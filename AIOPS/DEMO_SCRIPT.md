@@ -9,6 +9,11 @@ This demo shows how the remediation application helps a user go from a manually 
 - implementation
 - pull request creation
 
+The next production-oriented version should start from a real operational signal:
+concurrent users make the application slow or unavailable, telemetry raises a Sev
+ticket, AI agents assist RCA, and remediation is routed to code, config, infra,
+or human handoff.
+
 このデモでは、Remediationアプリが手動入力された課題から以下の流れをどのように支援するかを示します。
 - 対象プロジェクトの特定
 - 修正計画の生成
@@ -148,6 +153,32 @@ Say:
 
 日本語:
 「承認後、Codexは選択されたリポジトリで修正を行い、コード変更案とプルリクエストを準備します。」
+
+## Production Demo Track: Concurrent Load Incident
+
+Use this as the next version of the demo narrative.
+
+Scenario:
+- `MedicalAgent` receives high concurrent traffic on the chat/query endpoint.
+- p95 latency breaches the SLO or users see intermittent failures.
+- `AIopsTelemetry` raises a Sev ticket from NFR rules.
+- RCA agents inspect traces, logs, metrics, and code/config context.
+- The remediation plan classifies the fix as `config_change`, `infra_change`,
+  `code_change`, `runbook_change`, `investigation_only`, or `human_handoff`.
+
+Demo flow:
+1. Run a load generator against the application.
+2. Show latency/error-rate degradation in telemetry.
+3. Show the Sev ticket and RCA evidence.
+4. Click `AI Remediation`.
+5. Review the AI-generated plan and remediation type.
+6. If the fix is code/config/IaC in a repo, approve Codex implementation and PR.
+7. If the fix needs live infra permissions, show Codex producing exact operator
+   steps, validation checks, and rollback instructions instead of pretending to
+   change infrastructure it cannot access.
+
+Reference:
+[`docs/PRODUCTION_LOAD_DEGRADATION_USE_CASE.md`](docs/PRODUCTION_LOAD_DEGRADATION_USE_CASE.md).
 
 ## Short Executive Summary
 

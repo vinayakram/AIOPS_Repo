@@ -32,7 +32,6 @@
 - Demo scenarios using seeded multi-agent application defects such as timeout, handoff, and OOM-style failures.
 
 ## What Is Currently Out of Scope
-- Full autonomous RCA from live production telemetry as a required step in the active flow.
 - Automatic issue ingestion from all external systems by default.
 - Deep environment provisioning across real customer infrastructure.
 - Secret manager integration, vault rotation, and enterprise credential brokering.
@@ -40,6 +39,17 @@
 - End-to-end deployment execution into production environments.
 - Multi-repo orchestration, rollback management, and change management approval systems.
 - Rich observability integrations such as Datadog, Splunk, Sentry, or PagerDuty as first-class product features.
+
+## Production Use Case Requested After Demo Review
+- Keep the existing remediation workflow because the reviewers accepted the core flow.
+- Add a real-life production scenario where concurrent users access an application, causing slow responses or failed loads.
+- Raise a Sev ticket from telemetry/NFR evidence instead of relying only on manual issue entry.
+- Use AI-assisted RCA over traces, logs, metrics, and code/config context.
+- Classify remediation as code, config, infra, runbook, investigation-only, or human handoff.
+- For repo-manageable code/config/IaC changes, Codex should prepare a branch, validation evidence, and PR.
+- For live infra changes where Codex lacks permission, Codex should generate an operator plan with exact steps, validation checks, and rollback guidance.
+
+Detailed design: [`docs/PRODUCTION_LOAD_DEGRADATION_USE_CASE.md`](docs/PRODUCTION_LOAD_DEGRADATION_USE_CASE.md).
 
 ## What Can Potentially Be Covered For An Infrastructure-Independent Remediation AI
 - Intake from multiple sources:
@@ -92,10 +102,12 @@
 ## Recommended Positioning For This POC
 - This POC is best presented as a controlled remediation workflow rather than a fully autonomous production remediator.
 - The strongest story is:
-  - minimal intake
+  - production-like incident signal from telemetry or minimal intake fallback
   - correct project identification
+  - AI-assisted RCA
   - concise human-reviewed plan
-  - bounded Codex implementation
+  - explicit remediation type selection
+  - bounded Codex implementation or infra handoff plan
   - issue-relevant verification
   - branch and PR generation with artifacts
 - The natural next step is to replace more static project and environment assumptions with pluggable adapters, while keeping the human approval gate in place.

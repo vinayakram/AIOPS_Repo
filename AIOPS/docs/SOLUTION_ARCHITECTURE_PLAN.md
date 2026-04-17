@@ -9,6 +9,9 @@ Evolve the current remediation POC into a deployable Linux VM package that:
 - supports non-code remediation paths such as infra or config changes
 - exposes the workflow end-to-end as API operations
 - can be deployed with a fresh Codex API key and environment-specific configuration
+- supports a production-like concurrent-load incident where telemetry raises a
+  Sev ticket, AI agents assist RCA, and remediation becomes either a PR or an
+  operator handoff plan
 
 ## Upstream Integration Assumption
 
@@ -78,6 +81,30 @@ Current limitations:
 - deployment guidance exists in README, but there is no hardened Linux packaging bundle
 
 ## Review Comment Responses
+
+### 0. How should the demo become more production-realistic?
+
+Reviewer feedback:
+
+- the existing flow is good
+- the next use case should look like a production incident, not only a seeded code defect
+- concurrent users should make an application slow or unavailable
+- telemetry should raise a Sev ticket
+- AI agents should assist RCA and select a suitable remediation path
+- remediation may be code, config, infra, or human handoff
+
+Target response:
+
+- add a concurrent-load degradation scenario using `MedicalAgent`
+- detect the incident through latency, error-rate, saturation, and trace evidence
+- route the issue into remediation with RCA context already attached
+- classify the remediation type before implementation
+- create a PR when the change is repo-managed
+- produce precise operator steps when the change requires live infra permissions
+
+Detailed design:
+
+- [`PRODUCTION_LOAD_DEGRADATION_USE_CASE.md`](PRODUCTION_LOAD_DEGRADATION_USE_CASE.md)
 
 ### 1. Why is the input manual in the first screen?
 
