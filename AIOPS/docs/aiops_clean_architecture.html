@@ -1,0 +1,566 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AIOps Clean Architecture</title>
+  <style>
+    :root {
+      --bg: #f5f7fb;
+      --panel: #ffffff;
+      --ink: #162033;
+      --muted: #5f6b7c;
+      --line: #d9e2ec;
+      --blue: #155bd5;
+      --blue-soft: #eaf2ff;
+      --green: #0a7a42;
+      --green-soft: #eaf7f0;
+      --amber: #9a6200;
+      --amber-soft: #fff5df;
+      --red: #b4233a;
+      --red-soft: #fff0f2;
+      --violet: #5b3fd6;
+      --violet-soft: #f1edff;
+      --code: #101827;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: var(--ink);
+      background: var(--bg);
+      line-height: 1.55;
+    }
+    header {
+      background: var(--panel);
+      border-bottom: 1px solid var(--line);
+      padding: 32px 40px 24px;
+    }
+    main {
+      max-width: 1220px;
+      margin: 0 auto;
+      padding: 28px 24px 48px;
+    }
+    h1, h2, h3 {
+      margin: 0;
+      line-height: 1.2;
+      letter-spacing: 0;
+    }
+    h1 { font-size: 30px; }
+    h2 { font-size: 22px; margin-bottom: 12px; }
+    h3 { font-size: 16px; margin-bottom: 8px; }
+    p { margin: 8px 0 0; color: var(--muted); }
+    code, pre {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+      letter-spacing: 0;
+    }
+    code {
+      color: var(--code);
+      background: #eef2f7;
+      border: 1px solid #dfe7f0;
+      border-radius: 5px;
+      padding: 1px 5px;
+      white-space: nowrap;
+    }
+    pre {
+      margin: 12px 0 0;
+      padding: 14px 16px;
+      color: #eef4ff;
+      background: #101827;
+      border-radius: 8px;
+      overflow: auto;
+      font-size: 13px;
+    }
+    section {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 22px;
+      margin-bottom: 18px;
+    }
+    ul, ol {
+      margin: 10px 0 0 22px;
+      padding: 0;
+      color: var(--muted);
+    }
+    li { margin: 6px 0; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 12px;
+      font-size: 14px;
+    }
+    th, td {
+      border: 1px solid var(--line);
+      text-align: left;
+      vertical-align: top;
+      padding: 10px 12px;
+    }
+    th {
+      color: #2b3648;
+      background: #eef3f9;
+    }
+    td { color: var(--muted); }
+    .meta {
+      display: flex;
+      gap: 14px;
+      flex-wrap: wrap;
+      margin-top: 8px;
+      color: var(--muted);
+      font-size: 14px;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+    }
+    .card {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 16px;
+      background: #ffffff;
+    }
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      min-height: 24px;
+      padding: 2px 9px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 700;
+      border: 1px solid var(--line);
+      margin: 3px 4px 3px 0;
+    }
+    .blue { color: var(--blue); background: var(--blue-soft); border-color: #c5d8ff; }
+    .green { color: var(--green); background: var(--green-soft); border-color: #bce4cd; }
+    .amber { color: var(--amber); background: var(--amber-soft); border-color: #f2d28c; }
+    .red { color: var(--red); background: var(--red-soft); border-color: #f2bfca; }
+    .violet { color: var(--violet); background: var(--violet-soft); border-color: #d7ccff; }
+    .diagram-wrap {
+      margin-top: 12px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fbfdff;
+      overflow: auto;
+    }
+    svg {
+      display: block;
+      width: 100%;
+      min-width: 1050px;
+      height: auto;
+    }
+    .diagram-title {
+      font-size: 15px;
+      font-weight: 700;
+      fill: #172033;
+    }
+    .diagram-sub {
+      font-size: 12px;
+      fill: #5f6b7c;
+    }
+    .node-title {
+      font-size: 13px;
+      font-weight: 700;
+      fill: #172033;
+    }
+    .node-text {
+      font-size: 11px;
+      fill: #4a5568;
+    }
+    .arrow {
+      stroke: #66758a;
+      stroke-width: 1.7;
+      fill: none;
+      marker-end: url(#arrowHead);
+    }
+    .arrow-strong {
+      stroke: #155bd5;
+      stroke-width: 2.2;
+      fill: none;
+      marker-end: url(#arrowHeadBlue);
+    }
+    .legend {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(150px, 1fr));
+      gap: 8px;
+      margin-top: 12px;
+    }
+    .legend div {
+      border: 1px solid var(--line);
+      border-radius: 7px;
+      padding: 9px 10px;
+      color: var(--muted);
+      background: #ffffff;
+      font-size: 13px;
+    }
+    @media (max-width: 860px) {
+      header { padding: 24px 18px 18px; }
+      main { padding: 18px 12px 36px; }
+      .grid, .legend { grid-template-columns: 1fr; }
+      h1 { font-size: 25px; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>AIOps Clean Architecture</h1>
+    <div class="meta">
+      <span>Project: POCDEMO1</span>
+      <span>Application: MedicalAgent / medical-rag</span>
+      <span>Observability: Prometheus, traces, RCA agents</span>
+      <span>Updated: 17 April 2026</span>
+    </div>
+  </header>
+
+  <main>
+    <section>
+      <h2>Purpose</h2>
+      <p>
+        This document explains how the AIOps proof of concept works as a clean production-style architecture. It shows the technical components, how telemetry moves through the system, what scenarios are already covered, and where the current limitations are.
+      </p>
+      <p>
+        The central idea is simple: the business application emits telemetry, the AIOps platform detects issues, the RCA service gathers evidence from metrics and traces, and remediation produces either an executable code/config change or an operator plan when infrastructure permissions are required.
+      </p>
+    </section>
+
+    <section>
+      <h2>Architecture Diagram</h2>
+      <div class="diagram-wrap" aria-label="AIOps architecture diagram">
+        <svg viewBox="0 0 1180 720" role="img">
+          <defs>
+            <marker id="arrowHead" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto">
+              <path d="M0,0 L10,4 L0,8 z" fill="#66758a"></path>
+            </marker>
+            <marker id="arrowHeadBlue" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto">
+              <path d="M0,0 L10,4 L0,8 z" fill="#155bd5"></path>
+            </marker>
+            <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
+              <feDropShadow dx="0" dy="2" stdDeviation="2" flood-color="#0f172a" flood-opacity="0.12"></feDropShadow>
+            </filter>
+          </defs>
+
+          <text x="34" y="36" class="diagram-title">AIOps end-to-end telemetry, RCA, and remediation flow</text>
+          <text x="34" y="58" class="diagram-sub">Prometheus carries metrics, traces carry request-level error detail, and RCA combines both for evidence-backed recommendations.</text>
+
+          <rect x="30" y="90" width="250" height="150" rx="8" fill="#eaf2ff" stroke="#b8cffb" filter="url(#shadow)"></rect>
+          <text x="52" y="122" class="node-title">Users and Demo Drivers</text>
+          <text x="52" y="150" class="node-text">Browser UI</text>
+          <text x="52" y="171" class="node-text">Demo scenarios page</text>
+          <text x="52" y="192" class="node-text">Load script / k6 / Locust</text>
+          <text x="52" y="213" class="node-text">Concurrent user traffic</text>
+
+          <rect x="360" y="80" width="270" height="175" rx="8" fill="#eaf7f0" stroke="#b9e2ca" filter="url(#shadow)"></rect>
+          <text x="382" y="112" class="node-title">MedicalAgent Service</text>
+          <text x="382" y="140" class="node-text">FastAPI app on port 8002</text>
+          <text x="382" y="161" class="node-text">RAG pipeline and PubMed retrieval</text>
+          <text x="382" y="182" class="node-text">Azure OpenAI LLM calls</text>
+          <text x="382" y="203" class="node-text">/api/query and /api/health</text>
+          <text x="382" y="224" class="node-text">/metrics for Prometheus scrape</text>
+
+          <rect x="730" y="70" width="245" height="120" rx="8" fill="#fff5df" stroke="#efd08b" filter="url(#shadow)"></rect>
+          <text x="752" y="102" class="node-title">External Dependencies</text>
+          <text x="752" y="130" class="node-text">Azure OpenAI deployment</text>
+          <text x="752" y="151" class="node-text">PubMed / NCBI APIs</text>
+          <text x="752" y="172" class="node-text">Provider throttling and failures</text>
+
+          <rect x="360" y="330" width="270" height="150" rx="8" fill="#f1edff" stroke="#d4c9ff" filter="url(#shadow)"></rect>
+          <text x="382" y="362" class="node-title">Prometheus</text>
+          <text x="382" y="390" class="node-text">Endpoint: 10.169.82.55:9090</text>
+          <text x="382" y="411" class="node-text">Scrapes job=medical-rag</text>
+          <text x="382" y="432" class="node-text">Target: 10.169.91.16:8002/metrics</text>
+          <text x="382" y="453" class="node-text">Stores numeric time-series metrics</text>
+
+          <rect x="30" y="330" width="250" height="150" rx="8" fill="#fff0f2" stroke="#efbcc7" filter="url(#shadow)"></rect>
+          <text x="52" y="362" class="node-title">Trace and Span Store</text>
+          <text x="52" y="390" class="node-text">Langfuse / AIOps trace ingestion</text>
+          <text x="52" y="411" class="node-text">Request timeline and span status</text>
+          <text x="52" y="432" class="node-text">Provider error detail</text>
+          <text x="52" y="453" class="node-text">Failed openai_generation spans</text>
+
+          <rect x="730" y="300" width="265" height="190" rx="8" fill="#ffffff" stroke="#d9e2ec" filter="url(#shadow)"></rect>
+          <text x="752" y="332" class="node-title">AIopsTelemetry</text>
+          <text x="752" y="360" class="node-text">Issue detector</text>
+          <text x="752" y="381" class="node-text">Escalation rules and NFRs</text>
+          <text x="752" y="402" class="node-text">Dashboard issue lifecycle</text>
+          <text x="752" y="423" class="node-text">SQLite persistence for POC</text>
+          <text x="752" y="444" class="node-text">Rules: NFR-7p95, NFR-9, NFR-32</text>
+          <text x="752" y="465" class="node-text">Runs on port 7000</text>
+
+          <rect x="360" y="570" width="270" height="115" rx="8" fill="#ffffff" stroke="#d9e2ec" filter="url(#shadow)"></rect>
+          <text x="382" y="602" class="node-title">RCA Investigation Flow</text>
+          <text x="382" y="630" class="node-text">Normalization, correlation, RCA agents</text>
+          <text x="382" y="651" class="node-text">Reads Prometheus and traces</text>
+          <text x="382" y="672" class="node-text">Runs on port 8000</text>
+
+          <rect x="730" y="570" width="265" height="115" rx="8" fill="#eaf2ff" stroke="#b8cffb" filter="url(#shadow)"></rect>
+          <text x="752" y="602" class="node-title">Remediation / Codex</text>
+          <text x="752" y="630" class="node-text">Action plan and code/config changes</text>
+          <text x="752" y="651" class="node-text">PR-ready patches when permitted</text>
+          <text x="752" y="672" class="node-text">Infra steps when access is missing</text>
+
+          <path class="arrow-strong" d="M280 160 C310 160, 330 160, 360 160"></path>
+          <path class="arrow" d="M630 140 C670 125, 690 125, 730 130"></path>
+          <path class="arrow-strong" d="M493 255 C493 285, 493 300, 493 330"></path>
+          <path class="arrow" d="M360 410 C330 410, 310 410, 280 410"></path>
+          <path class="arrow" d="M630 405 C670 405, 690 405, 730 405"></path>
+          <path class="arrow" d="M280 405 C430 520, 545 520, 730 420"></path>
+          <path class="arrow-strong" d="M862 490 C820 545, 715 610, 630 628"></path>
+          <path class="arrow-strong" d="M630 628 C670 628, 690 628, 730 628"></path>
+          <path class="arrow" d="M495 570 C495 530, 495 505, 495 480"></path>
+          <path class="arrow" d="M862 570 C862 530, 862 515, 862 490"></path>
+
+          <text x="300" y="146" class="diagram-sub">HTTP requests</text>
+          <text x="646" y="116" class="diagram-sub">LLM / PubMed calls</text>
+          <text x="510" y="292" class="diagram-sub">scrape /metrics</text>
+          <text x="295" y="390" class="diagram-sub">trace spans</text>
+          <text x="648" y="386" class="diagram-sub">issue signals</text>
+          <text x="650" y="555" class="diagram-sub">RCA request</text>
+          <text x="650" y="616" class="diagram-sub">recommendation</text>
+        </svg>
+      </div>
+      <div class="legend">
+        <div><span class="pill blue">Traffic</span> User and test requests.</div>
+        <div><span class="pill green">Application</span> MedicalAgent production workload.</div>
+        <div><span class="pill violet">Metrics</span> Prometheus numeric evidence.</div>
+        <div><span class="pill red">Traces</span> Detailed request and error context.</div>
+      </div>
+    </section>
+
+    <section>
+      <h2>Technical Components</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Component</th>
+            <th>Responsibility</th>
+            <th>Current Endpoint or Location</th>
+            <th>Telemetry Role</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>MedicalAgent</td>
+            <td>Medical RAG application with PubMed retrieval and LLM answer generation</td>
+            <td><code>http://localhost:8002</code>, <code>/api/query</code>, <code>/metrics</code></td>
+            <td>Emits metrics and request traces</td>
+          </tr>
+          <tr>
+            <td>Prometheus</td>
+            <td>Scrapes and stores numeric time-series metrics</td>
+            <td><code>http://10.169.82.55:9090</code></td>
+            <td>Provides latency, error, concurrency, and LLM counter evidence</td>
+          </tr>
+          <tr>
+            <td>AIopsTelemetry</td>
+            <td>Issue detection, dashboard, NFR rule engine, issue lifecycle</td>
+            <td><code>http://localhost:7000</code></td>
+            <td>Raises issues from traces and detector rules</td>
+          </tr>
+          <tr>
+            <td>RCA Investigation Flow</td>
+            <td>Normalizes evidence, correlates signals, generates RCA and recommendations</td>
+            <td><code>http://localhost:8000</code></td>
+            <td>Reads Prometheus and trace/span evidence</td>
+          </tr>
+          <tr>
+            <td>Remediation Service</td>
+            <td>Produces actionable fix plans and Codex-assisted changes</td>
+            <td><code>http://localhost:8005</code></td>
+            <td>Turns RCA into code/config/infra remediation steps</td>
+          </tr>
+          <tr>
+            <td>Azure OpenAI</td>
+            <td>External LLM provider for low-rate deployment scenario</td>
+            <td>Configured by environment; key not documented</td>
+            <td>Provider rate-limit errors become trace evidence and metrics counters</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section>
+      <h2>Telemetry Flow</h2>
+      <ol>
+        <li>User or test traffic calls <code>MedicalAgent /api/query</code>.</li>
+        <li>MedicalAgent records request status, duration, concurrency, article counts, and LLM call outcomes.</li>
+        <li>MedicalAgent exposes those values at <code>/metrics</code>.</li>
+        <li>Prometheus scrapes <code>http://10.169.91.16:8002/metrics</code> as <code>job="medical-rag"</code>.</li>
+        <li>MedicalAgent also emits request traces and span errors to the trace path used by the AIOps/RCA flow.</li>
+        <li>AIopsTelemetry detects issues such as p95 latency under load or LLM provider throttling.</li>
+        <li>RCA calls Prometheus <code>query_range</code> and retrieves trace/span evidence for the same incident window.</li>
+        <li>Remediation uses RCA output to suggest or implement code, config, or infrastructure changes.</li>
+      </ol>
+      <pre>Current Prometheus target:
+
+job="medical-rag"
+instance="10.169.91.16:8002"
+metrics_path="/metrics"
+prometheus="http://10.169.82.55:9090"</pre>
+    </section>
+
+    <section>
+      <h2>Covered Scenarios</h2>
+      <div class="grid">
+        <div class="card">
+          <h3>Concurrent Users / Load Degradation</h3>
+          <p>Many users call MedicalAgent at once. p95 latency, error count, and max concurrency are captured through Prometheus metrics. AIOps can raise an NFR latency issue and RCA can recommend scaling, resource tuning, or backpressure.</p>
+          <p><span class="pill green">Covered</span><span class="pill amber">Needs pod validation for production realism</span></p>
+        </div>
+        <div class="card">
+          <h3>Azure OpenAI Rate Limit</h3>
+          <p>The low-rate Azure deployment is called rapidly. Provider-side failures such as HTTP 429 are captured as failed LLM spans and Prometheus LLM counters.</p>
+          <p><span class="pill green">Covered</span><span class="pill blue">Real provider call path</span></p>
+        </div>
+        <div class="card">
+          <h3>RCA Evidence Quality</h3>
+          <p>RCA now separates trace evidence from Prometheus metrics and should avoid claiming Prometheus proved something when a query returned no samples.</p>
+          <p><span class="pill green">Covered</span></p>
+        </div>
+        <div class="card">
+          <h3>Remediation Plan</h3>
+          <p>Remediation can propose code, configuration, or infrastructure steps. When Codex lacks cluster permissions, it produces a user-executable plan instead of pretending the change was applied.</p>
+          <p><span class="pill green">Covered</span><span class="pill amber">PR workflow pending credentials</span></p>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>Key Metrics RCA Uses</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Metric</th>
+            <th>Purpose</th>
+            <th>RCA Interpretation</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>medical_rag_query_duration_seconds</code></td>
+            <td>Request latency histogram</td>
+            <td>Computes p95/p99 latency and identifies slow-user impact</td>
+          </tr>
+          <tr>
+            <td><code>medical_rag_query_requests_total</code></td>
+            <td>Request outcome counter</td>
+            <td>Identifies success/error trends during the incident window</td>
+          </tr>
+          <tr>
+            <td><code>medical_rag_query_in_flight</code></td>
+            <td>Live concurrent request gauge</td>
+            <td>Supports load saturation and queueing RCA</td>
+          </tr>
+          <tr>
+            <td><code>medical_rag_query_max_concurrency</code></td>
+            <td>Peak concurrency observed by the app</td>
+            <td>Shows whether a burst of users occurred</td>
+          </tr>
+          <tr>
+            <td><code>medical_rag_llm_requests_total</code></td>
+            <td>LLM outcome counter by deployment and status</td>
+            <td>Shows success, provider error, and rate-limited outcomes</td>
+          </tr>
+          <tr>
+            <td><code>medical_rag_llm_rate_limit_current_window_hits</code></td>
+            <td>Observed LLM calls in the current rolling 60-second window</td>
+            <td>Supports rate-limit RCA with runtime request volume context</td>
+          </tr>
+          <tr>
+            <td><code>medical_rag_llm_rate_limit_per_minute</code></td>
+            <td>Configured limit exported for context</td>
+            <td>Shows the intended request-per-minute threshold for comparison</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section>
+      <h2>What Prometheus Does and Does Not Do</h2>
+      <p>
+        Prometheus stores numeric metrics, not full application log lines. The RCA display may show rows with <code>source=prometheus</code>, but those are formatted evidence rows generated by the investigation service from Prometheus query results.
+      </p>
+      <table>
+        <thead>
+          <tr>
+            <th>Evidence Type</th>
+            <th>System of Record</th>
+            <th>Example</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Numeric metric</td>
+            <td>Prometheus</td>
+            <td><code>medical_rag_llm_requests_total{status="rate_limited"} 2</code></td>
+          </tr>
+          <tr>
+            <td>Request-level error text</td>
+            <td>Trace/span store</td>
+            <td><code>openai_generation</code> span with Azure HTTP 429 error details</td>
+          </tr>
+          <tr>
+            <td>Raw application logs</td>
+            <td>Not yet implemented as a log backend</td>
+            <td>Recommended future addition: Loki or OpenTelemetry Collector logs pipeline</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section>
+      <h2>Kubernetes Pod Hosting Path</h2>
+      <p>
+        MedicalAgent can be hosted as a Kubernetes pod. That is the right next step for validating concurrent-user failure in a production-like environment.
+      </p>
+      <ul>
+        <li>Create a <code>Deployment</code> for MedicalAgent with CPU and memory requests/limits.</li>
+        <li>Expose it with a <code>Service</code> on port <code>8002</code>.</li>
+        <li>Configure Prometheus scrape annotations or a <code>ServiceMonitor</code> for <code>/metrics</code>.</li>
+        <li>Run load from <code>k6</code>, <code>Locust</code>, <code>hey</code>, or a Kubernetes Job.</li>
+        <li>Validate that Prometheus captures pod-level and app-level pressure: CPU, memory, p95 latency, errors, and in-flight requests.</li>
+        <li>Use RCA to recommend horizontal scaling, resource tuning, worker tuning, caching, queueing, or backpressure.</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>Recommended Next Production Code-Fix Scenario</h2>
+      <p>
+        The best next production code-fix scenario is provider-aware LLM throttling remediation. It is more realistic than the special-character case and maps directly to a common GenAI production failure.
+      </p>
+      <table>
+        <thead>
+          <tr>
+            <th>Incident</th>
+            <th>RCA Cause</th>
+            <th>Useful Production Fix</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Azure OpenAI returns HTTP 429 during traffic burst</td>
+            <td>Deployment request/token quota exceeded or burst limit reached</td>
+            <td>Add bounded concurrency, provider-aware exponential backoff, <code>Retry-After</code> handling, timeout budgets, and user-safe fallback</td>
+          </tr>
+          <tr>
+            <td>MedicalAgent p95 latency rises under concurrent load</td>
+            <td>RAG pipeline performs expensive synchronous work per request</td>
+            <td>Add backpressure, queue limits, cache reuse, worker tuning, and clearer saturation metrics</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section>
+      <h2>Current Limitations</h2>
+      <ul>
+        <li>Prometheus metrics are real, but raw application logs are not yet stored in a log backend.</li>
+        <li>Process-local gauges reset when MedicalAgent restarts.</li>
+        <li>For multiple pods, PromQL must aggregate across instances intentionally.</li>
+        <li>Provider rate-limit behavior depends on Azure's actual throttling, which may allow short bursts.</li>
+        <li>GitHub PR/push automation depends on credentials and repository access.</li>
+        <li>Infrastructure remediation requires Kubernetes or cloud permissions.</li>
+      </ul>
+    </section>
+  </main>
+</body>
+</html>
