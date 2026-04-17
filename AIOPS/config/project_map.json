@@ -1,0 +1,56 @@
+{
+  "medical-rag": {
+    "repo_root": "/home/support/Documents/POCDEMO1/MedicalAgent_GitHub",
+    "allowed_folder": "/home/support/Documents/POCDEMO1/MedicalAgent_GitHub/backend",
+    "test_command": "pytest -q",
+    "base_branch": "main",
+    "github_repo": "vinayakram/medical_agent",
+    "matchers": [
+      "medical-rag",
+      "medical rag",
+      "rag",
+      "openai",
+      "openai-answer-generation",
+      "pagerank",
+      "latency",
+      "high latency",
+      "response time",
+      "generation"
+    ]
+  },
+  "multiagent-order-orchestrator": {
+    "repo_root": "C:\\Users\\vinayakram.r\\codex-demo-repos\\multiagent-order-orchestrator",
+    "allowed_folder": "C:\\Users\\vinayakram.r\\codex-demo-repos\\multiagent-order-orchestrator\\src\\order_orchestrator",
+    "test_command": "pytest -q",
+    "base_branch": "main",
+    "github_repo": "vinayakram/multiagent-order-orchestrator",
+    "matchers": [
+      "order orchestrator",
+      "order router",
+      "planner agent",
+      "fulfillment agent",
+      "workflow runtime",
+      "agent handoff",
+      "timeout",
+      "retry"
+    ]
+  },
+  "multiagent-support-copilot": {
+    "repo_root": "C:\\Users\\vinayakram.r\\codex-demo-repos\\multiagent-support-copilot",
+    "allowed_folder": "C:\\Users\\vinayakram.r\\codex-demo-repos\\multiagent-support-copilot\\src\\support_copilot",
+    "test_command": "pytest -q",
+    "base_branch": "main",
+    "github_repo": "vinayakram/multiagent-support-copilot",
+    "matchers": [
+      "support copilot",
+      "ticket agent",
+      "conversation agent",
+      "resolution agent",
+      "workflow runtime",
+      "agent handoff",
+      "timeout",
+      "context loss",
+      "handoff"
+    ]
+  }
+}

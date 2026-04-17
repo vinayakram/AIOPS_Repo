@@ -1,0 +1,74 @@
+flowchart LR
+  U["User / Browser"] --> MA["MedicalAgent FastAPI :8000"]
+  MA --> RAG["RAG Pipeline: PubMed -> Embed -> FAISS -> PageRank -> LLM"]
+  RAG --> LF[("Langfuse Cloud")]
+  MA --> MAAIOPS["MedicalAgent aiops_client.py -> POST /api/ingest/trace"]
+  MAAIOPS --> AT
+
+  subgraph AT ["AIopsTelemetry :7000"]
+    ING["/api/ingest/trace"]
+    DB[("aiops.db: traces, spans, issues, issue_analyses, escalation_rules")]
+    EE["Escalation Engine (30s loop)"]
+    DET["NFR Issue Detector"]
+    RCAREQ["RCA Client: request_rca(issue_id)"]
+    INC["/api/v1/incidents"]
+    REMP["/api/remediation/* proxy"]
+    DASH["Dashboard / UI / APIs"]
+  end
+
+  ING --> DB
+  DB --> EE
+  EE --> DET
+  DET -->|create issues| DB
+  EE --> RCAREQ
+  DB --> INC
+  DASH --> REMP
+
+  subgraph INV ["Invastigate_flow_with_Poller :8000"]
+    POLL["AIOpsPoller: GET /api/v1/incidents"]
+    ORCH["5-Agent Orchestrator"]
+    NORM["Normalization Agent"]
+    CORR["Correlation Agent"]
+    EA["Error Analysis Agent"]
+    RCA["RCA Agent"]
+    REC["Recommendation Agent"]
+    IDB[("investigations.db: trace_results")]
+    ANZ["/api/v1/analyze (cache or run pipeline)"]
+  end
+
+  INC --> POLL
+  POLL --> ORCH
+  ORCH --> NORM --> CORR --> EA --> RCA --> REC
+  ORCH --> IDB
+  RCAREQ --> ANZ
+  ANZ --> ORCH
+  ORCH -->|full RCA JSON result| DB
+
+  NORM --> LF
+  CORR --> LF
+  EA --> LF
+  RCA --> LF
+  NORM --> PM[("Prometheus")]
+  CORR --> PM
+  EA --> PM
+  RCA --> PM
+
+  subgraph RM ["AIOPS Remediation Service :8005"]
+    API["/api/issues workflow APIs"]
+    RUNS[("runs/<issue_id>/ artifacts: plan.md, implementation.json, git_diff.patch, test_results.json")]
+    CODEX["Codex CLI execution"]
+    GIT["Git / GitHub PR"]
+  end
+
+  REMP --> API
+  API --> RUNS
+  API --> CODEX
+  CODEX --> GIT
+
+  classDef ext fill:#fff7e6,stroke:#b26b00,stroke-width:1px;
+  classDef svc fill:#e8f4ff,stroke:#1f6fb2,stroke-width:1px;
+  classDef db fill:#f3f0ff,stroke:#5f3dc4,stroke-width:1px;
+
+  class LF,PM ext;
+  class MA,AT,INV,RM,ING,EE,DET,RCAREQ,INC,REMP,DASH,POLL,ORCH,NORM,CORR,EA,RCA,REC,ANZ,API,CODEX,GIT,MAAIOPS,RAG svc;
+  class DB,IDB,RUNS db;

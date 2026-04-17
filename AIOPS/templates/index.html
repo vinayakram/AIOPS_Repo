@@ -1,0 +1,997 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate, max-age=0" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
+  <title>{{ title }}</title>
+  <link rel="stylesheet" href="/static/style.css" />
+</head>
+<body>
+<div class="container">
+  <section class="hero">
+    <div class="hero-copy-block">
+      <p class="eyebrow">リメディエーション ワークフロー / Remediation Workflow</p>
+      <h1 class="hero-title">
+        <span class="hero-title-main">Remediation POC</span>
+        <span class="hero-title-divider">/</span>
+        <span class="hero-title-ja">コーデックス ネイティブ POC</span>
+      </h1>
+    </div>
+  </section>
+
+  {% if message %}<div class="message-banner"><strong>Update / 更新:</strong> {{ message }}</div>{% endif %}
+
+  <section class="workflow-strip" aria-label="Workflow status">
+    <article class="workflow-card" data-screen="issue">
+      <div class="workflow-head"><p class="workflow-step">1</p><span class="workflow-state-tag"></span></div>
+      <h3>Issue Entry / 課題登録</h3>
+      <p class="workflow-meta">Capture the minimal issue details and confirm the target project.</p>
+    </article>
+    <article class="workflow-card" data-screen="plan">
+      <div class="workflow-head"><p class="workflow-step">2</p><span class="workflow-state-tag"></span></div>
+      <h3>Plan Review / 計画レビュー</h3>
+      <p class="workflow-meta">Generate the plan, review logs, and approve or reject.</p>
+    </article>
+    <article class="workflow-card" data-screen="implementation">
+      <div class="workflow-head"><p class="workflow-step">3</p><span class="workflow-state-tag"></span></div>
+      <h3>Implementation / 実装</h3>
+      <p class="workflow-meta">Review implementation summary, logs, and test proof before proceeding.</p>
+    </article>
+    <article class="workflow-card" data-screen="pr">
+      <div class="workflow-head"><p class="workflow-step">4</p><span class="workflow-state-tag"></span></div>
+      <h3>PR Details / PR詳細</h3>
+      <p class="workflow-meta">Create the branch and PR, then review the repo and PR details.</p>
+    </article>
+  </section>
+
+  <section class="screen-panel {% if current_screen == 'issue' %}is-active{% endif %}" data-screen="issue">
+    <div class="grid issue-grid">
+      <div class="card">
+        <div class="section-heading">
+          <p class="step">Step 1</p>
+          <h2>Issue Entry / 課題登録</h2>
+        </div>
+        <form method="post" action="/save-issue" id="issueForm" autocomplete="off">
+          <label>Application name / アプリケーション名</label>
+          <input type="text" name="project_name" id="applicationName" value="{{ issue.project_name if issue else '' }}" required />
+
+          <label>Remediation type / 変更タイプ</label>
+          <select name="remediation_type" id="remediationType">
+            <option value="code_change" {% if issue and issue.remediation_type == 'code_change' %}selected{% endif %}>Code change</option>
+            <option value="infra_change" {% if issue and issue.remediation_type == 'infra_change' %}selected{% endif %}>Infra change</option>
+            <option value="config_change" {% if issue and issue.remediation_type == 'config_change' %}selected{% endif %}>Config change</option>
+            <option value="runbook_change" {% if issue and issue.remediation_type == 'runbook_change' %}selected{% endif %}>Runbook change</option>
+            <option value="investigation_only" {% if issue and issue.remediation_type == 'investigation_only' %}selected{% endif %}>Investigation only</option>
+            <option value="human_handoff" {% if issue and issue.remediation_type == 'human_handoff' %}selected{% endif %}>Human handoff</option>
+          </select>
+
+          <label>Upstream repo / 上流リポジトリ</label>
+          <input type="text" name="upstream_repo" id="upstreamRepo" value="{{ issue.upstream_repo if issue else '' }}" />
+
+          <div class="resolver-box">
+            <div class="section-heading compact">
+              <p class="step">Resolver</p>
+              <h2>Available projects / 候補プロジェクト</h2>
+            </div>
+            <p class="small">Type the application name fully, then press Enter to see matches. If you type a partial name and press Enter, multiple possible matches will be shown.</p>
+            <div id="projectConfirm" class="status-callout info">Type an application name and press Enter to match a configured project. / アプリケーション名を入力して Enter を押すと候補プロジェクトが表示されます。</div>
+            <div id="projectSuggestionList" class="project-list">
+              <p class="small">No project suggestions yet. / まだ候補はありません。</p>
+            </div>
+          </div>
+
+          <label>Issue ID / 課題ID</label>
+          <input type="text" name="issue_id" value="{{ issue.issue_id if issue else '' }}" required />
+
+          <label>Issue description / 課題説明</label>
+          <textarea name="description" required>{{ issue.description if issue else '' }}</textarea>
+
+          <input type="hidden" name="title" id="hiddenTitle" value="{{ issue.title if issue else '' }}" />
+          <input type="hidden" name="repo_root" id="hiddenRepoRoot" value="{{ issue.repo_root if issue else '' }}" />
+          <input type="hidden" name="allowed_folder" id="hiddenAllowedFolder" value="{{ issue.allowed_folder if issue else '' }}" />
+          <input type="hidden" name="base_branch" id="hiddenBaseBranch" value="{{ issue.base_branch if issue else 'main' }}" />
+          <input type="hidden" name="test_command" id="hiddenTestCommand" value="{{ issue.test_command if issue else default_test_command }}" />
+          <input type="hidden" name="source_system" value="{{ issue.source_system if issue else 'manual_ui' }}" />
+          <input type="hidden" name="source_issue_id" value="{{ issue.source_issue_id if issue else '' }}" />
+          <input type="hidden" name="source_issue_url" value="{{ issue.source_issue_url if issue else '' }}" />
+          <input type="hidden" name="validation_command" value="{{ issue.validation_command if issue else default_test_command }}" />
+          <textarea name="acceptance_criteria" id="hiddenAcceptanceCriteria" hidden></textarea>
+
+          <button type="submit" class="secondary">Save issue and continue / 保存して次へ</button>
+        </form>
+      </div>
+
+      <div class="card">
+        <div class="section-heading">
+          <p class="step">Selection</p>
+          <h2>Chosen project / 選択済みプロジェクト</h2>
+        </div>
+        <div id="selectedProjectCard" class="selection-summary">
+          <p class="small">No project selected yet. / まだプロジェクトは選択されていません。</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="screen-panel {% if current_screen == 'plan' %}is-active{% endif %}" data-screen="plan">
+    <div class="grid">
+      <div>
+        <div class="card">
+          <div class="section-heading">
+            <p class="step">Step 2</p>
+            <h2>Plan / 計画</h2>
+          </div>
+          <div id="planNotice" class="status-callout info">Generate a plan to review it here. / 計画を生成すると、ここでレビューできます。</div>
+          <div class="inline-actions">
+            <button type="button" onclick="startJob('/plan')">Generate plan / 計画を生成</button>
+          </div>
+          <div id="planText" class="markdown-plan">{{ plan_text or 'No plan yet. / まだ計画はありません。' }}</div>
+        </div>
+
+        <div class="card">
+          <div class="section-heading">
+            <p class="step">Review</p>
+            <h2>Review comments / レビューコメント</h2>
+          </div>
+          <form id="revisePlanForm">
+            <textarea name="review_comments"></textarea>
+            <div class="inline-actions">
+              <button type="submit" class="warn">Revise / 修正</button>
+              <button type="button" class="success" onclick="approvePlan()">Approve / 承認</button>
+              <button type="button" class="danger" onclick="openRejectModal()">Reject / 却下</button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <div>
+        <div class="card">
+          <div class="section-heading">
+            <p class="step">Logs</p>
+            <h2>Plan logs / 計画ログ</h2>
+          </div>
+          <pre id="planLogs">{{ plan_logs or 'No plan logs yet. / まだ計画ログはありません。' }}</pre>
+        </div>
+
+        <div class="card">
+          <div class="section-heading">
+            <p class="step">Context</p>
+            <h2>Current issue / 現在の課題</h2>
+          </div>
+          <pre id="issueJson">{{ issue | tojson(indent=2) if issue else 'No issue loaded yet. / まだ課題はありません。' }}</pre>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="screen-panel {% if current_screen == 'implementation' %}is-active{% endif %}" data-screen="implementation">
+    <div class="grid">
+      <div>
+        <div class="card">
+          <div class="section-heading">
+            <p class="step">Step 3</p>
+            <h2>Implementation summary / 実装サマリー</h2>
+          </div>
+          <div id="implementationBanner" class="status-callout info">No implementation run yet. / まだ実装は実行されていません。</div>
+          <div id="changeSummary" class="summary-stack"></div>
+          <div id="reviewBanner" class="status-callout info">Human review is required before branch push / PR. / ブランチやPRの前に人の確認が必要です。</div>
+          <details id="changesReview" class="changes-review">
+            <summary>View code changes / コード変更を表示</summary>
+            <div class="changes-grid">
+              <div class="changes-card">
+                <h3>Changed files and commit view / 変更ファイルとコミット情報</h3>
+                <pre id="headShowText">No change details yet. / まだ変更詳細はありません。</pre>
+              </div>
+              <div class="changes-card">
+                <h3>Issue-relevant test proof / 関連テスト結果</h3>
+                <div id="testResultsView" class="summary-stack">
+                  <p class="small">No test results yet. / まだテスト結果はありません。</p>
+                </div>
+              </div>
+            </div>
+            <div class="changes-card">
+              <h3>Git diff / 差分</h3>
+              <pre id="gitDiffText">No diff available yet. / まだ差分はありません。</pre>
+            </div>
+          </details>
+          <div class="inline-actions">
+            <button type="button" onclick="startJob('/implement')">Implement solution / 実装を開始</button>
+            <button type="button" class="success" onclick="approveReview()">Approve changes / 変更を承認</button>
+            <button type="button" class="warn" onclick="rejectReview()">Request changes / 差し戻し</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="section-heading">
+            <p class="step">Next</p>
+            <h2>Proceed to PR creation / PR作成へ進む</h2>
+          </div>
+          <p class="small">When the implementation summary looks good, move to the PR creation screen.</p>
+          <button type="button" class="success" onclick="goToPrScreen()">Proceed for PR creation / PR作成へ進む</button>
+        </div>
+      </div>
+
+      <div>
+        <div class="card">
+          <div class="section-heading">
+            <p class="step">Logs</p>
+            <h2>Implementation logs / 実装ログ</h2>
+          </div>
+          <pre id="implementationLogs">{{ implementation_logs or 'No implementation logs yet. / まだ実装ログはありません。' }}</pre>
+        </div>
+
+        <div class="card">
+          <div class="section-heading">
+            <p class="step">Result</p>
+            <h2>Implementation result / 実装結果</h2>
+          </div>
+          <pre id="implementationText">{{ implementation_text or 'No implementation run yet. / まだ実装は実行されていません。' }}</pre>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="screen-panel {% if current_screen == 'pr' %}is-active{% endif %}" data-screen="pr">
+    <div class="grid">
+      <div>
+        <div class="card">
+          <div class="section-heading">
+            <p class="step">Step 4</p>
+            <h2>Git and PR details / Git と PR の詳細</h2>
+          </div>
+          <div id="prBanner" class="status-callout info">PR handoff has not started yet. / PR作成はまだ開始されていません。</div>
+          <div id="prDetails" class="summary-stack">
+            <p class="small">Proceed from implementation to prepare branch and PR details here. / 実装画面から進むと、ここにブランチとPRの詳細が表示されます。</p>
+          </div>
+          <div id="prActionRow" class="inline-actions">
+            <button type="button" class="success" onclick="startJob('/create-branch-pr')">Create branch and PR / ブランチとPRを作成</button>
+          </div>
+        </div>
+      </div>
+      <div>
+        <div class="card">
+          <div class="section-heading">
+            <p class="step">Logs</p>
+            <h2>PR creation logs / PR作成ログ</h2>
+          </div>
+          <pre id="prLogs">{{ implementation_logs or 'No PR creation logs yet. / まだPR作成ログはありません。' }}</pre>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<div id="rejectModal" class="modal-backdrop">
+  <div class="modal-card">
+    <h3>Manual correction required / 手動修正が必要です</h3>
+    <p>Please correct the issue or plan details manually, then generate or revise the plan again. / 課題または計画内容を手動で修正してから、再度計画を生成または修正してください。</p>
+    <div class="inline-actions">
+      <button type="button" class="secondary" onclick="closeRejectModal()">Close / 閉じる</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const STATUS_LABELS = {
+  IDLE: 'IDLE / 待機中',
+  ISSUE_SAVED: 'ISSUE_SAVED / 課題保存済み',
+  PLAN_DRAFTED: 'PLAN_DRAFTED / 計画作成済み',
+  PLAN_REVISED: 'PLAN_REVISED / 計画修正済み',
+  PLAN_APPROVED: 'PLAN_APPROVED / 計画承認済み',
+  IMPLEMENTATION_RUNNING: 'IMPLEMENTATION_RUNNING / 実装実行中',
+  IMPLEMENTATION_READY: 'IMPLEMENTATION_READY / 実装完了',
+  PR_CREATED: 'PR_CREATED / PR作成済み',
+  FAILED: 'FAILED / 失敗',
+};
+
+const PHASE_LABELS = {
+  idle: 'idle / 待機',
+  starting: 'starting / 開始中',
+  preparing: 'preparing / 準備中',
+  backup: 'backup / バックアップ中',
+  branch: 'branch / ブランチ準備中',
+  editing: 'editing / 修正中',
+  testing: 'testing / テスト中',
+  pushing: 'pushing / プッシュ中',
+  pr: 'creating pr / PR作成中',
+  finalizing: 'finalizing / 仕上げ中',
+  completed: 'completed / 完了',
+  failed: 'failed / 失敗',
+};
+
+let latestSuggestions = [];
+let selectedProject = null;
+let currentScreen = {{ current_screen | tojson }};
+let manualScreenOverride = false;
+const initialPrInfo = {{ pr_info | default({}, true) | tojson }};
+
+function escapeHtml(value) {
+  return (value || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+}
+
+function displayPath(value) {
+  return escapeHtml((value || '').replace(/\\/g, '/'));
+}
+
+function issueTitleFromIssue(issue) {
+  if (!issue) {
+    return '';
+  }
+  return issue.title || issue.description || '';
+}
+
+function renderIssueSummary(issue) {
+  const original = document.getElementById('issueJson');
+  if (!original) {
+    return;
+  }
+  let container = original;
+  if (container.tagName === 'PRE') {
+    const replacement = document.createElement('div');
+    replacement.id = 'issueJson';
+    replacement.className = 'summary-stack';
+    container.replaceWith(replacement);
+    container = replacement;
+  }
+  if (!issue) {
+    container.innerHTML = '<p class="small">課題はまだありません。 / No issue loaded yet.</p>';
+    return;
+  }
+  const english = issueTitleFromIssue(issue);
+  const gitTarget = fullGitUrl(issue.github_repo || issue.repo_root || '');
+  container.innerHTML = `
+    <div class="summary-item"><strong>Issue ID / 課題ID:</strong> ${escapeHtml(issue.issue_id || '')}</div>
+    <div class="summary-item"><strong>Application / アプリケーション:</strong> ${escapeHtml(issue.project_name || '')}</div>
+    <div class="summary-item"><strong>Issue summary / 課題要約:</strong><p>${escapeHtml(english || 'No issue summary yet.')}</p></div>
+    <div class="summary-item"><strong>Git repository / Git リポジトリ:</strong> ${gitTarget ? `<a href="${escapeHtml(gitTarget)}" target="_blank">${escapeHtml(gitTarget)}</a>` : 'Not set / 未設定'}</div>
+  `;
+}
+
+function renderPlanMarkdown(markdown) {
+  const text = (markdown || '').trim();
+  if (!text) {
+    return '<p>No plan yet. / まだ計画はありません。</p>';
+  }
+  const lines = text.split(/\r?\n/);
+  const parts = [];
+  let inList = false;
+  let sectionIndex = 0;
+  function closeList() {
+    if (inList) {
+      parts.push('</ul>');
+      inList = false;
+    }
+  }
+  for (const rawLine of lines) {
+    const line = rawLine.trim();
+    if (!line) {
+      closeList();
+      continue;
+    }
+    if (line.startsWith('# ')) {
+      closeList();
+      parts.push('<h1>' + escapeHtml(line.slice(2)) + '</h1>');
+      continue;
+    }
+    if (line.startsWith('## ')) {
+      closeList();
+      sectionIndex += 1;
+      parts.push('<h2><span class="plan-section-index">' + sectionIndex + '.</span> ' + escapeHtml(line.slice(3)) + '</h2>');
+      continue;
+    }
+    if (line.startsWith('- ')) {
+      if (!inList) {
+        parts.push('<ul>');
+        inList = true;
+      }
+      parts.push('<li>' + escapeHtml(line.slice(2)) + '</li>');
+      continue;
+    }
+    closeList();
+    parts.push('<p>' + escapeHtml(line) + '</p>');
+  }
+  closeList();
+  return parts.join('');
+}
+
+function buildImplementationBanner(data) {
+  const status = data.status || '';
+  const phase = data.job_phase || '';
+  const progressLog = data.progress_log || '';
+  const raw = data.implementation_text || '';
+  let parsed = null;
+  try {
+    parsed = raw ? JSON.parse(raw) : null;
+  } catch (err) {
+    parsed = null;
+  }
+
+  if (status === 'FAILED' && !['pushing', 'pr'].includes(phase)) {
+    return { level: 'error', text: data.job_error || 'Implementation failed. / 実装に失敗しました。' };
+  }
+  if (progressLog.includes('Create branch / PR completed successfully.')) {
+    return { level: 'success', text: 'Branch and PR flow completed. / ブランチとPR作成が完了しました。' };
+  }
+  if (status === 'IMPLEMENTATION_RUNNING') {
+    if (progressLog.includes('Codex received bounded fix request.')) {
+      return { level: 'working', text: 'Codex received bounded fix request. / Codex は最小修正依頼を受け取りました。' };
+    }
+    if (progressLog.includes('Minimal code change detected; proceeding to tests.')) {
+      return { level: 'working', text: 'Minimal code change detected; proceeding to tests. / 最小限の変更を検知し、テストへ進みます。' };
+    }
+    return { level: 'working', text: PHASE_LABELS[phase] || 'Implementation in progress / 実装進行中' };
+  }
+  if (status === 'PR_CREATED') {
+    return { level: 'success', text: 'Branch pushed and PR created. / ブランチをプッシュし、PRを作成しました。' };
+  }
+  if (status === 'REVIEW_PENDING' || status === 'IMPLEMENTATION_READY') {
+    const tests = parsed && Array.isArray(parsed.tests) ? parsed.tests : [];
+    const ok = tests.length > 0 && tests.every((item) => item.return_code === 0);
+    if (ok) {
+      return { level: 'success', text: 'Implementation complete. Review the diff and approve the changes before branch push / PR. / 実装が完了しました。差分を確認し、承認後にブランチやPRへ進んでください。' };
+    }
+  }
+  return { level: 'info', text: 'No implementation run yet. / まだ実装は実行されていません。' };
+}
+
+function buildReviewBanner(data) {
+  const reviewStatus = data.review_status || 'not_requested';
+  if (reviewStatus === 'approved') {
+    return { level: 'success', text: 'Human review approved. Branch push / PR is now enabled. / 人の確認が完了しました。ブランチやPRに進めます。' };
+  }
+  if (reviewStatus === 'changes_requested') {
+    return { level: 'warn', text: 'Changes were requested. Re-run implementation or revise manually before delivery. / 差し戻し済みです。再実装または手動修正後に進めてください。' };
+  }
+  if (reviewStatus === 'pending') {
+    return { level: 'working', text: 'Awaiting human approval of diff, summary, and validation proof. / 差分、要約、検証結果に対する人の承認待ちです。' };
+  }
+  return { level: 'info', text: 'Human review is required before branch push / PR. / ブランチやPRの前に人の確認が必要です。' };
+}
+
+function buildPlanNotice(data) {
+  const status = data.status || '';
+  const activeJob = data.active_job || '';
+  if (activeJob === 'plan' || activeJob === 'revise_plan') {
+    return { level: 'working', text: 'Codex is preparing the review plan. / Codex がレビュー用計画を準備中です。' };
+  }
+  if (status === 'PLAN_REVISED') {
+    return { level: 'success', text: 'Revised plan is ready for review. Compare the plan, then revise, approve, or reject. / 修正版の計画がレビュー可能です。内容を確認して、修正・承認・却下を選んでください。' };
+  }
+  if (status === 'PLAN_DRAFTED') {
+    return { level: 'success', text: 'Plan is ready for review. Read the plan on the left and use the actions below. / 計画がレビュー可能です。左側の計画を確認し、下の操作を選んでください。' };
+  }
+  if (status === 'PLAN_APPROVED') {
+    return { level: 'success', text: 'Plan approved. Move to the implementation screen when ready. / 計画は承認済みです。準備ができたら実装画面へ進んでください。' };
+  }
+  return { level: 'info', text: 'Generate a plan to review it here. / 計画を生成すると、ここでレビューできます。' };
+}
+
+function buildPrBanner(data) {
+  const status = data.status || '';
+  const activeJob = data.active_job || '';
+  const info = data.pr_info || {};
+  const jobError = data.job_error || '';
+  if (activeJob === 'create_branch_pr') {
+    return { level: 'working', text: 'Creating branch and PR. / ブランチとPRを作成中です。' };
+  }
+  if (status === 'PR_CREATED' && info.pr_url) {
+    return { level: 'success', text: 'PR created successfully. / PRの作成に成功しました。' };
+  }
+  if (status === 'IMPLEMENTATION_READY' && info.pr_url) {
+    return { level: 'success', text: 'Branch pushed successfully. Open the PR link to complete review. / ブランチのプッシュに成功しました。PRリンクを開いてレビューを続けてください。' };
+  }
+  if (status === 'FAILED' && jobError) {
+    return { level: 'error', text: `PR creation failed: ${jobError}` };
+  }
+  if ((data.review_status || '') !== 'approved') {
+    return { level: 'info', text: 'Waiting for human review approval before branch push / PR. / ブランチやPRの前に人の承認を待っています。' };
+  }
+  return { level: 'info', text: 'PR handoff has not started yet. / PR作成はまだ開始されていません。' };
+}
+
+function togglePrAction(data) {
+  const row = document.getElementById('prActionRow');
+  const status = data.status || '';
+  const activeJob = data.active_job || '';
+  const info = data.pr_info || {};
+  const shouldHide = activeJob === 'create_branch_pr' || status === 'PR_CREATED' || !!(info && info.pr_url);
+  row.style.display = shouldHide ? 'none' : 'flex';
+}
+
+function renderProjectSuggestions(items) {
+  const container = document.getElementById('projectSuggestionList');
+  if (!items.length) {
+    container.innerHTML = '<p class="small">No project suggestions yet. / まだ候補はありません。</p>';
+    return;
+  }
+  container.innerHTML = items.map((item, index) => {
+    const repoLabel = item.github_repo || item.repo_root || 'No git target';
+    const checked = index === 0 ? 'checked' : '';
+    return `
+      <label class="project-option">
+        <input type="radio" name="projectSuggestion" value="${escapeHtml(item.project_name)}" ${checked} />
+        <span>
+          <strong>${escapeHtml(item.project_name)}</strong>
+          <small>${escapeHtml(repoLabel)}</small>
+        </span>
+      </label>
+    `;
+  }).join('');
+  const radios = container.querySelectorAll('input[name="projectSuggestion"]');
+  radios.forEach((radio) => {
+    radio.addEventListener('change', async function () {
+      const selected = latestSuggestions.find((item) => item.project_name === this.value) || null;
+      selectedProject = selected;
+      if (selectedProject) {
+        await applySelectedProject(selectedProject.project_name);
+      }
+    });
+  });
+}
+
+function renderSelectedProject(item) {
+  const card = document.getElementById('selectedProjectCard');
+  const confirm = document.getElementById('projectConfirm');
+  if (!item) {
+    card.innerHTML = '<p class="small">No project selected yet. / まだプロジェクトは選択されていません。</p>';
+    confirm.className = 'status-callout info';
+    confirm.textContent = 'Type an application name to match a configured project. / アプリケーション名を入力すると候補プロジェクトが表示されます。';
+    return;
+  }
+  card.innerHTML = `
+    <div class="summary-item"><strong>Application / アプリ:</strong> ${escapeHtml(item.project_name)}</div>
+    <div class="summary-item"><strong>Git target / Git URL:</strong> ${escapeHtml(item.github_repo || item.repo_root || '')}</div>
+    <div class="summary-item"><strong>Repo root:</strong> ${displayPath(item.repo_root || '')}</div>
+    <div class="summary-item"><strong>Allowed folder:</strong> ${displayPath(item.allowed_folder || '')}</div>
+  `;
+  confirm.className = 'status-callout success';
+  confirm.textContent = `Selected project looks good. Save the issue if this is fine. / 候補を自動選択しました。問題なければ課題を保存してください。`;
+}
+
+async function suggestProjectsFromInput() {
+  const form = document.getElementById('issueForm');
+  const params = new URLSearchParams({
+    application_name: form.elements.project_name.value,
+    title: form.elements.title.value,
+    description: form.elements.description.value,
+    github_repo: form.elements.upstream_repo.value,
+  });
+  const response = await fetch('/api/projects/suggest?' + params.toString(), { cache: 'no-store' });
+  const data = await response.json();
+  if (!response.ok) {
+    return;
+  }
+  latestSuggestions = data.suggestions || [];
+  selectedProject = latestSuggestions[0] || null;
+  renderProjectSuggestions(latestSuggestions);
+  if (selectedProject) {
+    await applySelectedProject(selectedProject.project_name);
+  } else {
+    renderSelectedProject(null);
+  }
+}
+
+async function applySelectedProject(projectName) {
+  const formData = new FormData();
+  formData.append('project_name', projectName);
+  const response = await fetch('/api/projects/select', { method: 'POST', body: formData });
+  const data = await response.json();
+  if (!response.ok) {
+    alert(data.detail || 'Failed to load project details / プロジェクト情報の取得に失敗しました');
+    return;
+  }
+  selectedProject = data;
+  document.getElementById('applicationName').value = data.project_name || document.getElementById('applicationName').value;
+  document.getElementById('hiddenRepoRoot').value = data.repo_root || '';
+  document.getElementById('hiddenAllowedFolder').value = data.allowed_folder || '';
+  document.getElementById('hiddenBaseBranch').value = data.base_branch || 'main';
+  document.getElementById('hiddenTestCommand').value = data.test_command || {{ default_test_command | tojson }};
+  renderSelectedProject(data);
+}
+
+function setScreen(screen, manual = false) {
+  if (manual) {
+    manualScreenOverride = true;
+  }
+  currentScreen = screen;
+  for (const panel of document.querySelectorAll('.screen-panel')) {
+    panel.classList.toggle('is-active', panel.dataset.screen === screen);
+  }
+  const order = ['issue', 'plan', 'implementation', 'pr'];
+  const currentIndex = order.indexOf(screen);
+  for (const card of document.querySelectorAll('.workflow-card')) {
+    const idx = order.indexOf(card.dataset.screen);
+    card.classList.toggle('is-active', card.dataset.screen === screen);
+    card.classList.toggle('is-complete', idx > -1 && idx < currentIndex);
+  }
+}
+
+function goToPrScreen() {
+  setScreen('pr', true);
+}
+
+function renderChangeSummary(summary) {
+  const container = document.getElementById('changeSummary');
+  if (!summary || !Object.keys(summary).length) {
+    container.innerHTML = '<p class="small">No implementation summary yet. / まだ実装サマリーはありません。</p>';
+    return;
+  }
+  const files = (summary.files_changed || []).map((file) => `<li>${escapeHtml(file)}</li>`).join('') || '<li>No changed files recorded yet.</li>';
+  const tests = (summary.test_results || []).map((test) => `<li>${escapeHtml(test.command)} - ${escapeHtml(test.status)}</li>`).join('') || '<li>No test results yet.</li>';
+  container.innerHTML = `
+    <div class="summary-item"><strong>What changed / 変更概要:</strong><p>${escapeHtml(summary.human_summary || summary.summary || '')}</p></div>
+    <div class="summary-item"><strong>Components changed / 変更コンポーネント:</strong><ul>${(summary.components_changed || []).map((item) => `<li>${escapeHtml(item)}</li>`).join('') || '<li>No components recorded yet.</li>'}</ul></div>
+    <div class="summary-item"><strong>Files changed / 変更ファイル:</strong><ul>${files}</ul></div>
+    <div class="summary-item"><strong>Test results / テスト結果:</strong><ul>${tests}</ul></div>
+  `;
+}
+
+function renderPrDetails(info, issue) {
+  const container = document.getElementById('prDetails');
+  if (!info || !Object.keys(info).length) {
+    container.innerHTML = '<p class="small">Proceed from implementation to prepare branch and PR details here. / 実装画面から進むと、ここにブランチとPRの詳細が表示されます。</p>';
+    return;
+  }
+  const prLink = info.pr_url ? `<a href="${escapeHtml(info.pr_url)}" target="_blank">${escapeHtml(info.pr_url)}</a>` : 'Not available yet';
+  container.innerHTML = `
+    <div class="summary-item"><strong>Application / アプリ:</strong> ${escapeHtml(info.project_name || issue?.project_name || '')}</div>
+    <div class="summary-item"><strong>Git repository / Git リポジトリ:</strong> ${escapeHtml(info.github_repo || issue?.github_repo || '')}</div>
+    <div class="summary-item"><strong>Base branch / ベースブランチ:</strong> ${escapeHtml(info.base_branch || issue?.base_branch || '')}</div>
+    <div class="summary-item"><strong>Remediation branch / 修正ブランチ:</strong> ${escapeHtml(info.branch_name || '')}</div>
+    <div class="summary-item"><strong>PR title / PRタイトル:</strong> ${escapeHtml(info.pr_title || '')}</div>
+    <div class="summary-item"><strong>PR link / PRリンク:</strong> ${prLink}</div>
+  `;
+}
+
+function renderTestResults(results) {
+  const container = document.getElementById('testResultsView');
+  if (!container) return;
+  if (!results || !results.length) {
+    container.innerHTML = '<p class="small">No test results yet. / まだテスト結果はありません。</p>';
+    return;
+  }
+  container.innerHTML = results.map((test) => {
+    const status = (test.return_code === 0) ? 'Passed' : 'Failed';
+    const statusJa = (test.return_code === 0) ? '合格' : '失敗';
+    return `
+      <div class="summary-item">
+        <strong>${escapeHtml(test.command || 'Test command')}</strong>
+        <p>${escapeHtml(status)} / ${escapeHtml(statusJa)}</p>
+        <p class="small">Exit code: ${escapeHtml(String(test.return_code ?? ''))}</p>
+      </div>
+    `;
+  }).join('');
+}
+
+function fullGitUrl(value) {
+  const raw = (value || '').trim();
+  if (!raw) return '';
+  if (/^https?:\/\//i.test(raw) || /^git@/i.test(raw)) return raw;
+  if (/^[^/]+\/[^/]+$/.test(raw)) return `https://github.com/${raw}`;
+  return raw;
+}
+
+function formatTimestamp(value) {
+  if (!value) return 'Unknown time / 時刻不明';
+  return new Date(value * 1000).toLocaleString('en-IN', {
+    year: 'numeric',
+    month: 'short',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+  });
+}
+
+function ensureHistoryUi() {
+  const column = document.querySelector('[data-screen="pr"] .grid > div:last-child');
+  if (!column || document.getElementById('historyLink')) return;
+  const card = document.createElement('div');
+  card.className = 'card';
+  card.innerHTML = `
+    <div class="section-heading">
+      <p class="step">Artifacts</p>
+      <h2>Artifacts history / 成果物履歴</h2>
+    </div>
+    <div class="history-actions">
+      <a href="#" id="historyLink" class="history-link">History / 履歴</a>
+      <button type="button" class="secondary slim-button" onclick="manualReset()">Refresh session / セッション更新</button>
+    </div>
+    <div id="historyPanel" class="history-panel">
+      <div class="section-heading compact">
+        <p class="step">History</p>
+        <h2>Generated artifacts / 生成済み成果物</h2>
+      </div>
+      <ul class="files" id="historyList"></ul>
+    </div>
+  `;
+  column.appendChild(card);
+  document.getElementById('historyLink')?.addEventListener('click', function (e) {
+    e.preventDefault();
+    document.getElementById('historyPanel')?.classList.toggle('is-open');
+  });
+}
+
+function renderArtifactHistory(files) {
+  ensureHistoryUi();
+  const historyList = document.getElementById('historyList');
+  if (!historyList) return;
+  historyList.innerHTML = '';
+  if (!files || !files.length) {
+    historyList.innerHTML = '<li>No history yet. / まだ履歴はありません。</li>';
+    return;
+  }
+  files.forEach((file) => {
+    const li = document.createElement('li');
+    li.innerHTML = `<a href="/artifact?path=${encodeURIComponent(file.path)}" target="_blank">${escapeHtml(file.name)}</a> <a href="/artifact?path=${encodeURIComponent(file.path)}&download=1">[Download]</a><span class="history-meta">${escapeHtml(formatTimestamp(file.modified_at))}</span>`;
+    historyList.appendChild(li);
+  });
+}
+
+function hideImplementationArtifactsCard() {
+  const filesList = document.getElementById('filesList');
+  const card = filesList ? filesList.closest('.card') : null;
+  if (card) {
+    card.style.display = 'none';
+  }
+}
+
+function renderProjectSuggestions(items) {
+  latestSuggestions = items || [];
+}
+
+function renderSelectedProject(item) {
+  const card = document.getElementById('selectedProjectCard');
+  const confirm = document.getElementById('projectConfirm');
+  const heading = document.querySelector('.resolver-box .section-heading h2');
+  if (heading) heading.textContent = 'Project match / プロジェクト候補';
+  const projectList = document.getElementById('projectSuggestionList');
+  if (projectList) projectList.style.display = 'none';
+  if (!item) {
+    card.innerHTML = '<p class="small">No project selected yet. / まだプロジェクトは選択されていません。</p>';
+    confirm.className = 'status-callout info';
+    confirm.textContent = 'Type an application name and press Enter to auto-match a configured project. / アプリケーション名を入力して Enter を押すと、自動で候補プロジェクトを照合します。';
+    return;
+  }
+  const gitTarget = fullGitUrl(item.github_repo || item.repo_root || '');
+  card.innerHTML = `
+    <div class="summary-item"><strong>Application / アプリ:</strong> ${escapeHtml(item.project_name || '')}</div>
+    <div class="summary-item"><strong>Git repository / Git URL:</strong> <a href="${escapeHtml(gitTarget)}" target="_blank">${escapeHtml(gitTarget)}</a></div>
+    <div class="summary-item"><strong>Repo root:</strong> ${displayPath(item.repo_root || '')}</div>
+    <div class="summary-item"><strong>Allowed folder:</strong> ${displayPath(item.allowed_folder || '')}</div>
+  `;
+  confirm.className = latestSuggestions.length > 1 ? 'status-callout working' : 'status-callout success';
+  confirm.textContent = latestSuggestions.length > 1
+    ? 'Multiple matches were found. The closest project has been applied. / 複数候補が見つかりました。最も近いプロジェクトを適用しています。'
+    : 'Project matched successfully. Save the issue if this looks right. / プロジェクトの照合が完了しました。問題なければ課題を保存してください。';
+}
+
+function renderChangeSummary(summary) {
+  const container = document.getElementById('changeSummary');
+  if (!summary || !Object.keys(summary).length) {
+    container.innerHTML = '<p class="small">実装サマリーはまだありません。 / No implementation summary yet.</p>';
+    return;
+  }
+  const files = (summary.files_changed || []).map((file) => `<li>${escapeHtml(file)}</li>`).join('') || '<li>No changed files recorded yet.</li>';
+  const relevantTests = (summary.relevant_test_cases || []).map((name) => `<li>${escapeHtml(name)}</li>`).join('') || '<li>No issue-specific tests recorded yet.</li>';
+  const totals = summary.test_totals || {};
+  const englishSummary = summary.human_summary || summary.summary || '';
+  container.innerHTML = `
+    <div class="summary-item"><strong>Remediation summary / 変更概要:</strong><p>${escapeHtml(englishSummary || 'No remediation summary yet.')}</p></div>
+    <div class="summary-item"><strong>Components changed / 変更コンポーネント:</strong><ul>${(summary.components_changed || []).map((item) => `<li>${escapeHtml(item)}</li>`).join('') || '<li>No components recorded yet.</li>'}</ul></div>
+    <div class="summary-item"><strong>Files changed / 変更ファイル:</strong><ul>${files}</ul></div>
+    <div class="summary-item"><strong>Issue-relevant tests / 課題関連テスト:</strong><ul>${relevantTests}</ul></div>
+    <div class="summary-item"><strong>Test totals / テスト集計:</strong><p>${escapeHtml(String(totals.passed || 0))} passed / 合格, ${escapeHtml(String(totals.failed || 0))} failed / 失敗, ${escapeHtml(String(totals.total || 0))} total / 合計</p></div>
+  `;
+}
+
+async function startJob(url, formData) {
+  try {
+    if (url === '/implement') {
+      setScreen('implementation', true);
+    } else if (url === '/create-branch-pr') {
+      setScreen('pr', true);
+    } else if (url === '/plan' || url === '/revise-plan') {
+      setScreen('plan', true);
+    }
+    const response = await fetch(url, { method: 'POST', body: formData || undefined });
+    const data = await response.json();
+    if (!response.ok) {
+        alert(data.detail || data.message || 'Failed to start job');
+        return;
+      }
+      manualScreenOverride = false;
+      await refreshState();
+    } catch (err) {
+      alert('Failed to start background job: ' + err);
+    }
+  }
+
+async function approveReview() {
+  const formData = new FormData();
+  const notes = window.prompt('Optional review notes');
+  if (notes !== null) {
+    formData.append('review_notes', notes);
+  }
+  const response = await fetch('/review/approve', { method: 'POST', body: formData });
+  const data = await response.json();
+  if (!response.ok) {
+    alert(data.detail || data.message || 'Failed to approve review');
+    return;
+  }
+  await refreshState();
+}
+
+async function rejectReview() {
+  const notes = window.prompt('Enter review comments to explain what must change');
+  if (!notes) {
+    return;
+  }
+  const formData = new FormData();
+  formData.append('review_notes', notes);
+  const response = await fetch('/review/reject', { method: 'POST', body: formData });
+  const data = await response.json();
+  if (!response.ok) {
+    alert(data.detail || data.message || 'Failed to reject review');
+    return;
+  }
+  await refreshState();
+}
+
+async function approvePlan() {
+  manualScreenOverride = false;
+  const response = await fetch('/approve-plan', { method: 'POST' });
+  if (!response.ok) {
+    const text = await response.text();
+    alert(text);
+    return;
+  }
+  window.location.reload();
+}
+
+function openRejectModal() {
+  document.getElementById('rejectModal').classList.add('is-open');
+}
+
+function closeRejectModal() {
+  document.getElementById('rejectModal').classList.remove('is-open');
+}
+
+async function refreshState() {
+  const response = await fetch('/api/state', { cache: 'no-store' });
+  const data = await response.json();
+  document.getElementById('planText').innerHTML = renderPlanMarkdown(data.plan_text || '');
+  document.getElementById('planLogs').textContent = data.plan_logs || 'No plan logs yet. / まだ計画ログはありません。';
+  document.getElementById('implementationLogs').textContent = data.implementation_logs || 'No implementation logs yet. / まだ実装ログはありません。';
+  document.getElementById('prLogs').textContent = data.pr_logs || 'No PR creation logs yet. / まだPR作成ログはありません。';
+  document.getElementById('implementationText').textContent = data.implementation_text || 'No implementation run yet. / まだ実装は実行されていません。';
+  document.getElementById('gitDiffText').textContent = data.git_diff_text || 'No diff available yet. / まだ差分はありません。';
+  document.getElementById('headShowText').textContent = data.head_show_text || 'No change details yet. / まだ変更詳細はありません。';
+  renderIssueSummary(data.issue || null);
+  renderChangeSummary(data.change_summary || {});
+  renderTestResults(data.test_results || []);
+  renderPrDetails(data.pr_info || {}, data.issue || {});
+
+  const banner = buildImplementationBanner(data);
+  const implementationBanner = document.getElementById('implementationBanner');
+  implementationBanner.className = 'status-callout ' + banner.level;
+  implementationBanner.textContent = banner.text;
+
+  const reviewBanner = buildReviewBanner(data);
+  const reviewBannerEl = document.getElementById('reviewBanner');
+  if (reviewBannerEl) {
+    reviewBannerEl.className = 'status-callout ' + reviewBanner.level;
+    reviewBannerEl.textContent = reviewBanner.text;
+  }
+
+  const prBanner = buildPrBanner(data);
+  const prBannerEl = document.getElementById('prBanner');
+  prBannerEl.className = 'status-callout ' + prBanner.level;
+  prBannerEl.textContent = prBanner.text;
+  togglePrAction(data);
+
+  const planNotice = buildPlanNotice(data);
+  const planNoticeEl = document.getElementById('planNotice');
+  planNoticeEl.className = 'status-callout ' + planNotice.level;
+  planNoticeEl.textContent = planNotice.text;
+
+  hideImplementationArtifactsCard();
+  renderArtifactHistory(data.run_files || []);
+
+  const targetScreen = data.current_screen || currentScreen || 'issue';
+  if (!manualScreenOverride) {
+    setScreen(targetScreen);
+  }
+}
+
+async function resetSession() {
+  await fetch('/api/reset-session', { method: 'POST' });
+}
+
+async function manualReset() {
+  manualScreenOverride = false;
+  await resetSession();
+  window.location.href = '/';
+}
+
+document.getElementById('applicationName').addEventListener('input', async function () {
+  if (!this.value.trim()) {
+    latestSuggestions = [];
+    selectedProject = null;
+    renderProjectSuggestions([]);
+    renderSelectedProject(null);
+  }
+});
+
+document.getElementById('applicationName').addEventListener('keydown', async function (e) {
+  if (e.key === 'Enter') {
+    e.preventDefault();
+    if (!this.value.trim()) {
+      return;
+    }
+    await suggestProjectsFromInput();
+  }
+});
+
+document.getElementById('applicationName').addEventListener('blur', async function () {
+  if (!this.value.trim() || latestSuggestions.length) {
+    return;
+  }
+  await suggestProjectsFromInput();
+});
+
+document.getElementById('revisePlanForm').addEventListener('submit', async function (e) {
+  e.preventDefault();
+  manualScreenOverride = false;
+  const formData = new FormData(e.target);
+  await startJob('/revise-plan', formData);
+});
+
+for (const card of document.querySelectorAll('.workflow-card')) {
+  card.addEventListener('click', () => setScreen(card.dataset.screen, true));
+}
+
+const initialProject = {{ {
+  'project_name': issue.project_name if issue else '',
+  'repo_root': issue.repo_root if issue else '',
+  'allowed_folder': issue.allowed_folder if issue else '',
+  'github_repo': issue.github_repo if issue else '',
+} | tojson }};
+
+renderProjectSuggestions([]);
+renderSelectedProject(initialProject.project_name ? initialProject : null);
+renderIssueSummary({{ issue | tojson if issue else 'null' }});
+renderChangeSummary({{ change_summary | tojson }});
+renderTestResults({{ test_results | tojson }});
+renderPrDetails(initialPrInfo, {{ issue | tojson if issue else '{}' }});
+document.getElementById('gitDiffText').textContent = {{ git_diff_text | tojson }} || 'No diff available yet. / まだ差分はありません。';
+document.getElementById('headShowText').textContent = {{ head_show_text | tojson }} || 'No change details yet. / まだ変更詳細はありません。';
+hideImplementationArtifactsCard();
+renderArtifactHistory({{ run_files | tojson }});
+setScreen(currentScreen || 'issue');
+const initialPlanNotice = buildPlanNotice({ status: {{ status | tojson }}, active_job: {{ active_job | tojson }} });
+document.getElementById('planNotice').className = 'status-callout ' + initialPlanNotice.level;
+document.getElementById('planNotice').textContent = initialPlanNotice.text;
+const initialPrBanner = buildPrBanner({ status: {{ status | tojson }}, active_job: {{ active_job | tojson }}, pr_info: initialPrInfo, job_error: {{ job_error | tojson }} });
+document.getElementById('prBanner').className = 'status-callout ' + initialPrBanner.level;
+document.getElementById('prBanner').textContent = initialPrBanner.text;
+togglePrAction({ status: {{ status | tojson }}, active_job: {{ active_job | tojson }}, pr_info: initialPrInfo });
+const heroJa = document.querySelector('.hero-title-ja');
+if (heroJa) heroJa.textContent = 'リメディエーション POC';
+const heroMain = document.querySelector('.hero-title-main');
+if (heroMain) heroMain.textContent = 'Remediation POC';
+for (const heading of document.querySelectorAll('[data-screen="plan"] .section-heading h2')) {
+  if (heading.textContent.includes('Current issue')) {
+    heading.textContent = '課題概要 / Issue summary';
+  }
+}
+setInterval(refreshState, 2000);
+</script>
+</body>
+</html>

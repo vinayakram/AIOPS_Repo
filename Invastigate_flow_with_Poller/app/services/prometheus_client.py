@@ -1,0 +1,262 @@
+from __future__ import annotations
+
+from datetime import datetime, timedelta, timezone
+from typing import Any
+
+import httpx
+
+from app.core import get_settings, logger
+
+
+# ── Default PromQL queries for common failure signals ──────────────────
+
+DEFAULT_QUERIES: list[dict[str, str]] = [
+    {
+        "name": "error_rate",
+        "query": 'sum(rate(http_requests_total{{status=~"5..",job=~".*{agent}.*"}}[{window}]))',
+        "description": "HTTP 5xx error rate",
+    },
+    {
+        "name": "latency_p99",
+        "query": 'histogram_quantile(0.99, sum(rate(http_request_duration_seconds_bucket{{job=~".*{agent}.*"}}[{window}])) by (le))',
+        "description": "P99 request latency",
+    },
+    {
+        "name": "up_status",
+        "query": 'up{{job=~".*{agent}.*"}}',
+        "description": "Target up/down status",
+    },
+    {
+        "name": "memory_usage",
+        "query": 'container_memory_usage_bytes{{pod=~".*{agent}.*"}}',
+        "description": "Container memory usage",
+    },
+    {
+        "name": "restart_count",
+        "query": 'kube_pod_container_status_restarts_total{{pod=~".*{agent}.*"}}',
+        "description": "Pod restart count",
+    },
+    {
+        "name": "dns_failures",
+        "query": 'sum(rate(coredns_dns_responses_total{{rcode="SERVFAIL"}}[{window}]))',
+        "description": "DNS SERVFAIL rate",
+    },
+]
+
+
+class PrometheusClient:
+    """
+    Fetches metrics from Prometheus using PromQL range queries.
+
+    Queries a ±window around the incident timestamp to capture
+    anomalous signals near the time of failure.
+    """
+
+    def __init__(self) -> None:
+        settings = get_settings()
+        self._base_url = settings.prometheus_url.rstrip("/")
+        self._window = settings.prometheus_query_window
+        self._buffer_seconds = settings.prometheus_buffer_seconds
+
+    async def fetch_metrics(
+        self,
+        timestamp: str,
+        agent_name: str,
+        trace_start: str | None = None,
+        trace_end: str | None = None,
+    ) -> list[dict[str, Any]]:
+        """
+        Run default PromQL queries and return results as log-like dicts.
+
+        If trace_start and trace_end are provided (from a Langfuse trace),
+        the query window spans the full trace duration with a configurable
+        buffer on each side: (trace_start - buffer) to (trace_end + buffer).
+
+        If not provided, falls back to: timestamp ± buffer.
+
+        Args:
+            timestamp:   ISO-8601 incident timestamp (fallback anchor)
+            agent_name:  Agent name used to template PromQL filters
+            trace_start: ISO-8601 trace start time from Langfuse (optional)
+            trace_end:   ISO-8601 trace end time from Langfuse (optional)
+        """
+        if trace_start and trace_end:
+            logger.info(
+                "Prometheus | fetching metrics for agent=%s "
+                "trace_window=[%s → %s] buffer=%ds",
+                agent_name, trace_start, trace_end, self._buffer_seconds,
+            )
+        else:
+            logger.info(
+                "Prometheus | fetching metrics for agent=%s ts=%s buffer=%ds",
+                agent_name, timestamp, self._buffer_seconds,
+            )
+
+        start, end = self._compute_time_range(
+            timestamp=timestamp,
+            buffer_seconds=self._buffer_seconds,
+            trace_start=trace_start,
+            trace_end=trace_end,
+        )
+        logs: list[dict[str, Any]] = []
+
+        for qdef in DEFAULT_QUERIES:
+            promql = qdef["query"].format(agent=agent_name, window=self._window)
+
+            try:
+                result = await self._range_query(promql, start, end, step="15s")
+                entries = self._result_to_logs(
+                    query_name=qdef["name"],
+                    description=qdef["description"],
+                    promql=promql,
+                    result=result,
+                    agent_name=agent_name,
+                )
+                logs.extend(entries)
+            except Exception as exc:
+                logger.warning(
+                    "Prometheus | query '%s' failed: %s", qdef["name"], exc,
+                )
+                logs.append({
+                    "timestamp": timestamp,
+                    "source": "prometheus",
+                    "service": agent_name,
+                    "message": f"Prometheus query '{qdef['name']}' failed: {exc}",
+                    "level": "WARN",
+                    "metadata": {"query": promql, "error": str(exc)},
+                })
+
+        logger.info("Prometheus | got %d log entries for agent=%s", len(logs), agent_name)
+        return logs
+
+    # ── HTTP helper ────────────────────────────────────────────────────
+
+    async def _range_query(
+        self,
+        query: str,
+        start: str,
+        end: str,
+        step: str = "15s",
+    ) -> dict[str, Any]:
+        """POST /api/v1/query_range"""
+        url = f"{self._base_url}/api/v1/query_range"
+        params = {"query": query, "start": start, "end": end, "step": step}
+
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            resp = await client.get(url, params=params)
+            resp.raise_for_status()
+            data = resp.json()
+
+            if data.get("status") != "success":
+                raise ValueError(f"Prometheus returned status={data.get('status')}")
+
+            return data.get("data", {})
+
+    # ── Time range computation ─────────────────────────────────────────
+
+    @staticmethod
+    def _compute_time_range(
+        timestamp: str,
+        buffer_seconds: int = 300,
+        trace_start: str | None = None,
+        trace_end: str | None = None,
+    ) -> tuple[str, str]:
+        """
+        Compute Prometheus query (start, end) window.
+
+        Mode 1 — trace span (preferred when Langfuse data is available):
+          window = (trace_start - buffer_seconds) to (trace_end + buffer_seconds)
+          Captures the full trace duration plus context on both sides.
+
+        Mode 2 — single timestamp fallback (no Langfuse trace):
+          window = (timestamp - buffer_seconds) to (timestamp + buffer_seconds)
+        """
+        buf = timedelta(seconds=buffer_seconds)
+
+        if trace_start and trace_end:
+            ts_s = trace_start.replace("Z", "+00:00")
+            ts_e = trace_end.replace("Z", "+00:00")
+            dt_start = datetime.fromisoformat(ts_s)
+            dt_end = datetime.fromisoformat(ts_e)
+            if dt_start.tzinfo is None:
+                dt_start = dt_start.replace(tzinfo=timezone.utc)
+            if dt_end.tzinfo is None:
+                dt_end = dt_end.replace(tzinfo=timezone.utc)
+            return (dt_start - buf).isoformat(), (dt_end + buf).isoformat()
+
+        # Fallback: single timestamp ± buffer
+        ts = timestamp.replace("Z", "+00:00")
+        dt = datetime.fromisoformat(ts)
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=timezone.utc)
+        return (dt - buf).isoformat(), (dt + buf).isoformat()
+
+    # ── Transform to log format ────────────────────────────────────────
+
+    @staticmethod
+    def _result_to_logs(
+        query_name: str,
+        description: str,
+        promql: str,
+        result: dict[str, Any],
+        agent_name: str,
+    ) -> list[dict[str, Any]]:
+        """
+        Convert Prometheus range query result into flat log entries.
+        Picks the latest value from each time series.
+        """
+        logs: list[dict[str, Any]] = []
+        result_type = result.get("resultType", "matrix")
+        series_list = result.get("result", [])
+
+        if not series_list:
+            return []
+
+        for series in series_list:
+            metric_labels = series.get("metric", {})
+            values = series.get("values", [])
+
+            if not values:
+                continue
+
+            # Use the last data point in the range
+            ts_unix, value = values[-1]
+            ts_iso = datetime.fromtimestamp(
+                float(ts_unix), tz=timezone.utc
+            ).isoformat()
+
+            # Determine severity from the metric
+            level = "INFO"
+            try:
+                numeric_val = float(value)
+                if query_name == "error_rate" and numeric_val > 0:
+                    level = "ERROR"
+                elif query_name == "up_status" and numeric_val == 0:
+                    level = "ERROR"
+                elif query_name == "restart_count" and numeric_val > 0:
+                    level = "WARN"
+            except (ValueError, TypeError):
+                pass
+
+            message = f"{description}: {query_name}={value}"
+            if metric_labels:
+                label_str = ", ".join(f"{k}={v}" for k, v in metric_labels.items())
+                message += f" [{label_str}]"
+
+            logs.append({
+                "timestamp": ts_iso,
+                "source": "prometheus",
+                "service": metric_labels.get("job", agent_name),
+                "message": message,
+                "level": level,
+                "metadata": {
+                    "query_name": query_name,
+                    "promql": promql,
+                    "result_type": result_type,
+                    "value": value,
+                    "labels": metric_labels,
+                    "sample_count": len(values),
+                },
+            })
+
+        return logs

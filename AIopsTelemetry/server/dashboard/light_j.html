@@ -1,0 +1,1862 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AIops テレメトリー — 日本語</title>
+<style>
+:root {
+  --bg:#f6f8fa; --surface:#ffffff; --surface-2:#f6f8fa; --surface-3:#eaeef2;
+  --border:#d0d7de; --border-2:#afb8c1;
+  --text:#1f2328; --text-2:#636c76; --muted:#848d97;
+  --accent:#0969da; --accent-h:#0860ca; --accent-dim:rgba(9,105,218,.08);
+  --green:#1a7f37; --green-dim:rgba(26,127,55,.1);
+  --red:#d1242f;   --red-dim:rgba(209,36,47,.1);
+  --amber:#9a6700; --amber-dim:rgba(154,103,0,.1);
+  --purple:#8250df;--purple-dim:rgba(130,80,223,.1);
+  --cyan:#0969da;  --cyan-dim:rgba(9,105,218,.08);
+}
+/* Light-mode overrides for hardcoded dark rgba values */
+tbody tr:hover td{background:rgba(9,105,218,.04)!important}
+.expand-row{background:#f6f8fa!important}
+.analysis-panel{background:#f6f8fa!important}
+.flame-wrap{background:#f6f8fa!important}
+thead th{background:#eaeef2;color:#636c76;border-bottom:1px solid #d0d7de}
+#toast{background:#ffffff;box-shadow:0 4px 20px rgba(0,0,0,.12)}
+.af-overlay{background:rgba(0,0,0,.3)}
+.af-modal{background:#ffffff;border-color:#d0d7de}
+.af-log{background:#f6f8fa;border-color:#d0d7de;color:#1f2328}
+.inst-log{background:#f6f8fa;border-color:#d0d7de;color:#1f2328}
+.bsev1{background:rgba(209,36,47,.1);color:#d1242f;border-color:rgba(209,36,47,.4);font-weight:700}.bsev1::before{background:#d1242f}
+.bsev2{background:rgba(154,103,0,.1);color:#9a6700;border-color:rgba(154,103,0,.35);font-weight:700}.bsev2::before{background:#9a6700}
+.bsev3{background:rgba(9,105,218,.08);color:#0969da;border-color:rgba(9,105,218,.3);font-weight:700}.bsev3::before{background:#0969da}
+.bsev4{background:rgba(100,110,120,.08);color:#636c76;border-color:rgba(100,110,120,.2)}.bsev4::before{background:#636c76}
+.bk::before{background:#1a7f37} .be::before{background:#d1242f}
+.bo::before{background:#0969da} .ba::before{background:#9a6700}
+.besc::before{background:#d1242f} .bres::before{background:#1a7f37}
+/* stat card accent colours for light theme */
+.ca-cyan{--ca:#0969da}
+.stat-card .sv{color:var(--text)}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;font-size:13px;line-height:1.5}
+
+/* Header */
+header{background:var(--surface);border-bottom:1px solid var(--border);padding:0 24px;display:flex;align-items:center;justify-content:space-between;height:52px;position:sticky;top:0;z-index:100}
+.logo{display:flex;align-items:center;gap:10px}
+.logo h1{font-size:15px;font-weight:700;color:var(--text);letter-spacing:-.3px}
+.logo .env-tag{background:var(--accent-dim);color:var(--accent);font-size:10px;font-weight:600;padding:1px 7px;border-radius:20px;border:1px solid rgba(47,129,247,.3)}
+.nav{display:flex}
+.nav button{background:none;border:none;color:var(--muted);padding:0 14px;height:52px;cursor:pointer;font-size:13px;font-weight:500;border-bottom:2px solid transparent;transition:color .15s,border-color .15s}
+.nav button:hover{color:var(--text-2)}
+.nav button.active{color:var(--text);border-bottom-color:var(--accent)}
+.header-r{display:flex;align-items:center;gap:10px}
+.live-dot{width:7px;height:7px;border-radius:50%;background:var(--green);animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+.refresh-ts{font-size:11px;color:var(--muted)}
+
+/* Layout */
+.container{max-width:1440px;margin:0 auto;padding:20px 24px}
+.page{display:none}.page.active{display:block}
+
+/* Stat cards */
+.stat-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:12px;margin-bottom:18px}
+@media(max-width:1200px){.stat-grid{grid-template-columns:repeat(3,1fr)}}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:14px 16px;position:relative;overflow:hidden}
+.stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--ca,var(--border))}
+.stat-card .sl{color:var(--muted);font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:.06em}
+.stat-card .sv{font-size:24px;font-weight:700;margin-top:4px;line-height:1}
+.stat-card .ss{font-size:11px;color:var(--muted);margin-top:3px}
+.ca-blue{--ca:var(--accent)}.ca-green{--ca:var(--green)}.ca-red{--ca:var(--red)}.ca-amber{--ca:var(--amber)}.ca-purple{--ca:var(--purple)}.ca-cyan{--ca:var(--cyan)}
+
+/* Cards */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:8px;overflow:hidden;margin-bottom:16px}
+.card-header{padding:10px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;background:var(--surface-2)}
+.card-header h2{font-size:13px;font-weight:600;color:var(--text)}
+
+/* Filter bar */
+.filter-bar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:10px 14px;background:var(--surface-2);border-bottom:1px solid var(--border)}
+.search-wrap{position:relative;flex:1;min-width:160px;max-width:260px}
+.search-wrap .si{position:absolute;left:9px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:12px;pointer-events:none}
+.filter-bar input[type=search]{background:var(--bg);border:1px solid var(--border);color:var(--text);padding:5px 10px 5px 28px;border-radius:6px;font-size:12px;width:100%}
+.filter-bar input[type=number]{background:var(--bg);border:1px solid var(--border);color:var(--text);padding:5px 8px;border-radius:6px;font-size:12px;width:90px}
+.filter-bar select{background:var(--bg);border:1px solid var(--border);color:var(--text);padding:5px 26px 5px 9px;border-radius:6px;font-size:12px;cursor:pointer;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23768390'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 7px center}
+.fsep{width:1px;height:20px;background:var(--border);flex-shrink:0}
+.btn{background:var(--surface-3);border:1px solid var(--border);color:var(--text-2);padding:5px 11px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:500;transition:background .15s;white-space:nowrap}
+.btn:hover{background:var(--border-2);color:var(--text)}
+.btn-accent{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn-accent:hover{background:var(--accent-h);border-color:var(--accent-h)}
+.res-count{font-size:11px;color:var(--muted);margin-left:auto;white-space:nowrap}
+
+/* Tables */
+table{width:100%;border-collapse:collapse}
+thead th{background:var(--surface-2);color:var(--muted);text-align:left;padding:8px 12px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;white-space:nowrap;border-bottom:1px solid var(--border);user-select:none}
+thead th.sortable{cursor:pointer}
+thead th.sortable:hover{color:var(--text-2)}
+.si-sort{margin-left:3px;opacity:.35}
+th.sort-active .si-sort{opacity:1;color:var(--accent)}
+td{padding:8px 12px;border-bottom:1px solid rgba(48,54,61,.5);vertical-align:middle;font-size:12px}
+tbody tr:last-child td{border-bottom:none}
+tbody tr:hover td{background:rgba(47,129,247,.04)}
+tbody tr.expandable td{cursor:pointer}
+.expand-row{background:var(--bg);display:none}
+.expand-row.open{display:table-row}
+
+/* Badges */
+.badge{display:inline-flex;align-items:center;gap:4px;padding:2px 7px;border-radius:4px;font-size:11px;font-weight:600;line-height:1.4}
+.badge::before{content:'';width:5px;height:5px;border-radius:50%;flex-shrink:0}
+.bk{background:var(--green-dim);color:var(--green);border:1px solid rgba(63,185,80,.25)}.bk::before{background:var(--green)}
+.be{background:var(--red-dim);color:var(--red);border:1px solid rgba(248,81,73,.25)}.be::before{background:var(--red)}
+.bo{background:var(--accent-dim);color:var(--accent);border:1px solid rgba(47,129,247,.25)}.bo::before{background:var(--accent)}
+.ba{background:var(--amber-dim);color:var(--amber);border:1px solid rgba(210,153,34,.25)}.ba::before{background:var(--amber)}
+.besc{background:var(--red-dim);color:var(--red);border:1px solid rgba(248,81,73,.25)}.besc::before{background:var(--red)}
+.bres{background:var(--green-dim);color:var(--green);border:1px solid rgba(63,185,80,.25)}.bres::before{background:var(--green)}
+.blow{background:var(--accent-dim);color:var(--accent);border:1px solid rgba(47,129,247,.2)}.blow::before{background:var(--accent)}
+.bmed{background:var(--amber-dim);color:var(--amber);border:1px solid rgba(210,153,34,.2)}.bmed::before{background:var(--amber)}
+.bhi{background:var(--red-dim);color:var(--red);border:1px solid rgba(248,81,73,.2)}.bhi::before{background:var(--red)}
+.bcrit{background:var(--red-dim);color:var(--red);border:1px solid rgba(248,81,73,.4);font-weight:700}.bcrit::before{background:var(--red)}
+.bsev1{background:rgba(248,81,73,.15);color:#f85149;border:1px solid rgba(248,81,73,.45);font-weight:700}.bsev1::before{background:#f85149}
+.bsev2{background:rgba(210,153,34,.15);color:#e3a008;border:1px solid rgba(210,153,34,.4);font-weight:700}.bsev2::before{background:#e3a008}
+.bsev3{background:rgba(47,129,247,.15);color:#2f81f7;border:1px solid rgba(47,129,247,.35);font-weight:700}.bsev3::before{background:#2f81f7}
+.bsev4{background:rgba(110,118,129,.15);color:#8b949e;border:1px solid rgba(110,118,129,.3)}.bsev4::before{background:#8b949e}
+
+/* Type chips */
+.tt{display:inline-block;padding:1px 5px;border-radius:3px;font-size:10px;font-weight:600;font-family:'SF Mono','Fira Code',monospace}
+.tt-chain{background:var(--accent-dim);color:var(--accent)}
+.tt-llm{background:var(--purple-dim);color:var(--purple)}
+.tt-tool{background:var(--amber-dim);color:var(--amber)}
+.tt-retriever{background:var(--cyan-dim);color:var(--cyan)}
+
+/* Duration bar */
+.dur-wrap{display:flex;align-items:center;gap:6px}
+.dur-bg{width:72px;height:4px;background:var(--surface-3);border-radius:2px;flex-shrink:0}
+.dur-fill{height:100%;border-radius:2px;background:var(--accent);transition:width .3s}
+.dur-txt{font-size:12px;color:var(--text-2);font-variant-numeric:tabular-nums;min-width:55px}
+
+/* Pagination */
+.pagination{display:flex;align-items:center;justify-content:space-between;padding:9px 14px;border-top:1px solid var(--border);background:var(--surface-2)}
+.pg-info{font-size:12px;color:var(--muted)}
+.pg-btns{display:flex;gap:6px}
+.pg-btn{background:var(--surface-3);border:1px solid var(--border);color:var(--text-2);padding:4px 12px;border-radius:5px;cursor:pointer;font-size:12px}
+.pg-btn:hover:not(:disabled){background:var(--border-2);color:var(--text)}
+.pg-btn:disabled{opacity:.4;cursor:not-allowed}
+
+/* Flame graph */
+.flame-wrap{padding:14px 18px;background:var(--bg)}
+.flame-hdr{display:flex;align-items:center;gap:14px;margin-bottom:8px}
+.flame-hdr h3{font-size:12px;font-weight:600;color:var(--text-2)}
+.flame-leg{display:flex;gap:12px}
+.fl-item{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--muted)}
+.fl-dot{width:8px;height:8px;border-radius:2px}
+.flame-ruler-row{display:flex;padding-bottom:5px;border-bottom:1px solid var(--border);margin-bottom:3px}
+.fr-lspc{width:210px;flex-shrink:0}
+.fr-track{flex:1;position:relative;height:16px}
+.fr-mark{position:absolute;font-size:10px;color:var(--muted);transform:translateX(-50%)}
+.fr-rspc{width:68px;flex-shrink:0}
+.flame-row{display:flex;align-items:center;height:26px;border-bottom:1px solid rgba(48,54,61,.3)}
+.flame-row:last-child{border-bottom:none}
+.flame-row:hover{background:rgba(255,255,255,.02)}
+.fl-label{width:210px;flex-shrink:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding-right:8px;color:var(--text-2);font-size:11px;display:flex;align-items:center;gap:5px}
+.fl-ldot{width:6px;height:6px;border-radius:1px;flex-shrink:0}
+.fl-track{flex:1;position:relative;height:20px}
+.fl-bar{position:absolute;height:18px;top:1px;border-radius:3px;display:flex;align-items:center;overflow:hidden;min-width:3px;opacity:.82;transition:opacity .15s,filter .15s;cursor:default}
+.fl-bar:hover{opacity:1;filter:brightness(1.15)}
+.fl-bar-lbl{padding:0 5px;font-size:10px;color:rgba(255,255,255,.9);white-space:nowrap;font-weight:500}
+.fl-dur{width:68px;text-align:right;color:var(--muted);font-size:11px;flex-shrink:0;font-variant-numeric:tabular-nums}
+
+/* Span table (inside expand) */
+.spt-wrap{padding:0 18px 14px}
+.spt{width:100%;border-collapse:collapse;font-size:11px}
+.spt th{color:var(--muted);text-align:left;padding:5px 8px;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;border-bottom:1px solid var(--border)}
+.spt td{padding:5px 8px;border-bottom:1px solid rgba(48,54,61,.35);color:var(--text-2)}
+.spt tr:last-child td{border-bottom:none}
+.tok-sum{padding:7px 18px;font-size:11px;color:var(--muted);border-top:1px solid var(--border);background:var(--surface-2)}
+
+/* I/O preview */
+.io-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:0 18px 14px}
+.io-box{background:var(--surface-2);border:1px solid var(--border);border-radius:6px}
+.io-box-h{padding:5px 10px;border-bottom:1px solid var(--border);font-size:10px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+.io-box-b{padding:8px 10px;font-size:11px;color:var(--text-2);font-family:'SF Mono','Fira Code',monospace;white-space:pre-wrap;word-break:break-all;max-height:110px;overflow-y:auto;line-height:1.6}
+
+/* Expand meta bar */
+.exp-meta{padding:7px 18px;font-size:11px;color:var(--muted);border-bottom:1px solid var(--border);background:var(--surface-2);display:flex;gap:16px;flex-wrap:wrap}
+.exp-meta code{color:var(--text-2);font-family:'SF Mono','Fira Code',monospace}
+
+/* Generic filters (issues/metrics) */
+.filters{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;align-items:center}
+.filters select,.filters input{background:var(--surface);border:1px solid var(--border);color:var(--text);padding:5px 10px;border-radius:6px;font-size:12px}
+
+/* Mono ID + copy */
+.mono{font-family:'SF Mono','Fira Code',monospace;font-size:11px;color:var(--muted);letter-spacing:-.2px}
+.copy-btn{background:none;border:none;color:var(--muted);cursor:pointer;padding:2px 5px;border-radius:3px;font-size:10px;opacity:0;transition:opacity .15s;margin-left:2px}
+tr:hover .copy-btn{opacity:.7}
+.copy-btn:hover{opacity:1;background:var(--surface-3)}
+
+/* Action buttons */
+.action-btn{background:var(--surface-2);border:1px solid var(--border);color:var(--text-2);padding:3px 9px;border-radius:5px;cursor:pointer;font-size:11px;font-weight:500;transition:background .15s}
+.action-btn:hover{background:var(--surface-3);color:var(--text)}
+.action-btn.ack{border-color:rgba(210,153,34,.4);color:var(--amber)}.action-btn.ack:hover{background:var(--amber-dim)}
+.action-btn.esc{border-color:rgba(248,81,73,.4);color:var(--red)}.action-btn.esc:hover{background:var(--red-dim)}
+.action-btn.res{border-color:rgba(63,185,80,.4);color:var(--green)}.action-btn.res:hover{background:var(--green-dim)}
+.action-btn.autofix{border-color:rgba(188,140,255,.5);color:var(--purple);font-weight:600}.action-btn.autofix:hover{background:var(--purple-dim)}
+.action-btn.human{border-color:rgba(57,197,207,.4);color:var(--cyan);font-weight:600}.action-btn.human:hover{background:var(--cyan-dim)}
+
+/* Issue Analysis Panel (inline expand) */
+.analysis-row td{padding:0!important}
+.analysis-panel{padding:14px 18px;background:var(--bg);border-bottom:1px solid var(--border)}
+.analysis-hdr{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.analysis-hdr h4{font-size:12px;font-weight:700;color:var(--cyan);text-transform:uppercase;letter-spacing:.07em;margin:0}
+.analysis-model{font-size:10px;color:var(--muted);margin-left:auto}
+.analysis-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+@media(max-width:900px){.analysis-grid{grid-template-columns:1fr}}
+.analysis-card{background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:10px 12px}
+.analysis-card-lbl{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;margin-bottom:5px}
+.analysis-card-lbl.cause{color:var(--red)}
+.analysis-card-lbl.evidence{color:var(--amber)}
+.analysis-card-lbl.action{color:var(--green)}
+.analysis-card-body{font-size:12px;color:var(--text-2);line-height:1.6;white-space:pre-wrap}
+.analysis-pending{display:flex;align-items:center;gap:8px;color:var(--muted);font-size:12px;padding:8px 0}
+.analysis-spinner{width:12px;height:12px;border-radius:50%;border:2px solid var(--cyan);border-top-color:transparent;animation:spin .7s linear infinite;flex-shrink:0}
+
+/* Metrics mini-strip */
+.metrics-strip{display:flex;gap:10px;flex-wrap:wrap;padding:8px 18px 0;border-top:1px solid var(--border);margin-top:8px}
+.metric-pill{background:var(--surface-2);border:1px solid var(--border);border-radius:4px;padding:3px 8px;font-size:11px;display:flex;align-items:center;gap:5px}
+.metric-pill .mk{color:var(--muted);font-size:10px}
+.metric-pill .mv{font-weight:600;color:var(--text-2)}
+
+/* Metrics page — KPI cards */
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:16px}
+.kpi-card{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:16px 18px;position:relative;overflow:hidden}
+.kpi-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--kpi-accent,#3b82f6)}
+.kpi-label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px}
+.kpi-value{font-size:26px;font-weight:700;color:var(--text-2);line-height:1}
+.kpi-sub{font-size:11px;color:var(--muted);margin-top:4px}
+.kpi-warn{color:#f59e0b!important}
+.kpi-danger{color:#ef4444!important}
+
+/* Metrics page — per-app table health badges */
+.health-ok{color:#22c55e;font-weight:600}
+.health-warn{color:#f59e0b;font-weight:600}
+.health-bad{color:#ef4444;font-weight:600}
+
+/* Metrics page — chart containers */
+.chart-wrap{padding:4px 0;min-height:110px}
+.chart-empty{display:flex;align-items:center;justify-content:center;height:110px;color:var(--muted);font-size:12px}
+.chart-footer{display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-top:2px;padding:0 2px}
+
+/* Metrics page — system health gauges */
+.sys-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.sys-item{display:flex;flex-direction:column;gap:4px}
+.sys-item-label{font-size:11px;color:var(--muted)}
+.sys-bar-track{height:6px;background:var(--surface-2);border-radius:3px;overflow:hidden}
+.sys-bar-fill{height:100%;border-radius:3px;transition:width .4s ease}
+.sys-bar-ok{background:#22c55e}
+.sys-bar-warn{background:#f59e0b}
+.sys-bar-bad{background:#ef4444}
+.sys-value{font-size:12px;font-weight:600;color:var(--text-2)}
+.sys-io-row{display:flex;gap:16px;flex-wrap:wrap;margin-top:8px;padding-top:8px;border-top:1px solid var(--border)}
+.sys-io-item{font-size:11px;color:var(--muted)}.sys-io-item strong{color:var(--text-2)}
+
+/* AutoFix Modal */
+.af-overlay{position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:2000;display:none;align-items:center;justify-content:center}
+.af-overlay.open{display:flex}
+.af-modal{background:var(--surface);border:1px solid var(--border);border-radius:10px;width:min(800px,95vw);max-height:80vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 8px 40px rgba(0,0,0,.6)}
+.af-hdr{padding:12px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;background:var(--surface-2)}
+.af-hdr h3{font-size:14px;font-weight:600;color:var(--text)}
+.af-meta{font-size:11px;color:var(--muted);display:flex;gap:12px;align-items:center}
+.af-close{background:none;border:none;color:var(--muted);font-size:18px;cursor:pointer;padding:0 4px;line-height:1}.af-close:hover{color:var(--text)}
+.af-status-bar{padding:8px 18px;background:var(--surface-2);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;font-size:12px}
+.af-spinner{width:10px;height:10px;border-radius:50%;border:2px solid var(--purple);border-top-color:transparent;animation:spin .7s linear infinite;flex-shrink:0}
+@keyframes spin{to{transform:rotate(360deg)}}
+.af-status-txt{color:var(--text-2)}
+.af-done-dot{width:10px;height:10px;border-radius:50%;background:var(--green);flex-shrink:0}
+.af-fail-dot{width:10px;height:10px;border-radius:50%;background:var(--red);flex-shrink:0}
+.af-log{flex:1;overflow-y:auto;padding:14px 18px;font-family:'SF Mono','Fira Code',monospace;font-size:11px;line-height:1.75;background:#080c13;white-space:pre-wrap;word-break:break-word;color:#adbac7}
+.af-footer{padding:10px 18px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:8px;background:var(--surface-2)}
+
+/* Forms */
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.form-group label{display:block;color:var(--muted);font-size:11px;font-weight:500;margin-bottom:4px;text-transform:uppercase;letter-spacing:.05em}
+.form-group input,.form-group select,.form-group textarea{width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);padding:7px 10px;border-radius:6px;font-size:13px}
+.form-group input:focus,.form-group select:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-dim)}
+.btn-primary{background:var(--accent);color:#fff;border:none;padding:8px 16px;border-radius:6px;cursor:pointer;font-size:13px;font-weight:500;margin-top:10px;transition:background .15s}
+.btn-primary:hover{background:var(--accent-h)}
+
+/* Toast */
+#toast{position:fixed;bottom:20px;right:20px;background:var(--surface-2);border:1px solid var(--border);color:var(--text);padding:9px 15px;border-radius:8px;font-size:12px;display:none;z-index:9999;box-shadow:0 4px 20px rgba(0,0,0,.5)}
+
+/* Empty */
+.empty{text-align:center;color:var(--muted);padding:36px;font-size:13px}
+
+/* Instrument */
+.log-panel{padding:14px 18px;font-family:'SF Mono','Fira Code',monospace;font-size:11px;line-height:1.7;max-height:480px;overflow-y:auto;background:#080c13;white-space:pre-wrap;word-break:break-word}
+.log-status{color:var(--muted)}.log-tool{color:var(--purple)}.log-file{color:var(--green)}.log-done{color:var(--accent);font-weight:700}.log-error{color:var(--red)}
+.file-chip{display:inline-block;background:var(--surface-2);border:1px solid var(--border);border-radius:4px;padding:2px 8px;margin:3px 4px 3px 0;font-size:11px;font-family:'SF Mono','Fira Code',monospace;color:var(--green)}
+
+/* Flow map */
+.flow-map{display:flex;align-items:center;flex-wrap:wrap;padding:14px 18px;gap:0;overflow-x:auto}
+.flow-node{background:var(--surface-2);border:1px solid var(--border-2);border-radius:8px;padding:9px 14px;text-align:center;min-width:110px}
+.flow-node .nn{font-size:11px;font-weight:600;color:var(--text-2)}
+.flow-node .nd{font-size:10px;color:var(--muted);margin-top:3px}
+.flow-arrow{color:var(--border-2);font-size:14px;padding:0 4px}
+.flow-node.error-node{border-color:rgba(248,81,73,.4)}
+
+/* Trace logs panel */
+.logs-wrap{margin:16px 0 8px}
+.logs-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.logs-hdr h3{font-size:12px;font-weight:600;color:var(--text-2);text-transform:uppercase;letter-spacing:.06em}
+.btn-logs{background:var(--surface-3);border:1px solid var(--border-2);color:var(--text-2);padding:4px 12px;border-radius:6px;cursor:pointer;font-size:11px;font-weight:500;transition:background .15s,border-color .15s}
+.btn-logs:hover{background:var(--border-2);border-color:var(--accent);color:var(--text)}
+.log-console{background:#080c13;border:1px solid var(--border);border-radius:6px;padding:12px 14px;font-family:'SF Mono','Fira Code','Cascadia Code',monospace;font-size:11px;line-height:1.75;max-height:320px;overflow-y:auto;display:none}
+.log-entry{display:flex;gap:10px;align-items:baseline;white-space:pre-wrap;word-break:break-all;padding:1px 0}
+.log-entry:not(:last-child){border-bottom:1px solid rgba(48,54,61,.4)}
+.log-ts{flex-shrink:0;color:#3d4e63;font-size:10px;width:70px}
+.log-level{flex-shrink:0;font-weight:700;font-size:10px;width:52px}
+.log-logger{flex-shrink:0;color:var(--accent);font-size:10px;width:52px}
+.log-msg{color:var(--text-2);flex:1;line-height:1.5}
+.log-console-empty{color:var(--muted);font-size:12px;padding:8px 0;text-align:center}
+
+/* Resource Profile Panel */
+.detail-side-by-side{display:grid;grid-template-columns:1fr 300px;gap:0;border-top:1px solid var(--border)}
+@media(max-width:1024px){.detail-side-by-side{grid-template-columns:1fr}}
+.detail-obs-col{border-right:1px solid var(--border);min-width:0}
+.rp-wrap{padding:12px 14px;background:var(--bg)}
+.rp-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.rp-hdr h3{font-size:11px;font-weight:700;color:var(--cyan);text-transform:uppercase;letter-spacing:.07em}
+.rp-window{font-size:10px;color:var(--muted)}
+.rp-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px}
+.rp-card{background:var(--surface-2);border:1px solid var(--border);border-radius:5px;padding:7px 9px}
+.rp-label{font-size:10px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px}
+.rp-value{font-size:15px;font-weight:700;color:var(--text);line-height:1;margin-bottom:4px}
+.rp-bar-track{width:100%;height:4px;background:var(--surface-3);border-radius:2px;overflow:hidden;margin-bottom:3px}
+.rp-bar-fill{height:100%;border-radius:2px;transition:width .3s}
+.rp-range{font-size:10px;color:var(--muted)}
+.rp-no-data{color:var(--muted);font-size:11px;text-align:center;padding:20px 0}
+.rp-spark-wrap{border-top:1px solid var(--border);padding-top:8px;margin-top:4px}
+.rp-spark-lbl{font-size:10px;color:var(--muted);margin-bottom:4px}
+.rp-spark svg{width:100%;height:40px;display:block}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <h1>AIops テレメトリー</h1>
+    <span class="env-tag">ライブ</span>
+  </div>
+  <nav class="nav">
+    <button class="active" onclick="showPage('issues-page',this)">問題</button>
+    <button onclick="showPage('metrics-page',this)">メトリクス</button>
+    <button onclick="showPage('rules-page',this)">エスカレーションルール</button>
+    <button onclick="showPage('instrument-page',this)">インストゥルメント</button>
+  </nav>
+  <div class="header-r">
+    <div class="live-dot"></div>
+    <span class="refresh-ts" id="last-refresh">—</span>
+  </div>
+</header>
+
+<div class="container">
+
+<!-- ═══ TRACES ═══ (hidden in light theme) -->
+<div id="traces-page" class="page" style="display:none!important">
+  <div class="stat-grid">
+    <div class="stat-card ca-blue"><div class="sl">Total Traces</div><div class="sv" id="st-total">—</div><div class="ss">all time</div></div>
+    <div class="stat-card ca-green"><div class="sl">Success Rate</div><div class="sv" id="st-success">—</div><div class="ss">% OK</div></div>
+    <div class="stat-card ca-amber"><div class="sl">Avg Latency</div><div class="sv" id="st-avg">—</div><div class="ss">ms</div></div>
+    <div class="stat-card ca-purple"><div class="sl">P95 Latency</div><div class="sv" id="st-p95">—</div><div class="ss">ms (loaded set)</div></div>
+    <div class="stat-card ca-red"><div class="sl">Error Rate</div><div class="sv" id="st-err">—</div><div class="ss">%</div></div>
+    <div class="stat-card ca-cyan"><div class="sl">Applications</div><div class="sv" id="st-apps">—</div><div class="ss">distinct</div></div>
+  </div>
+
+  <!-- flow card, shown on row expand -->
+  <div class="card" id="flow-card" style="display:none">
+    <div class="card-header">
+      <h2>Pipeline Flow</h2>
+      <span id="flow-tid" style="font-size:11px;color:var(--muted)"></span>
+    </div>
+    <div class="flow-map" id="flow-map"></div>
+  </div>
+
+  <div class="card">
+    <div class="filter-bar">
+      <div class="search-wrap">
+        <span class="si">⌕</span>
+        <input type="search" id="trace-search" placeholder="Search ID or input…" oninput="applyFilters()">
+      </div>
+      <span class="fsep"></span>
+      <select id="time-filter" onchange="applyFilters()">
+        <option value="">All Time</option>
+        <option value="1">Last 1 Hour</option>
+        <option value="6">Last 6 Hours</option>
+        <option value="24">Last 24 Hours</option>
+        <option value="168">Last 7 Days</option>
+      </select>
+      <select id="app-filter" onchange="applyFilters()" style="display:none"><option value="">All Apps</option></select>
+      <select id="status-filter" onchange="applyFilters()">
+        <option value="">All Status</option>
+        <option value="ok">OK</option>
+        <option value="error">Error</option>
+      </select>
+      <select id="sort-filter" onchange="applyFilters()">
+        <option value="newest">Newest First</option>
+        <option value="oldest">Oldest First</option>
+        <option value="slowest">Slowest First</option>
+        <option value="fastest">Fastest First</option>
+        <option value="errors">Errors First</option>
+      </select>
+      <input type="number" id="min-dur" placeholder="最小 ms" title="最小所要時間フィルター" oninput="applyFilters()">
+      <span class="fsep"></span>
+      <button class="btn btn-accent" onclick="loadTraces()">↻ Refresh</button>
+      <button class="btn" onclick="exportCsv()" title="Export CSV">⬇ CSV</button>
+      <span class="res-count" id="res-count"></span>
+    </div>
+    <div style="display:flex;align-items:center;gap:6px;padding:6px 12px 2px;font-size:11px;color:var(--muted)">
+      <span style="width:8px;height:8px;border-radius:50%;background:var(--purple);display:inline-block"></span>
+      Traces sourced from <strong style="color:var(--text-2)">Langfuse</strong>
+    </div>
+    <table>
+      <thead><tr>
+        <th>Trace ID</th>
+        <th>Name</th>
+        <th>Status</th>
+        <th class="sortable" onclick="setSort('slowest')">Latency <span class="si-sort">↕</span></th>
+        <th>Observations</th>
+        <th>Cost</th>
+        <th style="max-width:160px">Tags / Scores</th>
+        <th class="sortable sort-active" onclick="setSort('newest')">Timestamp <span class="si-sort">↓</span></th>
+      </tr></thead>
+      <tbody id="traces-tbody"><tr><td colspan="8" class="empty">読み込み中…</td></tr></tbody>
+    </table>
+    <div class="pagination">
+      <span class="pg-info" id="pg-info">—</span>
+      <div class="pg-btns">
+        <button class="pg-btn" id="pg-prev" onclick="changePage(-1)" disabled>← Prev</button>
+        <button class="pg-btn" id="pg-next" onclick="changePage(1)" disabled>Next →</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ ISSUES ═══ -->
+<div id="issues-page" class="page active">
+
+  <!-- ── Analytics summary row ── -->
+  <div id="issue-analytics" style="display:grid;grid-template-columns:repeat(6,1fr);gap:12px;margin-bottom:18px">
+    <div class="stat-card ca-red">
+      <div class="sl">オープン</div>
+      <div class="sv" id="ia-open">—</div>
+      <div class="ss">アクティブな問題</div>
+    </div>
+    <div class="stat-card ca-amber">
+      <div class="sl">確認済み</div>
+      <div class="sv" id="ia-ack">—</div>
+      <div class="ss">レビュー中</div>
+    </div>
+    <div class="stat-card ca-purple">
+      <div class="sl">エスカレート済み</div>
+      <div class="sv" id="ia-esc">—</div>
+      <div class="ss">エスカレートされた問題</div>
+    </div>
+    <div class="stat-card ca-green">
+      <div class="sl">解決済み</div>
+      <div class="sv" id="ia-res">—</div>
+      <div class="ss">クローズ済みの問題</div>
+    </div>
+    <div class="stat-card ca-blue">
+      <div class="sl">重大 / 高</div>
+      <div class="sv" id="ia-sev">—</div>
+      <div class="ss">SEV1 + SEV2</div>
+    </div>
+    <div class="stat-card ca-cyan">
+      <div class="sl">解決率</div>
+      <div class="sv" id="ia-rate">—</div>
+      <div class="ss">全問題中の割合</div>
+    </div>
+  </div>
+
+  <div class="filters">
+    <select id="issue-app-filter" onchange="loadIssues()"><option value="">すべてのアプリ</option></select>
+    <select id="issue-status-filter" onchange="loadIssues()">
+      <option value="">すべてのステータス</option>
+      <option value="OPEN">オープン</option><option value="ACKNOWLEDGED">確認済み</option>
+      <option value="ESCALATED">エスカレート済み</option><option value="RESOLVED">解決済み</option>
+    </select>
+    <select id="issue-sev-filter" onchange="loadIssues()">
+      <option value="">すべての重大度</option>
+      <option value="critical">SEV1 — 重大</option><option value="high">SEV2 — 高</option>
+      <option value="medium">SEV3 — 中</option><option value="low">SEV4 — 低</option>
+    </select>
+    <button class="btn btn-accent" onclick="loadIssues()">↻ 更新</button>
+  </div>
+  <div class="card">
+    <div class="card-header"><h2>問題一覧</h2></div>
+    <table>
+      <thead><tr><th>#</th><th>アプリ</th><th>重大度</th><th>ルール</th><th>ステータス</th><th>タイトル</th><th>作成日時</th><th>アクション</th></tr></thead>
+      <tbody id="issues-tbody"><tr><td colspan="8" class="empty">読み込み中…</td></tr></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ═══ METRICS ═══ -->
+<div id="metrics-page" class="page">
+
+  <!-- Filters -->
+  <div class="filters">
+    <select id="metrics-app-filter" onchange="loadMetrics()"><option value="">すべてのアプリ</option></select>
+    <button class="btn btn-accent" onclick="loadMetrics()">↻ 更新</button>
+  </div>
+
+  <!-- KPI Summary Row -->
+  <div class="kpi-grid" id="kpi-grid">
+    <div class="kpi-card" style="--kpi-accent:#3b82f6">
+      <div class="kpi-label">総トレース数</div>
+      <div class="kpi-value" id="kpi-traces">—</div>
+      <div class="kpi-sub" id="kpi-traces-sub"></div>
+    </div>
+    <div class="kpi-card" style="--kpi-accent:#8b5cf6">
+      <div class="kpi-label">平均レイテンシ</div>
+      <div class="kpi-value" id="kpi-latency">—</div>
+      <div class="kpi-sub" id="kpi-latency-sub"></div>
+    </div>
+    <div class="kpi-card" style="--kpi-accent:#ef4444">
+      <div class="kpi-label">エラー率</div>
+      <div class="kpi-value" id="kpi-error-rate">—</div>
+      <div class="kpi-sub" id="kpi-error-sub"></div>
+    </div>
+    <div class="kpi-card" style="--kpi-accent:#f59e0b">
+      <div class="kpi-label">アクティブな問題</div>
+      <div class="kpi-value" id="kpi-issues">—</div>
+      <div class="kpi-sub" id="kpi-issues-sub"></div>
+    </div>
+    <div class="kpi-card" style="--kpi-accent:#22c55e">
+      <div class="kpi-label">LLM トークン</div>
+      <div class="kpi-value" id="kpi-tokens">—</div>
+      <div class="kpi-sub" id="kpi-tokens-sub"></div>
+    </div>
+  </div>
+
+  <!-- Per-App Health -->
+  <div class="card" style="margin-bottom:16px">
+    <div class="card-header"><h2>アプリ別ヘルス</h2></div>
+    <table>
+      <thead><tr>
+        <th>アプリ</th><th>トレース</th><th>平均ms</th><th>P95 ms</th>
+        <th>エラー率</th><th>入力トークン</th><th>出力トークン</th>
+        <th>推定コスト</th><th>未解決の問題</th>
+      </tr></thead>
+      <tbody id="per-app-tbody"><tr><td colspan="9" class="empty">読み込み中…</td></tr></tbody>
+    </table>
+  </div>
+
+  <!-- Trend Charts -->
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
+    <div class="card">
+      <div class="card-header"><h2>レイテンシ推移 <span style="font-size:11px;font-weight:400;color:var(--muted)">(5分平均 ms)</span></h2></div>
+      <div class="chart-wrap" id="latency-chart"><div class="chart-empty">読み込み中…</div></div>
+      <div class="chart-footer" id="latency-chart-footer"></div>
+    </div>
+    <div class="card">
+      <div class="card-header"><h2>エラー率推移 <span style="font-size:11px;font-weight:400;color:var(--muted)">(5分ごと %)</span></h2></div>
+      <div class="chart-wrap" id="error-chart"><div class="chart-empty">読み込み中…</div></div>
+      <div class="chart-footer" id="error-chart-footer"></div>
+    </div>
+  </div>
+
+  <!-- Span-level tables -->
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
+    <div class="card">
+      <div class="card-header"><h2>スパン別レイテンシ</h2></div>
+      <table>
+        <thead><tr><th>スパン</th><th>件数</th><th>平均</th><th>P95</th><th>P99</th></tr></thead>
+        <tbody id="latency-tbody"><tr><td colspan="5" class="empty">読み込み中…</td></tr></tbody>
+      </table>
+    </div>
+    <div class="card">
+      <div class="card-header"><h2>スパン別エラー</h2></div>
+      <table>
+        <thead><tr><th>スパン</th><th>合計</th><th>エラー</th><th>エラー率</th></tr></thead>
+        <tbody id="errors-tbody"><tr><td colspan="4" class="empty">読み込み中…</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Token usage + System health -->
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+    <div class="card">
+      <div class="card-header"><h2>トークン &amp; モデル使用状況</h2></div>
+      <table>
+        <thead><tr><th>モデル</th><th>呼び出し</th><th>入力トークン</th><th>出力トークン</th><th>推定コスト</th></tr></thead>
+        <tbody id="tokens-tbody"><tr><td colspan="5" class="empty">読み込み中…</td></tr></tbody>
+      </table>
+    </div>
+    <div class="card">
+      <div class="card-header"><h2>システムヘルス <span style="font-size:11px;font-weight:400;color:var(--muted)">(ライブ · 1分平均)</span></h2></div>
+      <div id="sys-health-body"><div class="empty" style="padding:20px 0">読み込み中…</div></div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ═══ RULES ═══ -->
+<div id="rules-page" class="page">
+  <div style="display:grid;grid-template-columns:2fr 1fr;gap:16px;align-items:start">
+    <div class="card">
+      <div class="card-header"><h2>エスカレーションルール</h2></div>
+      <table>
+        <thead><tr><th>名前</th><th>アプリ</th><th>条件</th><th>アクション</th><th>有効</th><th></th></tr></thead>
+        <tbody id="rules-tbody"><tr><td colspan="6" class="empty">読み込み中…</td></tr></tbody>
+      </table>
+    </div>
+    <div class="card" style="padding:20px">
+      <div style="font-size:13px;font-weight:600;margin-bottom:14px">ルールを追加</div>
+      <div class="form-grid">
+        <div class="form-group" style="grid-column:1/-1"><label>ルール名</label><input id="r-name" placeholder="例: オープン問題のアラート"></div>
+        <div class="form-group"><label>アプリ (空白=全て)</label><input id="r-app" placeholder="my-agent"></div>
+        <div class="form-group"><label>条件タイプ</label>
+          <select id="r-cond">
+            <option value="open_issue_age_gt">問題の経過時間 &gt; N分</option>
+            <option value="severity_gte">重大度 ≥ レベル</option>
+            <option value="repeated_error_count_gte">エスカレーション回数 ≥ N</option>
+          </select>
+        </div>
+        <div class="form-group"><label>値</label><input id="r-val" type="number" placeholder="例: 30"></div>
+        <div class="form-group" style="grid-column:1/-1"><label>アクション</label>
+          <select id="r-action" onchange="toggleWebhookUrl()">
+            <option value="log">ログのみ</option>
+            <option value="escalate_issue">自動エスカレート</option>
+            <option value="webhook">Webhook送信</option>
+          </select>
+        </div>
+        <div class="form-group" id="r-webhook-group" style="grid-column:1/-1;display:none"><label>Webhook URL</label><input id="r-webhook-url" placeholder="https://hooks.example.com/…"></div>
+      </div>
+      <button class="btn-primary" onclick="createRule()">ルールを作成</button>
+    </div>
+  </div>
+  <div class="card" style="margin-top:16px">
+    <div class="card-header"><h2>エスカレーションログ（最近）</h2></div>
+    <table>
+      <thead><tr><th>問題 #</th><th>ルール</th><th>アクション</th><th>ステータス</th><th>詳細</th><th>発火日時</th></tr></thead>
+      <tbody id="logs-tbody"><tr><td colspan="6" class="empty">読み込み中…</td></tr></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ═══ INSTRUMENT ═══ -->
+<div id="instrument-page" class="page">
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start">
+    <div class="card" style="padding:22px">
+      <div style="font-size:13px;font-weight:600;margin-bottom:6px">コードベースをインストゥルメント</div>
+      <p style="color:var(--muted);font-size:12px;margin-bottom:16px;line-height:1.7">任意のPythonエージェントプロジェクトのパスを入力してください。GPT-4o搭載の修正エージェントが分析し、AIopsテレメトリーを自動的に注入します。</p>
+      <div style="display:flex;flex-direction:column;gap:11px">
+        <div class="form-group"><label>プロジェクトディレクトリ</label><input id="inst-dir" placeholder="C:\Users\you\Projects\my-agent" style="font-family:'SF Mono','Fira Code',monospace;font-size:11px"></div>
+        <div class="form-group"><label>アプリ名</label><input id="inst-app" placeholder="my-agent"></div>
+        <div class="form-group"><label>AIops サーバーURL</label><input id="inst-url" value="http://localhost:7000"></div>
+      </div>
+      <div style="margin-top:16px;display:flex;gap:8px;align-items:center">
+        <button class="btn-primary" id="inst-run-btn" onclick="runInstrument()">▶ エージェントを実行</button>
+        <button class="btn" onclick="clearInstrumentLog()">クリア</button>
+        <span id="inst-status" style="font-size:12px;color:var(--muted)"></span>
+      </div>
+    </div>
+    <div class="card" style="padding:18px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+        <span style="font-size:13px;font-weight:600">変更されたファイル</span>
+        <span id="inst-turn" style="font-size:11px;color:var(--muted)"></span>
+      </div>
+      <div id="inst-files" style="font-size:12px;color:var(--muted)">まだファイルが変更されていません。</div>
+    </div>
+  </div>
+  <div class="card" style="margin-top:16px">
+    <div class="card-header"><h2>エージェントログ</h2></div>
+    <div id="inst-log" class="log-panel"><span style="color:var(--muted)">開始待機中…</span></div>
+  </div>
+</div>
+
+</div><!-- /container -->
+<!-- AutoFix Modal -->
+<div id="af-overlay" class="af-overlay" onclick="if(event.target===this)closeAutofixModal()">
+  <div class="af-modal">
+    <div class="af-hdr">
+      <h3 id="af-title">修正を送信</h3>
+      <div class="af-meta">
+        <span id="af-app" style="color:var(--accent)"></span>
+        <span id="af-issue-title" style="max-width:320px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></span>
+      </div>
+      <button class="af-close" onclick="closeAutofixModal()">✕</button>
+    </div>
+    <div class="af-status-bar" id="af-status-bar">
+      <div id="af-spinner" class="af-spinner"></div>
+      <div id="af-done-dot" class="af-done-dot" style="display:none"></div>
+      <div id="af-fail-dot" class="af-fail-dot" style="display:none"></div>
+      <span class="af-status-txt" id="af-status-txt">起動中…</span>
+    </div>
+    <div class="af-log" id="af-log"></div>
+    <div class="af-footer">
+      <button class="btn" onclick="closeAutofixModal()">閉じる</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+const API='';
+let _apps=[];
+let _allTraces=[];
+let _filtered=[];
+let _page=0;
+const PAGE_SIZE=50;
+
+// ── Navigation ──────────────────────────────────────────────────────────────
+function showPage(id,btn){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav button').forEach(b=>b.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  btn.classList.add('active');
+  if(id==='issues-page')loadIssues();
+  if(id==='metrics-page')loadMetrics();
+  if(id==='rules-page'){loadRules();loadLogs();}
+}
+
+// ── Toast ───────────────────────────────────────────────────────────────────
+function toast(msg,ok=true){
+  const t=document.getElementById('toast');
+  t.textContent=msg;t.style.display='block';
+  t.style.borderColor=ok?'var(--green)':'var(--red)';
+  setTimeout(()=>t.style.display='none',3000);
+}
+
+// ── API ──────────────────────────────────────────────────────────────────────
+async function api(path,opts={}){
+  const r=await fetch(API+path,opts);
+  if(!r.ok)throw new Error(`${r.status} ${r.statusText}`);
+  return r.json();
+}
+
+// ── Stats ────────────────────────────────────────────────────────────────────
+async function loadStats(){
+  try{
+    const s=await api('/api/traces/stats');
+    document.getElementById('st-total').textContent=s.total_traces.toLocaleString();
+    const sr=(100-(s.error_rate_pct||0)).toFixed(1);
+    document.getElementById('st-success').textContent=sr+'%';
+    document.getElementById('st-avg').textContent=s.avg_latency_ms.toFixed(0);
+    document.getElementById('st-err').textContent=s.error_rate_pct+'%';
+    document.getElementById('st-apps').textContent=s.apps.length;
+    _apps=s.apps;
+    _populateAppFilters();
+    document.getElementById('last-refresh').textContent='更新 '+new Date().toLocaleTimeString('ja-JP');
+  }catch(e){console.warn('stats',e);}
+}
+
+function _populateAppFilters(){
+  ['app-filter','issue-app-filter','metrics-app-filter'].forEach(id=>{
+    const sel=document.getElementById(id);
+    const cur=sel.value;
+    while(sel.options.length>1)sel.remove(1);
+    _apps.forEach(a=>{const o=new Option(a,a);sel.add(o);});
+    if(cur)sel.value=cur;
+  });
+}
+
+// ── Traces load (Langfuse) ────────────────────────────────────────────────────
+async function loadTraces(){
+  document.getElementById('traces-tbody').innerHTML='<tr><td colspan="8" class="empty">Langfuseから読み込み中…</td></tr>';
+  try{
+    const data=await api('/api/langfuse/traces?limit=100');
+    _allTraces=data.traces||[];
+    // Stats from loaded set
+    const lats=_allTraces.map(t=>t.latency_ms||0).filter(d=>d>0).sort((a,b)=>a-b);
+    if(lats.length){
+      const p95=lats[Math.min(Math.ceil(lats.length*.95)-1,lats.length-1)];
+      document.getElementById('st-p95').textContent=fmtDur(p95);
+      const avg=lats.reduce((a,b)=>a+b,0)/lats.length;
+      document.getElementById('st-avg').textContent=fmtDur(avg);
+    }
+    const errs=_allTraces.filter(t=>t.status==='error').length;
+    document.getElementById('st-total').textContent=(data.meta?.total||_allTraces.length).toLocaleString();
+    document.getElementById('st-success').textContent=_allTraces.length?(((_allTraces.length-errs)/_allTraces.length)*100).toFixed(1)+'%':'—';
+    document.getElementById('st-err').textContent=_allTraces.length?(errs/_allTraces.length*100).toFixed(1)+'%':'—';
+    document.getElementById('st-apps').textContent=new Set(_allTraces.map(t=>t.name.split(':')[0])).size;
+    applyFilters();
+  }catch(e){
+    document.getElementById('traces-tbody').innerHTML=`<tr><td colspan="8" class="empty">エラー: ${esc(e.message)}</td></tr>`;
+  }
+}
+
+// ── Client-side filter + sort ─────────────────────────────────────────────
+function applyFilters(){
+  const q=(document.getElementById('trace-search').value||'').toLowerCase();
+  const app=document.getElementById('app-filter').value;
+  const status=document.getElementById('status-filter').value;
+  const hrs=parseInt(document.getElementById('time-filter').value)||0;
+  const minDur=parseInt(document.getElementById('min-dur').value)||0;
+  const sort=document.getElementById('sort-filter').value;
+
+  let list=_allTraces.filter(t=>{
+    if(status&&t.status!==status)return false;
+    if(minDur&&(t.latency_ms||0)<minDur)return false;
+    if(hrs){
+      const cut=Date.now()-hrs*3600000;
+      const ts=+new Date(t.timestamp);
+      if(ts<cut)return false;
+    }
+    if(q){
+      const hay=(t.id+' '+t.name+' '+(t.tags||[]).join(' ')).toLowerCase();
+      if(!hay.includes(q))return false;
+    }
+    return true;
+  });
+
+  if(sort==='newest')list.sort((a,b)=>cmpDate(b.timestamp,a.timestamp));
+  else if(sort==='oldest')list.sort((a,b)=>cmpDate(a.timestamp,b.timestamp));
+  else if(sort==='slowest')list.sort((a,b)=>(b.latency_ms||0)-(a.latency_ms||0));
+  else if(sort==='fastest')list.sort((a,b)=>(a.latency_ms||0)-(b.latency_ms||0));
+  else if(sort==='errors')list.sort((a,b)=>(a.status==='error'?0:1)-(b.status==='error'?0:1));
+
+  _filtered=list;
+  _page=0;
+  renderPage();
+}
+
+function cmpDate(a,b){return +new Date(a+(a.endsWith('Z')?'':'Z'))- +new Date(b+(b.endsWith('Z')?'':'Z'));}
+
+function setSort(v){document.getElementById('sort-filter').value=v;applyFilters();}
+
+function changePage(d){
+  _page+=d;
+  renderPage();
+  window.scrollTo(0,0);
+}
+
+function renderPage(){
+  const total=_filtered.length;
+  const start=_page*PAGE_SIZE;
+  const end=Math.min(start+PAGE_SIZE,total);
+  const page=_filtered.slice(start,end);
+
+  document.getElementById('res-count').textContent=total.toLocaleString()+'件';
+
+  if(!page.length){
+    document.getElementById('traces-tbody').innerHTML='<tr><td colspan="8" class="empty">フィルター条件に一致するトレースがありません。</td></tr>';
+  }else{
+    const maxDur=Math.max(...page.map(t=>t.latency_ms||0),1);
+    document.getElementById('traces-tbody').innerHTML=page.map(t=>traceRow(t,maxDur)).join('');
+  }
+
+  const totalPg=Math.max(1,Math.ceil(total/PAGE_SIZE));
+  document.getElementById('pg-info').textContent=total
+    ?`${_page+1}/${totalPg}ページ · ${start+1}–${end} / ${total}件`
+    :'0件';
+  document.getElementById('pg-prev').disabled=_page===0;
+  document.getElementById('pg-next').disabled=end>=total;
+}
+
+function traceRow(t,maxDur){
+  const dur=t.latency_ms!=null?fmtDur(t.latency_ms):'—';
+  const barW=t.latency_ms?Math.round(t.latency_ms/maxDur*100):0;
+  const isSevTrace=t.name.startsWith('[SEV');
+  const badge=isSevTrace?'be':'bk';
+  const statusLbl=isSevTrace?'ALERT':'OK';
+  const tid=t.id.substring(0,8);
+  const obsCnt=t.observations_count!=null?t.observations_count:'—';
+  const cost=t.total_cost!=null&&t.total_cost>0?'$'+t.total_cost.toFixed(4):'—';
+  const tags=(t.tags||[]).map(g=>`<span style="background:var(--accent-dim);color:var(--accent);border-radius:3px;padding:1px 5px;font-size:10px">${esc(g)}</span>`).join(' ');
+  const scores=(t.scores||[]).map(s=>`<span style="color:var(--muted);font-size:10px">${esc(s.name)}:${s.value}</span>`).join(' ');
+  const tagsScores=tags||scores?`${tags}${scores}`:'—';
+  const lfLink=t.html_path?`<a href="https://cloud.langfuse.com${t.html_path}" target="_blank" onclick="event.stopPropagation()" style="color:var(--accent);font-size:10px;margin-left:4px" title="Langfuseで開く">↗</a>`:'';
+  return `
+  <tr class="expandable" onclick="toggleTrace('${t.id}',this)">
+    <td><span class="mono">${tid}…</span><button class="copy-btn" onclick="copyId('${t.id}',event)" title="Copy ID">⎘</button>${lfLink}</td>
+    <td style="font-weight:500;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${esc(t.name)}">${esc(t.name)}</td>
+    <td><span class="badge ${badge}">${statusLbl}</span></td>
+    <td><div class="dur-wrap"><span class="dur-txt">${dur}</span><span class="dur-bg"><span class="dur-fill" style="width:${barW}%"></span></span></div></td>
+    <td style="color:var(--muted);text-align:center">${obsCnt}</td>
+    <td style="color:var(--muted);font-variant-numeric:tabular-nums;text-align:right">${cost}</td>
+    <td style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${tagsScores}</td>
+    <td style="color:var(--muted);white-space:nowrap">${timeAgo(t.timestamp)}</td>
+  </tr>
+  <tr class="expand-row" id="expand-${t.id}"><td colspan="8"><div id="content-${t.id}">読み込み中…</div></td></tr>`;
+}
+
+async function toggleTrace(tid,row){
+  const er=document.getElementById('expand-'+tid);
+  const isOpen=er.classList.contains('open');
+  document.querySelectorAll('.expand-row.open').forEach(r=>r.classList.remove('open'));
+  if(!isOpen){er.classList.add('open');await loadTraceDetail(tid);}
+}
+
+async function loadTraceDetail(tid){
+  const el=document.getElementById('content-'+tid);
+  try{
+    // Fetch Langfuse trace and resource profile in parallel
+    const [t, profile] = await Promise.all([
+      api('/api/langfuse/traces/'+tid),
+      api('/api/traces/'+tid+'/profile?window=90').catch(()=>null),
+    ]);
+    const obs=t.observations||[];
+    const scores=t.scores||[];
+
+    // If profile returned 404 for local trace, retry with ?at= timestamp from Langfuse
+    let prof = profile;
+    if(!prof && t.timestamp){
+      prof = await api('/api/traces/'+tid+'/profile?at='+encodeURIComponent(t.timestamp)+'&window=90').catch(()=>null);
+    }
+
+    // Meta bar
+    const latMs=t.latency!=null?Math.round(t.latency*1000):null;
+    const cost=t.totalCost!=null&&t.totalCost>0?'$'+t.totalCost.toFixed(5):'';
+    const scoreStr=scores.map(s=>`${s.name}: ${s.value}`).join(' · ');
+    const lfUrl=t.htmlPath?`https://cloud.langfuse.com${t.htmlPath}`:'';
+    const meta=`<div class="exp-meta">
+      <span>ID: <code>${t.id}</code></span>
+      <span style="font-weight:600">${esc(t.name||'')}</span>
+      ${latMs!=null?`<span>${fmtDur(latMs)}</span>`:''}
+      <span>${obs.length}件の観測</span>
+      ${cost?`<span>${cost}</span>`:''}
+      ${scoreStr?`<span style="color:var(--amber)">${esc(scoreStr)}</span>`:''}
+      ${lfUrl?`<a href="${lfUrl}" target="_blank" style="color:var(--accent)">Langfuseで開く ↗</a>`:''}
+    </div>`;
+
+    // Observations table
+    const obsRows=obs.length?obs.map(o=>`<tr>
+      <td style="font-family:monospace;font-size:11px;color:var(--muted)">${(o.id||'').substring(0,8)}…</td>
+      <td>${esc(o.name||'')}</td>
+      <td><span class="badge ${o.type==='GENERATION'?'ba':'bk'}" style="font-size:10px">${o.type||''}</span></td>
+      <td>${o.startTime?timeAgo(o.startTime):'—'}</td>
+      <td>${o.latency!=null?fmtDur(Math.round(o.latency*1000)):'—'}</td>
+      <td style="color:var(--muted)">${(o.promptTokens||0)+(o.completionTokens||0)||'—'}</td>
+      <td style="color:${o.statusMessage?'var(--red)':'var(--muted)'};max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(o.statusMessage||'')}</td>
+    </tr>`).join(''):'<tr><td colspan="7" class="empty">観測なし</td></tr>';
+
+    const obsTable=`<div style="padding:12px 0 0">
+      <div style="font-size:12px;font-weight:600;margin-bottom:6px;color:var(--text-2);padding:0 12px">観測</div>
+      <table><thead><tr><th>ID</th><th>名前</th><th>タイプ</th><th>時刻</th><th>レイテンシ</th><th>トークン</th><th>メッセージ</th></tr></thead>
+      <tbody>${obsRows}</tbody></table></div>`;
+
+    // Input / output
+    const inStr=t.input?JSON.stringify(t.input,null,2):'';
+    const outStr=t.output?JSON.stringify(t.output,null,2):'';
+    const io=(inStr||outStr)?`<div class="io-grid" style="margin-top:12px;padding:0 12px 12px">
+      ${inStr?`<div><div class="io-label">入力</div><pre class="io-pre">${esc(inStr.substring(0,800))}</pre></div>`:''}
+      ${outStr?`<div><div class="io-label">出力</div><pre class="io-pre">${esc(outStr.substring(0,800))}</pre></div>`:''}
+    </div>`:'';
+
+    // Resource profile side panel
+    const rpPanel = buildResourceProfile(prof);
+
+    // Side-by-side layout: observations left, resource profile right
+    const sideLayout=`<div class="detail-side-by-side">
+      <div class="detail-obs-col">${obsTable}${io}</div>
+      <div>${rpPanel}</div>
+    </div>`;
+
+    el.innerHTML=meta+sideLayout;
+  }catch(e){el.innerHTML=`<div class="empty">エラー: ${esc(e.message)}</div>`;}
+}
+
+// ── Resource Profile Panel ────────────────────────────────────────────────────
+function buildResourceProfile(prof){
+  if(!prof||!prof.summary||!Object.keys(prof.summary).length){
+    return`<div class="rp-wrap">
+      <div class="rp-hdr"><h3>システムリソース</h3></div>
+      <div class="rp-no-data">ウィンドウ内のスナップショットなし</div>
+    </div>`;
+  }
+  const s=prof.summary;
+  const snaps=prof.snapshots||[];
+  const cnt=s.snapshot_count||snaps.length;
+  const win=prof.window_seconds||90;
+
+  function rpCard(label,value,unit,pct,color,range){
+    const fill=Math.min(100,Math.max(0,pct||0));
+    return`<div class="rp-card">
+      <div class="rp-label">${label}</div>
+      <div class="rp-value">${value!=null?value:'—'}<span style="font-size:10px;font-weight:400;color:var(--muted);margin-left:2px">${unit}</span></div>
+      <div class="rp-bar-track"><div class="rp-bar-fill" style="width:${fill}%;background:${color}"></div></div>
+      <div class="rp-range">${range}</div>
+    </div>`;
+  }
+
+  const cpu=s.cpu||{};
+  const mem=s.mem||{};
+  const memMb=s.mem_used_mb||{};
+  const diskR=s.disk&&s.disk.read_mb_s||{};
+  const diskW=s.disk&&s.disk.write_mb_s||{};
+  const netR=s.net&&s.net.recv_mb_s||{};
+  const netS=s.net&&s.net.sent_mb_s||{};
+  const conn=s.connections||{};
+
+  const fmt1=v=>v!=null?v.toFixed(1):'—';
+  const fmt3=v=>v!=null?v.toFixed(3):'—';
+  const fmtI=v=>v!=null?Math.round(v):'—';
+
+  const cards=[
+    rpCard('CPU',fmt1(cpu.avg),'%',cpu.avg,'var(--accent)',`最小 ${fmt1(cpu.min)}% · 最大 ${fmt1(cpu.max)}%`),
+    rpCard('メモリ',fmt1(mem.avg),'%',mem.avg,'var(--purple)',`${fmt1(memMb.avg)} MB 使用中 · 最大 ${fmt1(memMb.max)} MB`),
+    rpCard('ディスク読込',fmt3(diskR.avg),'MB/s',(diskR.avg||0)*20,'var(--cyan)',`最大 ${fmt3(diskR.max)} MB/s`),
+    rpCard('ディスク書込',fmt3(diskW.avg),'MB/s',(diskW.avg||0)*20,'var(--amber)',`最大 ${fmt3(diskW.max)} MB/s`),
+    rpCard('受信',fmt3(netR.avg),'MB/s',(netR.avg||0)*10,'var(--green)',`最大 ${fmt3(netR.max)} MB/s`),
+    rpCard('送信',fmt3(netS.avg),'MB/s',(netS.avg||0)*10,'var(--red)',`最大 ${fmt3(netS.max)} MB/s`),
+  ].join('');
+
+  const connLine=conn.avg!=null?`<div style="margin-top:6px;font-size:10px;color:var(--muted)">接続数 平均 <strong style="color:var(--text-2)">${fmtI(conn.avg)}</strong> (最大 ${fmtI(conn.max)})</div>`:'';
+
+  // Mini CPU sparkline using SVG
+  let spark='';
+  if(snaps.length>1){
+    const cpuVals=snaps.map(sn=>sn.cpu_percent||0);
+    const maxV=Math.max(...cpuVals,1);
+    const W=270,H=36,pad=2;
+    const pts=cpuVals.map((v,i)=>{
+      const x=pad+i/(cpuVals.length-1)*(W-2*pad);
+      const y=H-pad-(v/maxV)*(H-2*pad);
+      return`${x.toFixed(1)},${y.toFixed(1)}`;
+    }).join(' ');
+    const memVals=snaps.map(sn=>sn.mem_percent||0);
+    const mPts=memVals.map((v,i)=>{
+      const x=pad+i/(memVals.length-1)*(W-2*pad);
+      const y=H-pad-(v/100)*(H-2*pad);
+      return`${x.toFixed(1)},${y.toFixed(1)}`;
+    }).join(' ');
+    spark=`<div class="rp-spark-wrap">
+      <div class="rp-spark-lbl">CPU % <span style="color:var(--purple);margin-left:8px">· · · メモリ %</span></div>
+      <div class="rp-spark"><svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" style="overflow:visible">
+        <polyline points="${mPts}" fill="none" stroke="var(--purple)" stroke-width="1.5" stroke-opacity=".6"/>
+        <polyline points="${pts}" fill="none" stroke="var(--accent)" stroke-width="1.5"/>
+      </svg></div>
+    </div>`;
+  }
+
+  return`<div class="rp-wrap">
+    <div class="rp-hdr">
+      <h3>システムリソース</h3>
+      <span class="rp-window">±${win}秒 · ${cnt}スナップショット</span>
+    </div>
+    <div class="rp-grid">${cards}</div>
+    ${connLine}
+    ${spark}
+  </div>`;
+}
+
+// ── Flame graph ──────────────────────────────────────────────────────────────
+function buildFlame(trace){
+  const spans=trace.spans||[];
+  if(!spans.length)return'';
+  const tS=+new Date(trace.started_at+(trace.started_at.endsWith('Z')?'':'Z'));
+  const tE=trace.ended_at?+new Date(trace.ended_at+(trace.ended_at.endsWith('Z')?'':'Z')):tS+(trace.total_duration_ms||1);
+  const tDur=Math.max(tE-tS,1);
+
+  // Depth map
+  const depth={};const kids={};
+  spans.forEach(s=>{kids[s.id]=[];});
+  spans.forEach(s=>{if(s.parent_span_id&&kids[s.parent_span_id])kids[s.parent_span_id].push(s.id);});
+  function setD(id,d){depth[id]=d;(kids[id]||[]).forEach(c=>setD(c,d+1));}
+  spans.filter(s=>!s.parent_span_id).forEach(s=>setD(s.id,0));
+
+  // Ruler
+  const marks=[0,.25,.5,.75,1].map(f=>{
+    const lbl=fmtDur(f*tDur);
+    return `<span class="fr-mark" style="left:${f*100}%">${lbl}</span>`;
+  }).join('');
+
+  const rows=spans.map(s=>{
+    const sS=s.started_at?+new Date(s.started_at+(s.started_at.endsWith('Z')?'':'Z')):tS;
+    const left=Math.max(0,(sS-tS)/tDur*100).toFixed(2);
+    const w=Math.max((s.duration_ms||0)/tDur*100,.4).toFixed(2);
+    const d=depth[s.id]||0;
+    const col=spanColor(s.span_type);
+    const lbl=s.duration_ms!=null?fmtDur(s.duration_ms):'?';
+    const errOutline=s.status==='error'?';outline:1px solid var(--red)':'';
+    const showLbl=parseFloat(w)>7;
+    return `<div class="flame-row">
+      <div class="fl-label" style="padding-left:${8+d*13}px" title="${esc(s.name)}">
+        <span class="fl-ldot" style="background:${col}"></span>
+        <span>${esc(s.name)}</span>
+      </div>
+      <div class="fl-track">
+        <div class="fl-bar" style="left:${left}%;width:${w}%;background:${col}${errOutline}" title="${esc(s.name)}: ${lbl}">
+          <span class="fl-bar-lbl">${showLbl?lbl:''}</span>
+        </div>
+      </div>
+      <div class="fl-dur">${lbl}</div>
+    </div>`;
+  }).join('');
+
+  return `<div class="flame-wrap">
+    <div class="flame-hdr">
+      <h3>スパンタイムライン</h3>
+      <div class="flame-leg">
+        <span class="fl-item"><span class="fl-dot" style="background:#2f81f7"></span>チェーン</span>
+        <span class="fl-item"><span class="fl-dot" style="background:#bc8cff"></span>LLM</span>
+        <span class="fl-item"><span class="fl-dot" style="background:#d29922"></span>ツール</span>
+        <span class="fl-item"><span class="fl-dot" style="background:#39c5cf"></span>検索</span>
+      </div>
+    </div>
+    <div class="flame-ruler-row">
+      <div class="fr-lspc"></div>
+      <div class="fr-track">${marks}</div>
+      <div class="fr-rspc"></div>
+    </div>
+    <div>${rows}</div>
+  </div>`;
+}
+
+function spanColor(t){
+  return{chain:'#2f81f7',llm:'#bc8cff',tool:'#d29922',retriever:'#39c5cf'}[t]||'#768390';
+}
+
+// ── Span table ───────────────────────────────────────────────────────────────
+function buildSpanTable(spans){
+  if(!spans.length)return'';
+  const rows=spans.map(s=>{
+    const type=`<span class="tt tt-${s.span_type||'chain'}">${s.span_type||'—'}</span>`;
+    const err=s.status==='error'?`<span class="badge be" style="font-size:10px;margin-left:4px">ERR</span>`:'';
+    const tok=s.tokens_input!=null?`${(s.tokens_input||0).toLocaleString()} / ${(s.tokens_output||0).toLocaleString()}`:'—';
+    const model=s.model_name?`<span style="font-size:10px;color:var(--muted)">${esc(s.model_name)}</span>`:'—';
+    const errMsg=s.error_message?`<span style="color:var(--red);font-size:10px">${esc(s.error_message.substring(0,80))}</span>`:'—';
+    return `<tr>
+      <td style="font-size:11px">${esc(s.name)}${err}</td>
+      <td>${type}</td>
+      <td style="font-variant-numeric:tabular-nums">${s.duration_ms!=null?fmtDur(s.duration_ms):'—'}</td>
+      <td style="font-variant-numeric:tabular-nums;color:var(--muted)">${tok}</td>
+      <td>${model}</td>
+      <td>${errMsg}</td>
+    </tr>`;
+  }).join('');
+  const llm=spans.filter(s=>s.span_type==='llm');
+  const tIn=llm.reduce((s,sp)=>s+(sp.tokens_input||0),0);
+  const tOut=llm.reduce((s,sp)=>s+(sp.tokens_output||0),0);
+  const tokSum=tIn>0?`<div class="tok-sum">総トークン数: <strong style="color:var(--text-2)">${tIn.toLocaleString()}</strong> 入力 · <strong style="color:var(--text-2)">${tOut.toLocaleString()}</strong> 出力 · <strong style="color:var(--accent)">${(tIn+tOut).toLocaleString()}</strong> 合計</div>`:'';
+  return `<div class="spt-wrap">
+    <table class="spt">
+      <thead><tr><th>スパン名</th><th>タイプ</th><th>所要時間</th><th>トークン 入/出</th><th>モデル</th><th>エラー</th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table>${tokSum}
+  </div>`;
+}
+
+// ── I/O preview ──────────────────────────────────────────────────────────────
+function buildIO(t){
+  const inp=cleanPreviewFull(t.input_preview);
+  const out=cleanPreviewFull(t.output_preview);
+  if(!inp&&!out)return'';
+  return `<div class="io-grid">
+    <div class="io-box"><div class="io-box-h">入力</div><div class="io-box-b">${esc(inp)}</div></div>
+    <div class="io-box"><div class="io-box-h">出力</div><div class="io-box-b">${esc(out)}</div></div>
+  </div>`;
+}
+
+// ── Trace logs ───────────────────────────────────────────────────────────────
+function buildLogsSection(traceId){
+  return `<div class="logs-wrap">
+    <div class="logs-hdr">
+      <h3>実行ログ</h3>
+      <button class="btn-logs" onclick="toggleLogs('${traceId}',this)">▶ ログを表示</button>
+    </div>
+    <div class="log-console" id="log-console-${traceId}"></div>
+  </div>`;
+}
+
+async function toggleLogs(traceId,btn){
+  const con=document.getElementById('log-console-'+traceId);
+  if(con.style.display!=='none'&&con.style.display!==''){
+    con.style.display='none';btn.textContent='▶ ログを表示';return;
+  }
+  btn.textContent='読み込み中…';btn.disabled=true;
+  try{
+    const data=await api('/api/traces/'+traceId+'/logs');
+    const logs=data.logs||[];
+    if(!logs.length){
+      con.innerHTML='<div class="log-console-empty">このトレースにはログが記録されていません。</div>';
+    }else{
+      con.innerHTML=logs.map(logEntry).join('');
+    }
+    con.style.display='block';
+    btn.textContent='▼ ログを非表示';
+  }catch(e){
+    con.innerHTML=`<div class="log-console-empty">ログの取得エラー: ${esc(e.message)}</div>`;
+    con.style.display='block';
+    btn.textContent='▼ ログを非表示';
+  }finally{btn.disabled=false;}
+}
+
+function logEntry(l){
+  const levelColor={DEBUG:'#3d6b8a',INFO:'#3fb950',WARNING:'#d29922',ERROR:'#f85149'};
+  const col=levelColor[l.level]||'#768390';
+  const ts=l.timestamp?new Date(l.timestamp+(l.timestamp.endsWith('Z')?'':'Z'))
+    .toLocaleTimeString('en-US',{hour12:false,hour:'2-digit',minute:'2-digit',second:'2-digit',fractionalSecondDigits:1}):'';
+  const logger=l.logger?`<span class="log-logger">[${esc(l.logger)}]</span>`:'<span class="log-logger"></span>';
+  return `<div class="log-entry">
+    <span class="log-ts">${ts}</span>
+    <span class="log-level" style="color:${col}">${(l.level||'INFO').padEnd(7)}</span>
+    ${logger}
+    <span class="log-msg">${esc(l.message)}</span>
+  </div>`;
+}
+
+// ── Flow map ─────────────────────────────────────────────────────────────────
+function updateFlowMap(t){
+  const card=document.getElementById('flow-card');
+  const spans=t.spans||[];
+  if(!spans.length){card.style.display='none';return;}
+  card.style.display='';
+  document.getElementById('flow-tid').textContent=t.id.substring(0,16)+'…';
+  const map=document.getElementById('flow-map');
+  map.innerHTML=spans.map((s,i)=>`
+    ${i>0?'<span class="flow-arrow">→</span>':''}
+    <div class="flow-node ${s.status==='error'?'error-node':''}">
+      <div class="nn">${esc(s.name)}</div>
+      <div class="nd">${s.duration_ms?fmtDur(s.duration_ms):'—'}</div>
+    </div>`).join('');
+}
+
+// ── Export CSV ───────────────────────────────────────────────────────────────
+function exportCsv(){
+  const hdr=['trace_id','app_name','status','duration_ms','spans','tokens','started_at','input_preview'];
+  const rows=_filtered.map(t=>{
+    const spans=t.spans||[];
+    const tok=spans.reduce((s,sp)=>s+(sp.tokens_input||0)+(sp.tokens_output||0),0);
+    return[t.id,t.app_name,t.status,t.total_duration_ms||'',spans.length,tok,t.started_at,(t.input_preview||'').replace(/\n/g,' ')]
+      .map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',');
+  });
+  const csv=[hdr.join(','),...rows].join('\n');
+  const a=document.createElement('a');
+  a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv);
+  a.download=`aiops-traces-${new Date().toISOString().slice(0,10)}.csv`;
+  a.click();
+  toast(`${_filtered.length}行をエクスポートしました`);
+}
+
+function copyId(id,e){
+  e.stopPropagation();
+  navigator.clipboard.writeText(id).catch(()=>{});
+  toast('トレースIDをコピーしました');
+}
+
+// ── Issues ───────────────────────────────────────────────────────────────────
+async function loadIssues(){
+  const app=document.getElementById('issue-app-filter').value;
+  const status=document.getElementById('issue-status-filter').value;
+  const sev=document.getElementById('issue-sev-filter').value;
+  let url='/api/issues?limit=200';
+  if(app)url+=`&app_name=${encodeURIComponent(app)}`;
+  if(status)url+=`&status=${status}`;
+  if(sev)url+=`&severity=${sev}`;
+  try{
+    const data=await api(url);
+    const issues=data.issues;
+    _renderIssueAnalytics(issues);
+    if(!issues.length){document.getElementById('issues-tbody').innerHTML='<tr><td colspan="8" class="empty">問題はありません。</td></tr>';return;}
+    document.getElementById('issues-tbody').innerHTML=issues.map(issueRow).join('');
+    // Populate app filter dropdown from live data (first load only)
+    const appSel=document.getElementById('issue-app-filter');
+    const apps=[...new Set(issues.map(i=>i.app_name).filter(Boolean))].sort();
+    if(appSel.options.length<=1){
+      apps.forEach(a=>{const o=document.createElement('option');o.value=a;o.textContent=a;appSel.appendChild(o);});
+    }
+  }catch(e){document.getElementById('issues-tbody').innerHTML=`<tr><td colspan="8" class="empty">エラー: ${esc(e.message)}</td></tr>`;}
+}
+
+function _renderIssueAnalytics(issues){
+  // Always fetch the full unfiltered set for the summary cards so filters
+  // on the table don't distort the top-level numbers.
+  api('/api/issues?limit=500').then(data=>{
+    const all=data.issues||[];
+    const count=(fn)=>all.filter(fn).length;
+    const open   = count(i=>i.status==='OPEN');
+    const ack    = count(i=>i.status==='ACKNOWLEDGED');
+    const esc    = count(i=>i.status==='ESCALATED');
+    const res    = count(i=>i.status==='RESOLVED');
+    const sevHigh= count(i=>i.severity==='critical'||i.severity==='high');
+    const total  = all.length;
+    const rate   = total ? Math.round(res/total*100) : 0;
+    const g=id=>document.getElementById(id);
+    g('ia-open').textContent = open;
+    g('ia-ack').textContent  = ack;
+    g('ia-esc').textContent  = esc;
+    g('ia-res').textContent  = res;
+    g('ia-sev').textContent  = sevHigh;
+    g('ia-rate').textContent = rate+'%';
+  }).catch(()=>{});
+}
+
+// ── Japanese label maps ──────────────────────────────────────────────────────
+const _JA_STATUS = {OPEN:'オープン',ACKNOWLEDGED:'確認済み',ESCALATED:'エスカレート済み',RESOLVED:'解決済み'};
+const _JA_SEV    = {critical:'重大',high:'高',medium:'中',low:'低'};
+
+function issueRow(i){
+  const sevMap={low:'bsev4',medium:'bsev3',high:'bsev2',critical:'bsev1'};
+  const statMap={OPEN:'bo',ACKNOWLEDGED:'ba',ESCALATED:'besc',RESOLVED:'bres'};
+  const sb=sevMap[i.severity]||'bsev4';
+  const stb=statMap[i.status]||'bo';
+  const sevLabel=_JA_SEV[i.severity]||(i.sev_label||i.severity.toUpperCase());
+  const statusLabel=_JA_STATUS[i.status]||i.status;
+  const ruleId=i.rule_id?`<span style="font-family:monospace;font-size:11px;color:var(--muted)">${esc(i.rule_id)}</span>`:'<span style="color:var(--muted)">—</span>';
+  const ack=i.status==='OPEN'?`<button class="action-btn ack" onclick="issueAction(${i.id},'acknowledge',event)">確認</button>`:'';
+  const esc2=(i.status==='OPEN'||i.status==='ACKNOWLEDGED')?`<button class="action-btn esc" onclick="issueAction(${i.id},'escalate',event)">エスカレート</button>`:'';
+  const res=i.status!=='RESOLVED'?`<button class="action-btn res" onclick="issueAction(${i.id},'resolve',event)">解決</button>`:'';
+  const titleEsc=i.title.replace(/'/g,"\\'");
+  const appEsc=i.app_name.replace(/'/g,"\\'");
+  const autofix=i.status!=='RESOLVED'?`<button class="action-btn autofix" title="この問題をAI修正パイプラインに送信" onclick="autofixIssue(${i.id},'${titleEsc}','${appEsc}',event)">⚡ AI修正</button>`:'';
+  const humanEsc=i.status!=='RESOLVED'?`<button class="action-btn human" style="white-space:nowrap" title="人間のエージェントにエスカレート" onclick="escalateToHuman(event)">👤 手動修正</button>`:'';
+  return`<tr class="expandable" onclick="toggleAnalysis(${i.id},null)" style="cursor:pointer">
+    <td style="color:var(--muted)">${i.id}</td>
+    <td style="font-weight:500">${i.app_name}</td>
+    <td><span class="badge ${sb}">${sevLabel}</span></td>
+    <td>${ruleId}</td>
+    <td><span class="badge ${stb}">${statusLabel}</span></td>
+    <td title="${i.description||''}">${i.title}</td>
+    <td style="color:var(--muted)">${timeAgo(i.created_at)}</td>
+    <td onclick="event.stopPropagation()"><div style="display:flex;gap:4px;flex-wrap:wrap;min-height:22px;align-items:center">${ack}${esc2}${res}${autofix}${humanEsc}</div></td>
+  </tr>
+  <tr id="analysis-row-${i.id}" class="analysis-row" style="display:none">
+    <td colspan="8"><div class="analysis-panel" id="analysis-panel-${i.id}"><div class="analysis-pending"><div class="analysis-spinner"></div>分析を読み込み中…</div></div></td>
+  </tr>`;
+}
+
+async function issueAction(id,action,event){
+  event.stopPropagation();
+  try{await api(`/api/issues/${id}/${action}`,{method:'POST'});toast(`問題 #${id} → ${action}`);loadIssues();}
+  catch(e){toast('エラー: '+e.message,false);}
+}
+
+function escalateToHuman(event){
+  event.stopPropagation();
+  const t=document.getElementById('toast');
+  t.innerHTML='🔗 <strong>Linearとの統合は近日公開予定</strong>';
+  t.style.display='block';
+  t.style.borderColor='var(--cyan)';
+  setTimeout(()=>{t.style.display='none';},4000);
+}
+
+// ── Metrics ──────────────────────────────────────────────────────────────────
+// ── Metrics helpers ───────────────────────────────────────────────────────────
+function _fmtNum(n){
+  if(n>=1_000_000) return (n/1_000_000).toFixed(1)+'M';
+  if(n>=1_000)     return (n/1_000).toFixed(1)+'K';
+  return String(n);
+}
+function _healthClass(errPct){
+  if(errPct>=10) return 'health-bad';
+  if(errPct>=3)  return 'health-warn';
+  return 'health-ok';
+}
+function _barClass(pct){
+  if(pct>=85) return 'sys-bar-bad';
+  if(pct>=70) return 'sys-bar-warn';
+  return 'sys-bar-ok';
+}
+
+function _lineChart(buckets, valueKey, color, unit=''){
+  if(!buckets||!buckets.length) return '<div class="chart-empty">データなし</div>';
+  const vals = buckets.map(b=>b[valueKey]||0);
+  const maxV = Math.max(...vals, 0.01);
+  const W=100, H=55, py=3;
+  const pts = vals.map((v,i)=>{
+    const x = vals.length<2 ? W/2 : (i/(vals.length-1))*W;
+    const y = H - py - (v/maxV)*(H-py*2);
+    return {x,y,v,label:buckets[i].label};
+  });
+  const poly  = pts.map(p=>`${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ');
+  const area  = `0,${H} `+poly+` ${W},${H}`;
+  const last  = pts[pts.length-1];
+
+  // x-axis labels: first, mid, last
+  const idxs  = [...new Set([0, Math.floor(pts.length/2), pts.length-1])];
+  const labels = idxs.map(i=>
+    `<text x="${pts[i].x.toFixed(1)}" y="${H+8}" text-anchor="middle" font-size="5.5" fill="#6b7280">${pts[i].label}</text>`
+  ).join('');
+
+  const gradId = `g-${valueKey}-${Math.random().toString(36).slice(2,6)}`;
+  return `<svg viewBox="-1 -1 102 ${H+14}" style="width:100%;height:110px;display:block">
+    <defs>
+      <linearGradient id="${gradId}" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="${color}" stop-opacity="0.25"/>
+        <stop offset="100%" stop-color="${color}" stop-opacity="0.02"/>
+      </linearGradient>
+    </defs>
+    <polygon fill="url(#${gradId})" points="${area}"/>
+    <polyline fill="none" stroke="${color}" stroke-width="1.5" stroke-linejoin="round" points="${poly}"/>
+    <circle cx="${last.x.toFixed(1)}" cy="${last.y.toFixed(1)}" r="2.5" fill="${color}"/>
+    ${labels}
+  </svg>
+  <div class="chart-footer">
+    <span>Latest: <strong style="color:${color}">${last.v.toFixed(1)}${unit}</strong></span>
+    <span>Max: ${maxV.toFixed(1)}${unit}</span>
+  </div>`;
+}
+
+async function loadMetrics(){
+  const app = document.getElementById('metrics-app-filter').value;
+  const q   = app ? `?app_name=${encodeURIComponent(app)}` : '';
+  try{
+    const [ov, perApp, tp, lat, err, tok, sys] = await Promise.all([
+      api(`/api/metrics/overview${q}`),
+      api('/api/metrics/per-app'),
+      api(`/api/metrics/throughput${q}${q?'&':'?'}bucket_minutes=5&limit_buckets=24`),
+      api(`/api/metrics/latency${q}`),
+      api(`/api/metrics/errors${q}`),
+      api(`/api/metrics/tokens${q}`),
+      api('/api/metrics/system/current'),
+    ]);
+
+    // ── KPI cards ──────────────────────────────────────────────────────────
+    document.getElementById('kpi-traces').textContent      = _fmtNum(ov.total_traces);
+    document.getElementById('kpi-traces-sub').textContent  = `${ov.error_rate_pct}% エラー率`;
+    document.getElementById('kpi-latency').textContent     = ov.avg_latency_ms+'ms';
+    document.getElementById('kpi-latency-sub').textContent = `P95: ${ov.p95_latency_ms}ms`;
+    const errEl = document.getElementById('kpi-error-rate');
+    errEl.textContent = ov.error_rate_pct+'%';
+    errEl.className   = 'kpi-value'+(ov.error_rate_pct>=10?' kpi-danger':ov.error_rate_pct>=3?' kpi-warn':'');
+    document.getElementById('kpi-error-sub').textContent  = `${ov.total_traces}件のトレース中`;
+    const issEl = document.getElementById('kpi-issues');
+    issEl.textContent = ov.active_issues;
+    issEl.className   = 'kpi-value'+(ov.active_issues>0?' kpi-warn':'');
+    document.getElementById('kpi-issues-sub').textContent = ov.active_issues>0?'要注意':'問題なし';
+    document.getElementById('kpi-tokens').textContent     = _fmtNum(ov.tokens_in+ov.tokens_out);
+    document.getElementById('kpi-tokens-sub').textContent = `~$${ov.estimated_cost_usd} 推定コスト`;
+
+    // ── Per-app table ─────────────────────────────────────────────────────
+    document.getElementById('per-app-tbody').innerHTML = perApp.apps.length
+      ? perApp.apps.map(a=>{
+          const hc = _healthClass(a.error_rate_pct);
+          return `<tr>
+            <td style="font-weight:500">${a.app_name}</td>
+            <td>${a.total_traces}</td>
+            <td>${a.avg_ms}ms</td>
+            <td>${a.p95_ms}ms</td>
+            <td class="${hc}">${a.error_rate_pct}%</td>
+            <td>${_fmtNum(a.tokens_in)}</td>
+            <td>${_fmtNum(a.tokens_out)}</td>
+            <td>$${a.estimated_cost_usd}</td>
+            <td>${a.open_issues>0?`<span class="badge bo">${a.open_issues}</span>`:'<span style="color:var(--muted)">—</span>'}</td>
+          </tr>`;
+        }).join('')
+      : '<tr><td colspan="9" class="empty">アプリデータなし。</td></tr>';
+
+    // ── Trend charts ──────────────────────────────────────────────────────
+    document.getElementById('latency-chart').innerHTML  = _lineChart(tp.buckets,'avg_ms','#8b5cf6','ms');
+    document.getElementById('error-chart').innerHTML    = _lineChart(tp.buckets,'error_rate_pct','#ef4444','%');
+
+    // ── Span latency + error tables ───────────────────────────────────────
+    document.getElementById('latency-tbody').innerHTML = lat.latency.length
+      ? lat.latency.map(r=>`<tr>
+          <td>${r.span_name}</td><td>${r.count}</td>
+          <td>${r.avg_ms}ms</td><td>${r.p95_ms}ms</td><td>${r.p99_ms}ms</td>
+        </tr>`).join('')
+      : '<tr><td colspan="5" class="empty">データなし。</td></tr>';
+    document.getElementById('errors-tbody').innerHTML = err.errors.length
+      ? err.errors.map(r=>`<tr>
+          <td>${r.span_name}</td><td>${r.total}</td>
+          <td>${r.errors}</td>
+          <td class="${_healthClass(r.error_rate_pct)}">${r.error_rate_pct}%</td>
+        </tr>`).join('')
+      : '<tr><td colspan="4" class="empty">データなし。</td></tr>';
+
+    // ── Token & model usage ───────────────────────────────────────────────
+    document.getElementById('tokens-tbody').innerHTML = tok.models.length
+      ? tok.models.map(m=>`<tr>
+          <td style="font-family:monospace;font-size:11px">${m.model}</td>
+          <td>${m.calls}</td>
+          <td>${_fmtNum(m.tokens_in)}</td>
+          <td>${_fmtNum(m.tokens_out)}</td>
+          <td>$${m.estimated_cost_usd}</td>
+        </tr>`).join('')
+      : '<tr><td colspan="5" class="empty">LLMスパンの記録なし。</td></tr>';
+
+    // ── System health ─────────────────────────────────────────────────────
+    const sh = document.getElementById('sys-health-body');
+    if(!sys.available){
+      sh.innerHTML='<div class="empty" style="padding:16px 0">システムメトリクス利用不可</div>';
+    } else {
+      const gauge=(label,pct,display)=>`
+        <div class="sys-item">
+          <div style="display:flex;justify-content:space-between">
+            <span class="sys-item-label">${label}</span>
+            <span class="sys-value">${display}</span>
+          </div>
+          <div class="sys-bar-track">
+            <div class="sys-bar-fill ${_barClass(pct)}" style="width:${Math.min(pct,100)}%"></div>
+          </div>
+        </div>`;
+      const fmtMBs = v => v!=null ? (v<1?`${(v*1024).toFixed(0)} KB/s`:`${v.toFixed(1)} MB/s`) : '—';
+      sh.innerHTML = `
+        <div class="sys-grid">
+          ${gauge('CPU',sys.cpu_percent??0, sys.cpu_percent!=null?sys.cpu_percent+'%':'—')}
+          ${gauge('メモリ',sys.mem_percent??0, sys.mem_percent!=null?sys.mem_percent+'%':'—')}
+          ${gauge('スワップ',sys.swap_percent??0, sys.swap_percent!=null?sys.swap_percent+'%':'—')}
+          ${gauge('接続数',Math.min((sys.net_active_connections??0)/2,100),sys.net_active_connections!=null?sys.net_active_connections+' 接続':'—')}
+        </div>
+        <div class="sys-io-row">
+          <div class="sys-io-item">ディスク読込 <strong>${fmtMBs(sys.disk_read_mb_s)}</strong></div>
+          <div class="sys-io-item">ディスク書込 <strong>${fmtMBs(sys.disk_write_mb_s)}</strong></div>
+          <div class="sys-io-item">受信 ↓ <strong>${fmtMBs(sys.net_recv_mb_s)}</strong></div>
+          <div class="sys-io-item">送信 ↑ <strong>${fmtMBs(sys.net_sent_mb_s)}</strong></div>
+          <div class="sys-io-item">プロセス数 <strong>${sys.process_count??'—'}</strong></div>
+        </div>`;
+    }
+  } catch(e){ console.warn('metrics',e); }
+}
+
+// ── Rules ────────────────────────────────────────────────────────────────────
+async function loadRules(){
+  try{
+    const data=await api('/api/escalations/rules');
+    document.getElementById('rules-tbody').innerHTML=data.rules.length
+      ?data.rules.map(r=>`<tr>
+        <td style="font-weight:500">${r.name}</td>
+        <td style="color:var(--muted)">${r.app_name||'<em>all</em>'}</td>
+        <td style="font-family:monospace;font-size:11px">${r.condition_type.replace(/_/g,' ')} ${r.condition_value}</td>
+        <td>${r.action_type}</td>
+        <td><span class="badge ${r.enabled?'bk':'be'}">${r.enabled?'ON':'OFF'}</span></td>
+        <td><button class="action-btn" onclick="deleteRule(${r.id})">削除</button></td>
+      </tr>`).join('')
+      :'<tr><td colspan="6" class="empty">ルールはまだありません。</td></tr>';
+  }catch(e){console.warn('rules',e);}
+}
+
+async function deleteRule(id){
+  if(!confirm('このルールを削除しますか？'))return;
+  try{await api(`/api/escalations/rules/${id}`,{method:'DELETE'});toast('ルールを削除しました');loadRules();}
+  catch(e){toast('エラー: '+e.message,false);}
+}
+
+function toggleWebhookUrl(){
+  document.getElementById('r-webhook-group').style.display=
+    document.getElementById('r-action').value==='webhook'?'':'none';
+}
+
+async function createRule(){
+  const name=document.getElementById('r-name').value.trim();
+  const app=document.getElementById('r-app').value.trim();
+  const cond=document.getElementById('r-cond').value;
+  const val=parseFloat(document.getElementById('r-val').value);
+  const action=document.getElementById('r-action').value;
+  const webhookUrl=document.getElementById('r-webhook-url').value.trim();
+  if(!name||isNaN(val)){toast('名前と値は必須です',false);return;}
+  const body={name,condition_type:cond,condition_value:val,action_type:action,
+    app_name:app||null,action_config:action==='webhook'?{url:webhookUrl}:null};
+  try{
+    await api('/api/escalations/rules',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+    toast('ルールを作成しました');loadRules();
+    ['r-name','r-app','r-val','r-webhook-url'].forEach(id=>document.getElementById(id).value='');
+  }catch(e){toast('エラー: '+e.message,false);}
+}
+
+async function loadLogs(){
+  try{
+    const[data,rules]=await Promise.all([api('/api/escalations/logs?limit=50'),api('/api/escalations/rules')]);
+    const rm={};rules.rules.forEach(r=>rm[r.id]=r.name);
+    document.getElementById('logs-tbody').innerHTML=data.logs.length
+      ?data.logs.map(l=>`<tr>
+        <td style="color:var(--muted)">${l.issue_id||'—'}</td>
+        <td>${rm[l.rule_id]||l.rule_id||'—'}</td>
+        <td>${l.action_type}</td>
+        <td><span class="badge ${l.status==='fired'?'bk':'be'}">${l.status}</span></td>
+        <td style="color:var(--muted);max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${esc(l.detail||'')}">${l.detail||'—'}</td>
+        <td style="color:var(--muted)">${timeAgo(l.fired_at)}</td>
+      </tr>`).join('')
+      :'<tr><td colspan="6" class="empty">ログはまだありません。</td></tr>';
+  }catch(e){console.warn('logs',e);}
+}
+
+// ── Utilities ────────────────────────────────────────────────────────────────
+function fmtDur(ms){
+  if(ms==null)return'—';
+  if(ms<1000)return ms.toFixed(0)+'ms';
+  if(ms<60000)return(ms/1000).toFixed(2)+'s';
+  return(ms/60000).toFixed(1)+'m';
+}
+
+function timeAgo(iso){
+  if(!iso)return'—';
+  const d=(Date.now()-+new Date(iso+(iso.endsWith('Z')?'':'Z')))/1000;
+  if(d<60)return Math.round(d)+'秒前';
+  if(d<3600)return Math.round(d/60)+'分前';
+  if(d<86400)return Math.round(d/3600)+'時間前';
+  return Math.round(d/86400)+'日前';
+}
+
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+
+function cleanPreview(raw,max){
+  if(!raw)return'—';
+  const m=raw.match(/content='([^']{4,}?)'/);
+  if(m)return m[1].substring(0,max||80);
+  return raw.replace(/^\s*["'\[{]+/,'').substring(0,max||80);
+}
+
+function cleanPreviewFull(raw){
+  if(!raw)return'—';
+  return raw.substring(0,600);
+}
+
+// ── Instrument ───────────────────────────────────────────────────────────────
+let _instRunning=false,_instCtrl=null;
+
+function clearInstrumentLog(){
+  document.getElementById('inst-log').innerHTML='<span style="color:var(--muted)">開始待機中…</span>';
+  document.getElementById('inst-files').innerHTML='まだファイルが変更されていません。';
+  document.getElementById('inst-status').textContent='';
+  document.getElementById('inst-turn').textContent='';
+}
+
+function _appendLog(html){
+  const el=document.getElementById('inst-log');
+  if(el.innerHTML.includes('開始待機中'))el.innerHTML='';
+  el.innerHTML+=html+'\n';
+  el.scrollTop=el.scrollHeight;
+}
+
+async function runInstrument(){
+  if(_instRunning){if(_instCtrl)_instCtrl.abort();return;}
+  const dir=document.getElementById('inst-dir').value.trim();
+  const app=document.getElementById('inst-app').value.trim();
+  const url=document.getElementById('inst-url').value.trim();
+  if(!dir||!app){toast('ディレクトリとアプリ名は必須です',false);return;}
+  _instRunning=true;_instCtrl=new AbortController();
+  const btn=document.getElementById('inst-run-btn');
+  btn.textContent='⏹ 停止';
+  document.getElementById('inst-status').textContent='実行中…';
+  const files=[];
+  try{
+    const resp=await fetch('/api/agent/instrument',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({project_dir:dir,app_name:app,aiops_server_url:url}),signal:_instCtrl.signal});
+    if(!resp.ok){_appendLog(`<span class="log-error">HTTP エラー ${resp.status}</span>`);return;}
+    const reader=resp.body.getReader();const dec=new TextDecoder();let buf='';
+    while(true){
+      const{done,value}=await reader.read();if(done)break;
+      buf+=dec.decode(value,{stream:true});
+      const parts=buf.split('\n\n');buf=parts.pop();
+      for(const p of parts){
+        if(!p.startsWith('data: '))continue;
+        let ev;try{ev=JSON.parse(p.slice(6));}catch{continue;}
+        _handleInstEvent(ev,files);
+      }
+    }
+  }catch(e){if(e.name!=='AbortError')_appendLog(`<span class="log-error">接続エラー: ${esc(e.message)}</span>`);}
+  finally{_instRunning=false;_instCtrl=null;btn.textContent='▶ エージェントを実行';}
+}
+
+function _handleInstEvent(ev,files){
+  switch(ev.type){
+    case'status':{
+      const m=ev.message.match(/turn (\d+)/);
+      if(m)document.getElementById('inst-turn').textContent=`ターン ${m[1]}`;
+      _appendLog(`<span class="log-status">${esc(ev.message)}</span>`);
+      document.getElementById('inst-status').textContent=ev.message.length>55?ev.message.slice(0,55)+'…':ev.message;
+      break;}
+    case'tool_call':{
+      const inp=JSON.stringify(ev.input||{});
+      _appendLog(`<span class="log-tool">⚙ ${esc(ev.tool)}(${esc(inp.length>100?inp.slice(0,100)+'…':inp)})</span>`);
+      break;}
+    case'file_modified':{
+      files.push(ev.path);
+      _appendLog(`<span class="log-file">✓ 変更済み: ${esc(ev.path)} (${ev.size} バイト)</span>`);
+      document.getElementById('inst-files').innerHTML=files.map(f=>`<span class="file-chip">${esc(f)}</span>`).join('');
+      break;}
+    case'done':{
+      const c=(ev.files_modified||[]).length;
+      _appendLog(`<span class="log-done">完了 — ${c}件のファイルを変更しました。</span>`);
+      document.getElementById('inst-status').textContent=`完了 — ${c}件`;
+      if(c>0)document.getElementById('inst-files').innerHTML=(ev.files_modified||[]).map(f=>`<span class="file-chip">${esc(f)}</span>`).join('');
+      break;}
+    case'error':
+      _appendLog(`<span class="log-error">✗ ${esc(ev.message)}</span>`);
+      document.getElementById('inst-status').textContent='エラー — ログを確認';
+      break;
+    default:
+      _appendLog(`<span class="log-status">${esc(JSON.stringify(ev))}</span>`);
+  }
+}
+
+// ── Issue Analysis ────────────────────────────────────────────────────────────
+const _analysisOpen = new Set();
+const _analysisPoll = {};
+
+async function toggleAnalysis(issueId, event){
+  if(event) event.stopPropagation();
+  const row   = document.getElementById(`analysis-row-${issueId}`);
+  const panel = document.getElementById(`analysis-panel-${issueId}`);
+  if(!row) return;
+
+  if(_analysisOpen.has(issueId)){
+    row.style.display='none';
+    _analysisOpen.delete(issueId);
+    clearInterval(_analysisPoll[issueId]);
+    delete _analysisPoll[issueId];
+    return;
+  }
+
+  _analysisOpen.add(issueId);
+  row.style.display='table-row';
+  panel.innerHTML=`<div class="analysis-pending"><div class="analysis-spinner"></div>分析をリクエスト中…</div>`;
+
+  // Force-trigger analysis so each row click kicks a fresh external RCA run.
+  try{
+    await api(`/api/analysis/issues/${issueId}?force=true`,{method:'POST'});
+  }catch(e){
+    panel.innerHTML=`<div style="color:var(--red);font-size:12px;padding:8px">RCA起動に失敗しました: ${esc(e.message)}</div>`;
+    return;
+  }
+  _pollAnalysis(issueId);
+}
+
+function _pollAnalysis(issueId){
+  clearInterval(_analysisPoll[issueId]);
+  _analysisPoll[issueId] = setInterval(async ()=>{
+    try{
+      const a = await api(`/api/analysis/issues/${issueId}`);
+      if(a.status==='done'){
+        clearInterval(_analysisPoll[issueId]);
+        _renderAnalysis(issueId, a);
+      } else if(a.status==='failed'){
+        clearInterval(_analysisPoll[issueId]);
+        const panel=document.getElementById(`analysis-panel-${issueId}`);
+        if(panel) panel.innerHTML=`<div style="color:var(--red);font-size:12px;padding:8px">分析に失敗しました: ${esc(a.full_summary||'不明なエラー')}</div>`;
+      }
+      // else still pending — keep polling
+    }catch(e){/* 404 = not yet stored, keep polling */}
+  }, 2500);
+}
+
+function _renderAnalysis(issueId, a){
+  const panel = document.getElementById(`analysis-panel-${issueId}`);
+  if(!panel) return;
+  const ev = a.evidence || '';
+  const evHtml = ev.split('\n').filter(Boolean).map(l=>`<li>${esc(l.replace(/^[-•*]\s*/,''))}</li>`).join('') || `<li>${esc(ev)}</li>`;
+  panel.innerHTML=`
+    <div class="analysis-hdr">
+      <h4>🤖 AI 根本原因分析</h4>
+      <span class="analysis-model">${esc(a.model_used||'')} · ${a.generated_at?new Date(a.generated_at).toLocaleTimeString():''}</span>
+    </div>
+    <div class="analysis-grid">
+      <div class="analysis-card">
+        <div class="analysis-card-lbl cause">最も可能性の高い原因</div>
+        <div class="analysis-card-body">${esc(a.likely_cause||'—')}</div>
+      </div>
+      <div class="analysis-card">
+        <div class="analysis-card-lbl evidence">裏付け証拠</div>
+        <div class="analysis-card-body"><ul style="padding-left:14px;margin:0">${evHtml}</ul></div>
+      </div>
+      <div class="analysis-card">
+        <div class="analysis-card-lbl action">推奨アクション</div>
+        <div class="analysis-card-body">${esc(a.recommended_action||'—')}</div>
+      </div>
+    </div>`;
+}
+
+// ── AutoFix ───────────────────────────────────────────────────────────────────
+let _afPollTimer = null;
+
+function openAutofixModal(issueId, issueTitle, appName) {
+  const el = id => document.getElementById(id);
+  el('af-title').textContent = `自動修正 — 問題 #${issueId}`;
+  el('af-app').textContent = appName;
+  el('af-issue-title').textContent = issueTitle;
+  el('af-log').textContent = '';
+  _setAfStatus('starting');
+  el('af-overlay').classList.add('open');
+
+  api(`/api/issues/${issueId}/autofix`, {method:'POST'})
+    .then(data => {
+      el('af-log').textContent += `[autofix] ジョブ開始: ${data.job_id}\n`;
+      _setAfStatus('running');
+      _startPolling(data.job_id);
+    })
+    .catch(err => {
+      el('af-log').textContent += `[autofix] 起動失敗: ${err.message}\n`;
+      _setAfStatus('failed');
+    });
+}
+
+function closeAutofixModal() {
+  clearInterval(_afPollTimer);
+  _afPollTimer = null;
+  document.getElementById('af-overlay').classList.remove('open');
+}
+
+function _setAfStatus(state) {
+  const bar = document.getElementById('af-status-bar');
+  const txt = document.getElementById('af-status-txt');
+  const spinner = document.getElementById('af-spinner');
+  spinner.style.display = state === 'running' || state === 'starting' ? 'block' : 'none';
+  document.getElementById('af-done-dot').style.display = state === 'done' ? 'block' : 'none';
+  document.getElementById('af-fail-dot').style.display = state === 'failed' ? 'block' : 'none';
+  const labels = {starting:'修正パイプラインに送信中…',running:'修正エージェントが作業中…',done:'修正を適用済み — エージェントを再起動中',failed:'修正に失敗しました'};
+  txt.textContent = labels[state] || state;
+}
+
+function _startPolling(jobId) {
+  clearInterval(_afPollTimer);
+  let lastLen = 0;
+  _afPollTimer = setInterval(async () => {
+    try {
+      const job = await api(`/api/issues/autofix/${jobId}`);
+      const logEl = document.getElementById('af-log');
+      const newText = job.output || '';
+      if (newText.length > lastLen) {
+        logEl.textContent = newText;
+        logEl.scrollTop = logEl.scrollHeight;
+        lastLen = newText.length;
+      }
+      if (job.status !== 'running') {
+        clearInterval(_afPollTimer);
+        _afPollTimer = null;
+        _setAfStatus(job.status);
+        if (job.status === 'done') { loadIssues(); }
+      }
+    } catch(e) { /* ignore poll errors */ }
+  }, 2000);
+}
+
+async function autofixIssue(issueId, issueTitle, appName, event) {
+  event.stopPropagation();
+  openAutofixModal(issueId, issueTitle, appName);
+}
+
+// ── Smart auto-refresh ────────────────────────────────────────────────────────
+// Rules:
+//  1. No panel open                          → refresh normally every 30 s
+//  2. Panel open + user active (< 2 min)     → defer; fire immediately on close
+//  3. Panel open + user idle   (≥ 2 min)     → refresh anyway (user walked away)
+//  4. Switching between accordions            → still counts as active → stays deferred
+let _refreshPending  = false;
+let _lastInteraction = 0;
+const _IDLE_MS = 2 * 60 * 1000;   // 2 minutes
+
+['click','keydown','mousedown','touchstart'].forEach(evt =>
+  document.addEventListener(evt, ()=>{ _lastInteraction = Date.now(); }, {passive:true})
+);
+
+function _userIsActive(){ return Date.now() - _lastInteraction < _IDLE_MS; }
+function _anyPanelOpen(){
+  return !!(
+    document.querySelector('.expand-row.open') ||
+    document.querySelector('.af-overlay.open')
+  );
+}
+
+function _doRefresh(){
+  _refreshPending = false;
+  const pg = document.querySelector('.page.active'); if(!pg) return;
+  if(pg.id==='issues-page')loadIssues();
+  if(pg.id==='metrics-page')loadMetrics();
+  if(pg.id==='rules-page'){loadRules();loadLogs();}
+}
+
+// When all panels close, fire any pending refresh immediately
+new MutationObserver(()=>{
+  if(_refreshPending && !_anyPanelOpen()) _doRefresh();
+}).observe(document.body,{attributes:true,subtree:true,attributeFilter:['class']});
+
+// ── Init ─────────────────────────────────────────────────────────────────────
+loadIssues();
+setInterval(()=>{
+  if(_anyPanelOpen() && _userIsActive()){ _refreshPending = true; return; }
+  _doRefresh();
+},30000);
+</script>
+</body>
+</html>

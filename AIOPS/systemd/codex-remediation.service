@@ -1,0 +1,14 @@
+[Unit]
+Description=Codex Remediation POC
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/remediation-poc-demo
+EnvironmentFile=/opt/remediation-poc-demo/.env
+ExecStart=/opt/remediation-poc-demo/scripts/start_linux.sh
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

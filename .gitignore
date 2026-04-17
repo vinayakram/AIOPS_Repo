@@ -1,0 +1,62 @@
+# Local secrets and machine-specific configuration
+.env
+.env.*
+!.env.example
+*.local
+*.local.*
+**/.credentials
+**/.netrc
+*.pem
+*.key
+*.p12
+*.pfx
+id_rsa*
+id_ed25519*
+
+# Python environments and caches
+.venv/
+.venv-*/
+venv/
+env/
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+*.egg-info/
+
+# Runtime data, generated remediation artifacts, and local databases
+*.log
+*.db
+*.sqlite
+*.sqlite3
+*.bak
+*.bak_*
+*.zip
+AIOPS/runs/
+AIOPS/managed_repos/
+AIOPS/.test_state/
+AIopsTelemetry/logs/
+AIopsTelemetry/server/dashboard/static/
+
+# JavaScript dependencies and build output
+node_modules/
+dist/
+build/
+.vite/
+
+# Nested/local Git metadata must never be committed into this aggregate repo
+**/.git/
+
+# IDE and local assistant state
+.vscode/
+.idea/
+**/.claude/settings.local.json
+
+# OS files
+.DS_Store
+Thumbs.db

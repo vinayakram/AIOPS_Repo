@@ -1,0 +1,21 @@
+{
+  "issue_id": "SUP-5001",
+  "project_name": "multiagent-support-copilot",
+  "title": "Escalation payload loses context",
+  "description": "Payload context is dropped during agent handoff and the escalation summary arrives incomplete.",
+  "acceptance_criteria": [
+    "Escalation payload is preserved end to end",
+    "Validation command passes",
+    "Diff is reviewed by a human before PR creation"
+  ],
+  "source_system": "upstream-remediation-ui",
+  "source_issue_id": "SUP-5001",
+  "source_issue_url": "https://example.local/issues/SUP-5001",
+  "remediation_type": "code_change",
+  "github_repo": "vinayakram/multiagent-support-copilot",
+  "upstream_repo": "https://github.com/vinayakram/multiagent-support-copilot.git",
+  "base_branch": "main",
+  "validation_command": "pytest -q",
+  "requested_by": "demo-user@example.com",
+  "environment": "staging"
+}

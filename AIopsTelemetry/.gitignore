@@ -1,0 +1,128 @@
+# ── Python ────────────────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.pyd
+
+# Distribution / packaging
+.Python
+build/
+dist/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+pip-wheel-metadata/
+
+# Virtual environments
+venv/
+.venv/
+env/
+.env.venv/
+ENV/
+env.bak/
+venv.bak/
+
+# ── Environment / Secrets ─────────────────────────────────────────────────────
+.env
+.env.local
+.env.*.local
+*.env
+!.env.example        # .env.example IS committed — it's the template
+
+# ── Database ──────────────────────────────────────────────────────────────────
+*.db
+*.sqlite
+*.sqlite3
+aiops.db
+medical_rag.db
+
+# ── Test & Coverage ───────────────────────────────────────────────────────────
+.pytest_cache/
+.coverage
+.coverage.*
+coverage.xml
+htmlcov/
+.tox/
+.nox/
+nosetests.xml
+test-results/
+junit.xml
+
+# ── Type Checking ─────────────────────────────────────────────────────────────
+.mypy_cache/
+.dmypy.json
+dmypy.json
+.pytype/
+.pyre/
+
+# ── Linting ───────────────────────────────────────────────────────────────────
+.ruff_cache/
+
+# ── IDEs & Editors ────────────────────────────────────────────────────────────
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.project
+.classpath
+*.iml
+*.ipr
+*.iws
+.settings/
+
+# ── Operating System ──────────────────────────────────────────────────────────
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+.Spotlight-V100
+.Trashes
+
+# Windows
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+Desktop.ini
+$RECYCLE.BIN/
+*.lnk
+
+# Linux
+*~
+
+# ── Logs & Runtime ────────────────────────────────────────────────────────────
+*.log
+*.log.*
+logs/
+pip-log.txt
+pip-delete-this-directory.txt
+
+# ── Jupyter ───────────────────────────────────────────────────────────────────
+.ipynb_checkpoints
+*.ipynb
+
+# ── Claude Code ───────────────────────────────────────────────────────────────
+.claude/settings.local.json
+
+# ── Project-specific ──────────────────────────────────────────────────────────
+# Screenshots / design assets (tracked manually if needed)
+*.png
+*.jpg
+*.jpeg
+!docs/**/*.png   # allow images inside docs/
+
+# Compiled dashboard assets (if a build step is added)
+server/dashboard/static/dist/

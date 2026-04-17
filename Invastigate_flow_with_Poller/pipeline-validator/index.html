@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Investigation Pipeline Validator</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<h2 class="sr-only">Investigation Pipeline Validator — validate Normalization, Correlation, Analysis, RCA, and Recommendations steps</h2>
+
+<div class="header">
+  <div class="header-top">
+    <h1>Investigation Pipeline</h1>
+    <span class="badge">Validator</span>
+  </div>
+  <p>Validate each step of the Normalization → Correlation → Analysis → RCA → Recommendations flow</p>
+</div>
+
+<!-- Pipeline progress bar -->
+<div class="pipeline-bar" id="pipeline-bar"></div>
+
+<div class="main">
+  <!-- Left: Input panel -->
+  <div class="input-panel">
+    <div class="panel-title">Test Input</div>
+
+    <!-- Scenario presets -->
+    <div class="form-group">
+      <label>Quick scenarios</label>
+      <div class="scenario-grid" id="scenario-grid"></div>
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="form-group">
+      <label>Trace ID</label>
+      <input type="text" id="trace-id" value="8e3d196e9bda4fd09a4833740db8d360" />
+      <div class="hint">Used as the correlation key across all agents</div>
+    </div>
+
+    <div class="form-group">
+      <label>Agent / Service name</label>
+      <input type="text" id="agent-name" value="medical-rag" />
+    </div>
+
+    <div class="form-group">
+      <label>Timestamp</label>
+      <input type="text" id="timestamp" value="2026-04-10T04:19:55.204Z" />
+    </div>
+
+    <div class="form-group">
+      <label>Expected error type</label>
+      <select id="expected-error">
+        <option value="AI_AGENT">AI_AGENT</option>
+        <option value="NO_ERROR">NO_ERROR</option>
+        <option value="INFRASTRUCTURE">INFRASTRUCTURE</option>
+        <option value="DATA_PIPELINE">DATA_PIPELINE</option>
+        <option value="UNKNOWN">UNKNOWN</option>
+      </select>
+      <div class="hint">Used to validate normalization output</div>
+    </div>
+
+    <div class="form-group">
+      <label>API base URL</label>
+      <input type="text" id="api-url" value="http://localhost:8000" />
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="btn-row">
+      <button class="btn btn-primary btn-full" id="run-btn" onclick="runPipeline()">
+        <span>▶</span> Run full pipeline
+      </button>
+    </div>
+
+    <div style="margin-top: 8px;">
+      <button class="btn btn-full" id="step-btn" onclick="runStep()">
+        <span>→</span> Run next step only
+      </button>
+    </div>
+
+    <div style="margin-top: 8px;">
+      <button class="btn btn-full" onclick="resetAll()">
+        <span>↺</span> Reset
+      </button>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- Poller status -->
+    <div class="panel-title">Poller Status</div>
+    <div id="poller-status" style="padding: 10px; border: 0.5px solid var(--border); border-radius: var(--rad); background: var(--bg2);">
+      <div style="font-size: 12px; color: var(--text2);">Click to check poller health</div>
+    </div>
+    <button class="btn btn-sm" style="margin-top: 8px; width: 100%;" onclick="checkPoller()">Check /api/v1/poller/status</button>
+  </div>
+
+  <!-- Right: Detail panel -->
+  <div class="detail-panel" id="detail-panel">
+    <div class="empty-state">
+      <div class="empty-icon">⚗</div>
+      <p style="font-weight: 500; color: var(--text2); margin-bottom: 4px;">No pipeline run yet</p>
+      <p>Select a scenario or enter a trace ID<br>and click "Run full pipeline"</p>
+    </div>
+  </div>
+</div>
+
+<!-- Summary bar -->
+<div class="summary-bar" id="summary-bar" style="display: none;"></div>
+
+<script src="app.js"></script>
+</body>
+</html>

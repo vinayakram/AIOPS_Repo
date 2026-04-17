@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MedicalRAG — Register</title>
+  <link rel="stylesheet" href="/static/css/styles.css">
+</head>
+<body>
+  <div class="auth-wrap">
+    <div class="auth-card">
+      <div class="auth-header">
+        <div class="auth-logo">⚕️</div>
+        <h1>Create Account</h1>
+        <p>Join MedicalRAG — medical research AI</p>
+      </div>
+      <div class="auth-body">
+        <div id="errorMsg" class="alert alert-error"></div>
+        <div id="successMsg" class="alert alert-success"></div>
+
+        <form id="registerForm">
+          <div class="form-group">
+            <label for="full_name">Full Name</label>
+            <input type="text" id="full_name" placeholder="Dr. Jane Smith" autocomplete="name">
+          </div>
+          <div class="form-group">
+            <label for="username">Username <span style="color:var(--danger)">*</span></label>
+            <input type="text" id="username" placeholder="Min. 3 characters" autocomplete="username" required minlength="3">
+          </div>
+          <div class="form-group">
+            <label for="email">Email <span style="color:var(--danger)">*</span></label>
+            <input type="email" id="email" placeholder="your@email.com" autocomplete="email" required>
+          </div>
+          <div class="form-group">
+            <label for="password">Password <span style="color:var(--danger)">*</span></label>
+            <input type="password" id="password" placeholder="Min. 6 characters" autocomplete="new-password" required minlength="6">
+          </div>
+          <div class="form-group">
+            <label for="confirm_password">Confirm Password <span style="color:var(--danger)">*</span></label>
+            <input type="password" id="confirm_password" placeholder="Repeat password" autocomplete="new-password" required>
+          </div>
+          <button type="submit" class="btn btn-primary" id="registerBtn">
+            Create Account
+          </button>
+        </form>
+
+        <div class="auth-footer">
+          Already have an account? <a href="/">Sign in</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    if (localStorage.getItem('token')) {
+      window.location.href = '/chat';
+    }
+
+    const form = document.getElementById('registerForm');
+    const errorMsg = document.getElementById('errorMsg');
+    const successMsg = document.getElementById('successMsg');
+    const registerBtn = document.getElementById('registerBtn');
+
+    function showError(msg) {
+      errorMsg.textContent = msg;
+      errorMsg.style.display = 'block';
+      successMsg.style.display = 'none';
+    }
+
+    function showSuccess(msg) {
+      successMsg.textContent = msg;
+      successMsg.style.display = 'block';
+      errorMsg.style.display = 'none';
+    }
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      errorMsg.style.display = 'none';
+      successMsg.style.display = 'none';
+
+      const password = document.getElementById('password').value;
+      const confirm = document.getElementById('confirm_password').value;
+
+      if (password !== confirm) {
+        showError('Passwords do not match');
+        return;
+      }
+
+      registerBtn.disabled = true;
+      registerBtn.textContent = 'Creating account...';
+
+      const payload = {
+        username: document.getElementById('username').value.trim(),
+        email: document.getElementById('email').value.trim(),
+        password,
+        full_name: document.getElementById('full_name').value.trim(),
+      };
+
+      try {
+        const res = await fetch('/auth/register', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+
+        const data = await res.json();
+
+        if (!res.ok) {
+          showError(data.detail || 'Registration failed');
+          return;
+        }
+
+        showSuccess('Account created! Redirecting to login...');
+        setTimeout(() => (window.location.href = '/'), 1500);
+      } catch (err) {
+        showError('Network error. Is the server running?');
+      } finally {
+        registerBtn.disabled = false;
+        registerBtn.textContent = 'Create Account';
+      }
+    });
+  </script>
+</body>
+</html>

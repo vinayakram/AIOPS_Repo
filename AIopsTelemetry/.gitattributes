@@ -1,0 +1,23 @@
+# Normalize line endings to LF in the repository; convert to CRLF on checkout on Windows
+* text=auto eol=lf
+
+# Force LF for Python source and config files
+*.py        text eol=lf
+*.toml      text eol=lf
+*.txt       text eol=lf
+*.md        text eol=lf
+*.yml       text eol=lf
+*.yaml      text eol=lf
+*.json      text eol=lf
+*.html      text eol=lf
+*.css       text eol=lf
+*.js        text eol=lf
+*.env       text eol=lf
+.gitignore  text eol=lf
+
+# Binary files — no EOL conversion
+*.db        binary
+*.sqlite    binary
+*.png       binary
+*.jpg       binary
+*.jpeg      binary

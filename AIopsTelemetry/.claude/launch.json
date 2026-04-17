@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "aiops-telemetry",
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["-m", "uvicorn", "server.main:app", "--reload", "--port", "7000"],
+      "port": 7000
+    }
+  ]
+}

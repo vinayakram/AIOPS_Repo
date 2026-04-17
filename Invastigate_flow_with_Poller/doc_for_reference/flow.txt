@@ -1,0 +1,32 @@
+Server starts (uvicorn)
+    │
+    ▼
+lifespan() runs
+    │
+    ├── init_db()
+    ├── poller.start()
+    │       │
+    │       └── asyncio.create_task(self._poll_loop())   ← BACKGROUND TASK
+    │                                                       (does NOT block)
+    │
+    ▼
+yield  ← server is now accepting HTTP requests
+    │
+    │   Meanwhile, in the background:
+    │   ┌──────────────────────────────────────────┐
+    │   │  _poll_loop() running as asyncio.Task     │
+    │   │                                           │
+    │   │  while True:                              │
+    │   │      fetch incidents from AIOps           │
+    │   │      for each new incident:               │
+    │   │          await orchestrator.investigate()  │
+    │   │      await asyncio.sleep(20)              │
+    │   └──────────────────────────────────────────┘
+    │
+    │   At the SAME TIME, FastAPI handles:
+    │   ┌──────────────────────────────────────────┐
+    │   │  POST /api/v1/analyze     ← frontend      │
+    │   │  GET  /api/v1/traces/...  ← frontend      │
+    │   │  GET  /api/v1/poller/status               │
+    │   │  POST /api/v1/investigate ← direct call    │
+    │   └──────────────────────────────────────────┘

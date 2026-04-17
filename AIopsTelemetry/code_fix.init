@@ -1,0 +1,5 @@
+[project]
+name         = AIops Telemetry
+description  = LangGraph agent observability platform — trace ingestion, NFR issue detection, escalation and autofix
+git_remote   = origin
+default_branch = main

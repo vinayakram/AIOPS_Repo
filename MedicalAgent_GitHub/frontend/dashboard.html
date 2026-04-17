@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MedicalRAG — Trace Dashboard</title>
+  <link rel="stylesheet" href="/static/css/styles.css" />
+  <style>
+    /* ── Layout ──────────────────────────────────────────────────────────── */
+    body { background: #f0f4f8; }
+
+    .dash-header {
+      background: linear-gradient(135deg, #1a3a5c 0%, #2563eb 100%);
+      color: #fff;
+      padding: 1rem 2rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      box-shadow: 0 2px 8px rgba(0,0,0,.25);
+    }
+    .dash-header h1 { font-size: 1.3rem; margin: 0; letter-spacing: .5px; }
+    .dash-header nav a {
+      color: rgba(255,255,255,.85);
+      text-decoration: none;
+      margin-left: 1.5rem;
+      font-size: .9rem;
+      transition: color .15s;
+    }
+    .dash-header nav a:hover { color: #fff; }
+
+    .dash-body { max-width: 1300px; margin: 2rem auto; padding: 0 1.5rem; }
+
+    /* ── Stat cards ──────────────────────────────────────────────────────── */
+    .stat-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 1rem;
+      margin-bottom: 2rem;
+    }
+    .stat-card {
+      background: #fff;
+      border-radius: 12px;
+      padding: 1.2rem 1.4rem;
+      box-shadow: 0 1px 4px rgba(0,0,0,.08);
+      border-left: 4px solid #2563eb;
+    }
+    .stat-card.green { border-left-color: #16a34a; }
+    .stat-card.amber { border-left-color: #d97706; }
+    .stat-card.purple { border-left-color: #7c3aed; }
+    .stat-card .label { font-size: .75rem; color: #6b7280; text-transform: uppercase; letter-spacing: .5px; }
+    .stat-card .value { font-size: 2rem; font-weight: 700; color: #111827; line-height: 1.2; margin-top: .2rem; }
+    .stat-card .sub { font-size: .78rem; color: #6b7280; margin-top: .2rem; }
+
+    /* ── Langfuse badge ──────────────────────────────────────────────────── */
+    .lf-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: .4rem;
+      padding: .3rem .8rem;
+      border-radius: 20px;
+      font-size: .8rem;
+      font-weight: 600;
+    }
+    .lf-badge.on  { background: #dcfce7; color: #15803d; }
+    .lf-badge.off { background: #fef3c7; color: #92400e; }
+    .lf-badge .dot { width: 8px; height: 8px; border-radius: 50%; }
+    .lf-badge.on  .dot { background: #16a34a; }
+    .lf-badge.off .dot { background: #d97706; }
+
+    /* ── Pipeline map ────────────────────────────────────────────────────── */
+    .section-title {
+      font-size: 1rem;
+      font-weight: 700;
+      color: #1e3a5f;
+      margin-bottom: .75rem;
+      display: flex;
+      align-items: center;
+      gap: .5rem;
+    }
+    .pipeline-map {
+      background: #fff;
+      border-radius: 12px;
+      padding: 1.4rem 1.8rem;
+      box-shadow: 0 1px 4px rgba(0,0,0,.08);
+      margin-bottom: 2rem;
+      overflow-x: auto;
+    }
+    .pipe-flow {
+      display: flex;
+      align-items: center;
+      gap: 0;
+      min-width: 700px;
+    }
+    .pipe-node {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      flex: 1;
+    }
+    .pipe-box {
+      background: #eff6ff;
+      border: 2px solid #93c5fd;
+      border-radius: 10px;
+      padding: .55rem 1rem;
+      text-align: center;
+      width: 100%;
+      max-width: 140px;
+      cursor: default;
+      transition: background .15s, border-color .15s;
+    }
+    .pipe-box:hover { background: #dbeafe; border-color: #2563eb; }
+    .pipe-box .step-icon { font-size: 1.4rem; }
+    .pipe-box .step-name { font-size: .72rem; font-weight: 700; color: #1e40af; margin-top: .15rem; }
+    .pipe-box .step-time {
+      font-size: .7rem;
+      color: #6b7280;
+      margin-top: .1rem;
+      min-height: 1em;
+      transition: color .2s;
+    }
+    .pipe-box.active { background: #dbeafe; border-color: #2563eb; }
+    .pipe-box.active .step-time { color: #2563eb; font-weight: 600; }
+    .pipe-arrow {
+      color: #93c5fd;
+      font-size: 1.5rem;
+      flex-shrink: 0;
+      margin: 0 .2rem;
+      line-height: 1;
+      margin-bottom: 1.5rem;
+    }
+
+    /* ── Trace table ─────────────────────────────────────────────────────── */
+    .traces-section {
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 1px 4px rgba(0,0,0,.08);
+      overflow: hidden;
+    }
+    .traces-head {
+      padding: 1rem 1.4rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid #e5e7eb;
+    }
+    .btn-refresh {
+      background: #2563eb;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      padding: .4rem .9rem;
+      font-size: .82rem;
+      cursor: pointer;
+      transition: background .15s;
+    }
+    .btn-refresh:hover { background: #1d4ed8; }
+
+    table { width: 100%; border-collapse: collapse; font-size: .85rem; }
+    thead th {
+      background: #f8fafc;
+      color: #374151;
+      font-weight: 600;
+      padding: .7rem 1rem;
+      text-align: left;
+      border-bottom: 1px solid #e5e7eb;
+      white-space: nowrap;
+    }
+    tbody tr { border-bottom: 1px solid #f3f4f6; cursor: pointer; transition: background .1s; }
+    tbody tr:hover { background: #f0f9ff; }
+    tbody td { padding: .65rem 1rem; vertical-align: middle; }
+    .td-query { max-width: 260px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .badge {
+      display: inline-block;
+      padding: .15rem .55rem;
+      border-radius: 20px;
+      font-size: .72rem;
+      font-weight: 600;
+    }
+    .badge.citation { background: #dcfce7; color: #15803d; }
+    .badge.similarity { background: #eff6ff; color: #1d4ed8; }
+    .badge.na { background: #f3f4f6; color: #6b7280; }
+
+    .dur-bar {
+      display: flex;
+      align-items: center;
+      gap: .5rem;
+    }
+    .dur-fill {
+      height: 6px;
+      border-radius: 3px;
+      background: #2563eb;
+      min-width: 4px;
+    }
+    .dur-label { font-size: .78rem; color: #374151; white-space: nowrap; }
+
+    .lf-link { color: #7c3aed; text-decoration: none; font-size: .78rem; }
+    .lf-link:hover { text-decoration: underline; }
+
+    /* ── Trace detail panel ──────────────────────────────────────────────── */
+    .detail-panel {
+      display: none;
+      background: #f8fafc;
+      border-top: 1px solid #e5e7eb;
+      padding: 1rem 1.4rem;
+      animation: fadeIn .15s;
+    }
+    .detail-panel.open { display: block; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; } }
+
+    .step-bars { display: flex; flex-direction: column; gap: .5rem; }
+    .step-row { display: flex; align-items: center; gap: .75rem; }
+    .step-label { width: 160px; font-size: .8rem; color: #374151; text-align: right; flex-shrink: 0; }
+    .step-bar-wrap { flex: 1; background: #e5e7eb; border-radius: 4px; height: 18px; overflow: hidden; position: relative; }
+    .step-bar-fill {
+      height: 100%;
+      border-radius: 4px;
+      background: #2563eb;
+      transition: width .4s ease;
+    }
+    .step-bar-fill.pubmed_fetch    { background: #0ea5e9; }
+    .step-bar-fill.embedding       { background: #8b5cf6; }
+    .step-bar-fill.pagerank        { background: #f59e0b; }
+    .step-bar-fill.faiss_retrieval { background: #10b981; }
+    .step-bar-fill.openai_generation { background: #ef4444; }
+    .step-ms { width: 72px; font-size: .78rem; color: #6b7280; flex-shrink: 0; }
+
+    .answer-preview {
+      margin-top: .8rem;
+      padding: .7rem 1rem;
+      background: #fff;
+      border-left: 3px solid #2563eb;
+      border-radius: 6px;
+      font-size: .82rem;
+      color: #374151;
+      line-height: 1.5;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 3rem;
+      color: #9ca3af;
+    }
+    .empty-state .icon { font-size: 2.5rem; }
+
+    #loading { text-align: center; padding: 2rem; color: #6b7280; }
+  </style>
+</head>
+<body>
+
+<!-- ── Header ──────────────────────────────────────────────────────────────── -->
+<header class="dash-header">
+  <h1>🔬 MedicalRAG — Trace Dashboard</h1>
+  <nav>
+    <a href="/chat">💬 Chat</a>
+    <a href="/" id="logout-link">🚪 Logout</a>
+  </nav>
+</header>
+
+<div class="dash-body">
+
+  <!-- ── Stat cards ─────────────────────────────────────────────────────────── -->
+  <div class="stat-grid" id="stat-grid">
+    <div class="stat-card">
+      <div class="label">Total Queries</div>
+      <div class="value" id="stat-total">—</div>
+      <div class="sub">all time</div>
+    </div>
+    <div class="stat-card green">
+      <div class="label">Avg Latency</div>
+      <div class="value" id="stat-latency">—</div>
+      <div class="sub">ms end-to-end</div>
+    </div>
+    <div class="stat-card amber">
+      <div class="label">Avg Articles</div>
+      <div class="value" id="stat-articles">—</div>
+      <div class="sub">fetched per query</div>
+    </div>
+    <div class="stat-card purple">
+      <div class="label">Citation PageRank</div>
+      <div class="value" id="stat-citation">—</div>
+      <div class="sub">% of queries</div>
+    </div>
+    <div class="stat-card" style="border-left-color:#6b7280">
+      <div class="label">Langfuse</div>
+      <div class="value" style="font-size:1rem; margin-top:.5rem" id="lf-status">—</div>
+      <div class="sub" id="lf-host"></div>
+    </div>
+  </div>
+
+  <!-- ── Pipeline map ───────────────────────────────────────────────────────── -->
+  <div class="section-title">⚡ Pipeline Architecture</div>
+  <div class="pipeline-map">
+    <div class="pipe-flow">
+      <div class="pipe-node">
+        <div class="pipe-box" id="pbox-pubmed_fetch">
+          <div class="step-icon">🔍</div>
+          <div class="step-name">PubMed Fetch</div>
+          <div class="step-time" id="pt-pubmed_fetch">eutils API</div>
+        </div>
+      </div>
+      <div class="pipe-arrow">→</div>
+      <div class="pipe-node">
+        <div class="pipe-box" id="pbox-embedding">
+          <div class="step-icon">🧠</div>
+          <div class="step-name">Embedding</div>
+          <div class="step-time" id="pt-embedding">MiniLM-L6</div>
+        </div>
+      </div>
+      <div class="pipe-arrow">→</div>
+      <div class="pipe-node">
+        <div class="pipe-box" id="pbox-pagerank">
+          <div class="step-icon">📊</div>
+          <div class="step-name">PageRank</div>
+          <div class="step-time" id="pt-pagerank">citation / sim</div>
+        </div>
+      </div>
+      <div class="pipe-arrow">→</div>
+      <div class="pipe-node">
+        <div class="pipe-box" id="pbox-faiss_retrieval">
+          <div class="step-icon">⚡</div>
+          <div class="step-name">FAISS Retrieval</div>
+          <div class="step-time" id="pt-faiss_retrieval">cosine sim</div>
+        </div>
+      </div>
+      <div class="pipe-arrow">→</div>
+      <div class="pipe-node">
+        <div class="pipe-box" id="pbox-openai_generation">
+          <div class="step-icon">✨</div>
+          <div class="step-name">OpenAI Gen</div>
+          <div class="step-time" id="pt-openai_generation">gpt-5-nano</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Traces table ───────────────────────────────────────────────────────── -->
+  <div class="traces-section">
+    <div class="traces-head">
+      <div class="section-title" style="margin:0">📋 Recent Traces</div>
+      <button class="btn-refresh" onclick="loadAll()">↻ Refresh</button>
+    </div>
+
+    <div id="loading">Loading traces…</div>
+
+    <div id="traces-container" style="display:none">
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Query</th>
+            <th>User</th>
+            <th>Time</th>
+            <th>Duration</th>
+            <th>Articles</th>
+            <th>PageRank</th>
+            <th>Langfuse</th>
+          </tr>
+        </thead>
+        <tbody id="traces-body"></tbody>
+      </table>
+      <div id="empty-state" class="empty-state" style="display:none">
+        <div class="icon">🔭</div>
+        <p>No traces yet — run a query from the Chat page.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  const TOKEN = localStorage.getItem('token');
+  if (!TOKEN) { window.location.href = '/'; }
+
+  document.getElementById('logout-link').addEventListener('click', e => {
+    e.preventDefault();
+    localStorage.removeItem('token');
+    localStorage.removeItem('username');
+    window.location.href = '/';
+  });
+
+  // ── helpers ───────────────────────────────────────────────────────────────
+
+  function fmt(ms) {
+    if (ms == null) return '—';
+    if (ms < 1000) return ms.toFixed(0) + ' ms';
+    return (ms / 1000).toFixed(2) + ' s';
+  }
+
+  function timeAgo(iso) {
+    if (!iso) return '—';
+    const diff = (Date.now() - new Date(iso + 'Z').getTime()) / 1000;
+    if (diff < 60) return Math.round(diff) + 's ago';
+    if (diff < 3600) return Math.round(diff / 60) + 'm ago';
+    if (diff < 86400) return Math.round(diff / 3600) + 'h ago';
+    return new Date(iso + 'Z').toLocaleDateString();
+  }
+
+  // ── load stats ────────────────────────────────────────────────────────────
+
+  async function loadStats() {
+    try {
+      const r = await fetch('/api/traces/stats', {
+        headers: { Authorization: 'Bearer ' + TOKEN }
+      });
+      const d = await r.json();
+      document.getElementById('stat-total').textContent = d.total_queries;
+      document.getElementById('stat-latency').textContent = fmt(d.avg_duration_ms);
+      document.getElementById('stat-articles').textContent = d.avg_articles.toFixed(1);
+      document.getElementById('stat-citation').textContent = d.citation_pct + '%';
+
+      const lfEl = document.getElementById('lf-status');
+      const lfHost = document.getElementById('lf-host');
+      if (d.langfuse_enabled) {
+        lfEl.innerHTML = '<span class="lf-badge on"><span class="dot"></span>Connected</span>';
+        lfHost.innerHTML = `<a href="${d.langfuse_host}" target="_blank" style="color:#7c3aed;font-size:.72rem">${d.langfuse_host}</a>`;
+      } else {
+        lfEl.innerHTML = '<span class="lf-badge off"><span class="dot"></span>Disabled</span>';
+        lfHost.textContent = 'Set LANGFUSE keys in .env';
+      }
+    } catch (err) {
+      console.error('Stats error', err);
+    }
+  }
+
+  // ── pipeline map highlight ────────────────────────────────────────────────
+
+  const STEP_NAMES = ['pubmed_fetch', 'embedding', 'pagerank', 'faiss_retrieval', 'openai_generation'];
+
+  function highlightMap(steps) {
+    // reset
+    STEP_NAMES.forEach(n => {
+      const box = document.getElementById('pbox-' + n);
+      const pt  = document.getElementById('pt-' + n);
+      if (box) box.classList.remove('active');
+      if (pt)  pt.textContent = defaultStepLabel(n);
+    });
+    if (!steps || !steps.length) return;
+    const maxMs = Math.max(...steps.map(s => s.duration_ms || 0));
+    steps.forEach(s => {
+      const box = document.getElementById('pbox-' + s.name);
+      const pt  = document.getElementById('pt-' + s.name);
+      if (box) box.classList.add('active');
+      if (pt)  pt.textContent = fmt(s.duration_ms);
+    });
+  }
+
+  function defaultStepLabel(name) {
+    const map = {
+      pubmed_fetch: 'eutils API',
+      embedding: 'MiniLM-L6',
+      pagerank: 'citation / sim',
+      faiss_retrieval: 'cosine sim',
+      openai_generation: 'gpt-5-nano',
+    };
+    return map[name] || name;
+  }
+
+  // ── load traces ───────────────────────────────────────────────────────────
+
+  let allTraces = [];
+  let openRow = null;
+
+  async function loadAll() {
+    document.getElementById('loading').style.display = 'block';
+    document.getElementById('traces-container').style.display = 'none';
+
+    await loadStats();
+
+    try {
+      const r = await fetch('/api/traces?limit=100', {
+        headers: { Authorization: 'Bearer ' + TOKEN }
+      });
+      const d = await r.json();
+      allTraces = d.traces || [];
+      renderTable(allTraces);
+    } catch (err) {
+      console.error('Traces error', err);
+    }
+
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('traces-container').style.display = 'block';
+  }
+
+  function renderTable(traces) {
+    const tbody = document.getElementById('traces-body');
+    tbody.innerHTML = '';
+
+    if (!traces.length) {
+      document.getElementById('empty-state').style.display = 'block';
+      return;
+    }
+    document.getElementById('empty-state').style.display = 'none';
+
+    const maxDur = Math.max(...traces.map(t => t.total_duration_ms || 0)) || 1;
+
+    traces.forEach((t, i) => {
+      // ── main row ──────────────────────────────────────────────────────────
+      const tr = document.createElement('tr');
+      tr.id = 'row-' + t.trace_id;
+      tr.onclick = () => toggleDetail(t, tr);
+
+      const barPct = Math.max(4, ((t.total_duration_ms || 0) / maxDur) * 100);
+      const pmBadge = t.pagerank_method === 'citation'
+        ? '<span class="badge citation">citation</span>'
+        : t.pagerank_method === 'similarity'
+        ? '<span class="badge similarity">similarity</span>'
+        : '<span class="badge na">n/a</span>';
+
+      const lfCell = t.langfuse_url
+        ? `<a class="lf-link" href="${t.langfuse_url}" target="_blank" onclick="e=event;e.stopPropagation()">↗ View</a>`
+        : '<span style="color:#d1d5db">—</span>';
+
+      tr.innerHTML = `
+        <td style="color:#9ca3af;font-size:.78rem">${traces.length - i}</td>
+        <td class="td-query" title="${escHtml(t.query)}">${escHtml(t.query)}</td>
+        <td style="color:#6b7280;font-size:.8rem">${escHtml(t.user_id || '—')}</td>
+        <td style="color:#6b7280;font-size:.8rem;white-space:nowrap">${timeAgo(t.created_at)}</td>
+        <td>
+          <div class="dur-bar">
+            <div class="dur-fill" style="width:${barPct}px;max-width:100px"></div>
+            <span class="dur-label">${fmt(t.total_duration_ms)}</span>
+          </div>
+        </td>
+        <td style="text-align:center">${t.articles_fetched ?? '—'}</td>
+        <td>${pmBadge}</td>
+        <td>${lfCell}</td>
+      `;
+      tbody.appendChild(tr);
+
+      // ── detail row ────────────────────────────────────────────────────────
+      const detailTr = document.createElement('tr');
+      detailTr.id = 'detail-' + t.trace_id;
+      const detailTd = document.createElement('td');
+      detailTd.colSpan = 8;
+      detailTd.style.padding = '0';
+
+      const panel = document.createElement('div');
+      panel.className = 'detail-panel';
+      panel.id = 'panel-' + t.trace_id;
+      panel.innerHTML = buildDetailHTML(t);
+
+      detailTd.appendChild(panel);
+      detailTr.appendChild(detailTd);
+      tbody.appendChild(detailTr);
+    });
+
+    // Highlight pipeline map with the most recent trace
+    if (traces.length) highlightMap(traces[0].steps);
+  }
+
+  function buildDetailHTML(t) {
+    const steps = t.steps || [];
+    const total = t.total_duration_ms || 1;
+
+    const bars = steps.map(s => {
+      const pct = Math.max(2, Math.min(100, ((s.duration_ms || 0) / total) * 100));
+      return `
+        <div class="step-row">
+          <div class="step-label">${escHtml(s.name)}</div>
+          <div class="step-bar-wrap">
+            <div class="step-bar-fill ${escHtml(s.name)}" style="width:${pct}%"></div>
+          </div>
+          <div class="step-ms">${fmt(s.duration_ms)}</div>
+        </div>`;
+    }).join('');
+
+    const answerPrev = t.answer_preview
+      ? `<div class="answer-preview">💬 ${escHtml(t.answer_preview)}${t.answer_preview.length >= 300 ? '…' : ''}</div>`
+      : '';
+
+    const traceIdLine = `<div style="font-size:.72rem;color:#9ca3af;margin-top:.6rem">trace_id: ${escHtml(t.trace_id)}</div>`;
+
+    return `
+      <div style="font-size:.82rem;font-weight:600;color:#374151;margin-bottom:.6rem">
+        Step Timing Breakdown — total ${fmt(total)}
+      </div>
+      <div class="step-bars">${bars || '<div style="color:#9ca3af;font-size:.8rem">No step data</div>'}</div>
+      ${answerPrev}
+      ${traceIdLine}
+    `;
+  }
+
+  function toggleDetail(t, clickedTr) {
+    const panel = document.getElementById('panel-' + t.trace_id);
+    if (!panel) return;
+
+    // Update pipeline map to reflect this trace
+    highlightMap(t.steps);
+
+    const isOpen = panel.classList.contains('open');
+
+    // Close any currently open panel
+    if (openRow) {
+      const prev = document.getElementById('panel-' + openRow);
+      if (prev) prev.classList.remove('open');
+    }
+
+    if (!isOpen || openRow !== t.trace_id) {
+      panel.classList.add('open');
+      openRow = t.trace_id;
+    } else {
+      openRow = null;
+    }
+  }
+
+  function escHtml(s) {
+    if (!s) return '';
+    return String(s)
+      .replace(/&/g,'&amp;')
+      .replace(/</g,'&lt;')
+      .replace(/>/g,'&gt;')
+      .replace(/"/g,'&quot;');
+  }
+
+  // ── init ──────────────────────────────────────────────────────────────────
+  loadAll();
+</script>
+</body>
+</html>

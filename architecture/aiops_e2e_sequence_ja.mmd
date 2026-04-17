@@ -1,0 +1,23 @@
+sequenceDiagram
+  autonumber
+
+  participant MA as AIアプリケーション
+  participant AT as AIOpsテレメトリ基盤
+
+  box rgb(230, 255, 235)
+    participant INV as ログ分析エージェント層
+  end
+
+  participant RM as AIOPSリメディエーション層
+
+  MA->>AT: テレメトリ取り込みリクエスト（トレース + スパン）
+  AT->>AT: エスカレーションループ + NFR検知\n課題を作成
+  AT->>INV: 分析連携\n（trace_id, timestamp, agent_name）
+  INV->>INV: 5エージェントパイプライン + trace_resultsを永続化
+  INV-->>AT: RCA + 推奨対応ペイロード
+  AT->>AT: issue_analysesへ保存 + ダッシュボードへ反映
+
+  Note over AT,RM: リメディエーションフローは分離されており、通常はUI起点で実行
+  AT->>RM: リメディエーションワークフロー連携呼び出し
+  RM->>RM: プロジェクト解決 -> 計画 -> 実装 -> レビュー -> PR
+  RM-->>AT: ステータス + 成果物更新

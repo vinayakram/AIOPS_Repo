@@ -1,0 +1,10 @@
+.env
+.venv/
+.pyenv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+runs/
+managed_repos/

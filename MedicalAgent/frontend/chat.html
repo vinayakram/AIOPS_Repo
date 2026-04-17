@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MedicalRAG — Research Chat</title>
+  <link rel="stylesheet" href="/static/css/styles.css">
+</head>
+<body>
+  <div class="app-wrap">
+    <!-- Header -->
+    <header class="app-header">
+      <div class="header-brand">
+        <span class="logo">⚕️</span>
+        <span>MedicalRAG</span>
+      </div>
+      <div class="header-user">
+        <span class="user-badge" id="userBadge">User</span>
+        <a href="/dashboard" style="color:#93c5fd;text-decoration:none;font-size:.85rem;margin-right:.75rem">📊 Dashboard</a>
+        <button class="btn-llm-toggle" id="llmToggleBtn" onclick="toggleLLMAccess()" title="Toggle LLM access for demo error scenarios">⚡ LLM: Enabled</button>
+        <button class="btn-logout" onclick="logout()">Sign Out</button>
+      </div>
+    </header>
+
+    <!-- Chat Messages -->
+    <main class="chat-body" id="chatBody">
+      <div class="chat-empty" id="emptyState">
+        <div class="empty-icon">🔬</div>
+        <h2>Medical Research Assistant</h2>
+        <p>Ask any medical or clinical question. I'll search PubMed, rank results using PageRank + FAISS similarity, and generate an evidence-based answer using Claude.</p>
+        <div class="example-queries">
+          <button class="example-btn" onclick="fillQuery(this)">Effect of metformin on diabetes</button>
+          <button class="example-btn" onclick="fillQuery(this)">COVID-19 vaccine efficacy studies</button>
+          <button class="example-btn" onclick="fillQuery(this)">Alzheimer's disease treatment options</button>
+          <button class="example-btn" onclick="fillQuery(this)">CRISPR gene therapy cancer</button>
+          <button class="example-btn" onclick="fillQuery(this)">Gut microbiome mental health</button>
+        </div>
+      </div>
+    </main>
+
+    <!-- Input Area -->
+    <footer class="input-wrap">
+      <div class="input-controls">
+        <label style="font-size:.8rem;font-weight:600;color:var(--muted)">Articles:</label>
+        <select id="maxArticles" title="Number of PubMed articles to retrieve">
+          <option value="20">20</option>
+          <option value="30" selected>30</option>
+          <option value="50">50</option>
+        </select>
+        <label style="font-size:.8rem;font-weight:600;color:var(--muted)">Top-K:</label>
+        <select id="topK" title="Number of top articles used as context">
+          <option value="3">3</option>
+          <option value="5" selected>5</option>
+          <option value="8">8</option>
+        </select>
+      </div>
+      <div class="input-row">
+        <textarea
+          id="queryInput"
+          placeholder="Ask a medical research question..."
+          rows="1"
+        ></textarea>
+        <button class="btn-send" id="sendBtn" onclick="sendQuery()" title="Send (Enter)">➤</button>
+      </div>
+      <div class="input-hint">Press Enter to send · Shift+Enter for new line</div>
+    </footer>
+  </div>
+
+  <script src="/static/js/app.js"></script>
+</body>
+</html>

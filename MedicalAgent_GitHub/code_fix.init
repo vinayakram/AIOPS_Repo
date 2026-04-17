@@ -1,0 +1,5 @@
+[project]
+name         = Medical Agent
+description  = Evidence-based medical RAG agent — PubMed retrieval, FAISS + PageRank, Claude/GPT-4o answer generation
+git_remote   = origin
+default_branch = main

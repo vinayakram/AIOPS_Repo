@@ -1,0 +1,242 @@
+{
+  "source": "pipeline",
+  "message": "Pipeline executed for trace 'e7fa7bf5e6b047d1829eb0cfd09c8ca6'",
+  "data": {
+    "trace_id": "e7fa7bf5e6b047d1829eb0cfd09c8ca6",
+    "normalization": {
+      "incident": {
+        "error_type": "NO_ERROR",
+        "error_summary": "No error detected",
+        "timestamp": "2026-04-10 09:49:55",
+        "confidence": 1.0,
+        "entities": {
+          "agent_id": "medical-rag",
+          "service": null,
+          "trace_id": "e7fa7bf5e6b047d1829eb0cfd09c8ca6"
+        },
+        "signals": []
+      },
+      "data_source": "langfuse",
+      "raw_log_count": 8,
+      "processing_time_ms": 3393.09
+    },
+    "correlation": null,
+    "error_analysis": null,
+    "rca": null,
+    "recommendations": null,
+    "pipeline_steps": [
+      {
+        "agent": "normalization",
+        "status": "completed",
+        "processing_time_ms": 3393.38,
+        "error": null
+      }
+    ],
+    "total_processing_time_ms": 3414.51,
+    "completed": true
+  }
+}
+
+
+{
+  "source": "pipeline",
+  "message": "Pipeline executed for trace '8e3d196e9bda4fd09a4833740db8d360'",
+  "data": {
+    "trace_id": "8e3d196e9bda4fd09a4833740db8d360",
+    "normalization": {
+      "incident": {
+        "error_type": "AI_AGENT",
+        "error_summary": "LLM access is disabled in 'medical-rag' service due to demo error mode.",
+        "timestamp": "2026-04-10T04:19:55.204Z",
+        "confidence": 1.0,
+        "entities": {
+          "agent_id": "medical-rag",
+          "service": "medical-rag",
+          "trace_id": "8e3d196e9bda4fd09a4833740db8d360"
+        },
+        "signals": [
+          "LLM_access_disabled"
+        ]
+      },
+      "data_source": "langfuse",
+      "raw_log_count": 7,
+      "processing_time_ms": 4924.05
+    },
+    "correlation": {
+      "correlation": {
+        "correlation_chain": [
+          "LLM access is disabled in 'medical-rag' service due to demo error mode"
+        ],
+        "peer_components": [],
+        "timeline": [
+          {
+            "timestamp": "2026-04-10T04:19:55.204Z",
+            "event": "LLM access is disabled (demo error mode). Click 'Enable LLM Access' in the chat UI to restore.",
+            "service": "medical-rag"
+          }
+        ],
+        "root_cause_candidate": {
+          "component": "medical-rag",
+          "confidence": 1.0,
+          "reason": "The error is explicitly stated as LLM access being disabled in 'medical-rag' service due to demo error mode, with no upstream dependencies or external factors indicated in the logs."
+        },
+        "analysis_target": "Agent"
+      },
+      "data_sources": [
+        "prometheus",
+        "langfuse"
+      ],
+      "total_logs_analyzed": 13,
+      "processing_time_ms": 67341.35
+    },
+    "error_analysis": {
+      "analysis": {
+        "analysis_summary": "The 'medical-rag' service experienced a single error where LLM access was disabled due to demo error mode, impacting its functionality.",
+        "analysis_target": "Agent",
+        "errors": [
+          {
+            "error_id": "ERR-001",
+            "category": "configuration_error",
+            "severity": "high",
+            "component": "medical-rag",
+            "error_message": "LLM access is disabled (demo error mode). Click 'Enable LLM Access' in the chat UI to restore.",
+            "timestamp": "2026-04-10T04:19:55.204Z",
+            "evidence": "[langfuse:1] | ts=2026-04-10T04:19:55.204Z | svc=medical-rag | level=ERROR | msg=Trace 'medical-rag' | Error: LLM access is disabled (demo error mode). Click 'Enable LLM Access' in the chat UI to restore.",
+            "source": "langfuse"
+          }
+        ],
+        "error_patterns": [],
+        "error_impacts": [
+          {
+            "affected_service": "medical-rag",
+            "impact_description": "The service was unable to access the LLM, preventing it from processing queries that require LLM capabilities.",
+            "severity": "high"
+          }
+        ],
+        "error_propagation_path": [],
+        "confidence": 1.0
+      },
+      "rca_target": "Agent",
+      "data_sources": [
+        "langfuse"
+      ],
+      "total_logs_analyzed": 7,
+      "processing_time_ms": 5035.72
+    },
+    "rca": {
+      "rca": {
+        "rca_summary": "The root cause of the incident was a configuration error in the 'medical-rag' service where LLM access was disabled due to the service being set to demo error mode. This prevented the service from accessing the LLM, impacting its functionality.",
+        "root_cause": {
+          "category": "configuration",
+          "component": "medical-rag",
+          "description": "The 'medical-rag' service was configured in demo error mode, which disabled LLM access. This configuration setting directly caused the service to be unable to process queries requiring LLM capabilities.",
+          "evidence": [
+            "[langfuse:1] | ts=2026-04-10T04:19:55.204Z | svc=medical-rag | level=ERROR | msg=Trace 'medical-rag' | Error: LLM access is disabled (demo error mode). Click 'Enable LLM Access' in the chat UI to restore."
+          ],
+          "error_ids": [
+            "ERR-001"
+          ],
+          "confidence": 1.0
+        },
+        "causal_chain": [
+          {
+            "source_event": "medical-rag service set to demo error mode",
+            "target_event": "LLM access is disabled",
+            "link_type": "direct_cause",
+            "evidence": "[langfuse:1] | ts=2026-04-10T04:19:55.204Z | svc=medical-rag | level=ERROR | msg=Trace 'medical-rag' | Error: LLM access is disabled (demo error mode). Click 'Enable LLM Access' in the chat UI to restore."
+          },
+          {
+            "source_event": "LLM access is disabled",
+            "target_event": "medical-rag service unable to process LLM queries",
+            "link_type": "direct_cause",
+            "evidence": "[langfuse:1] | ts=2026-04-10T04:19:55.204Z | svc=medical-rag | level=ERROR | msg=Trace 'medical-rag' | Error: LLM access is disabled (demo error mode). Click 'Enable LLM Access' in the chat UI to restore."
+          }
+        ],
+        "contributing_factors": [],
+        "failure_timeline": [
+          {
+            "timestamp": "2026-04-10T04:19:55.204Z",
+            "component": "medical-rag",
+            "event": "LLM access is disabled due to demo error mode",
+            "is_root_cause": true
+          },
+          {
+            "timestamp": "2026-04-10T04:19:55.204Z",
+            "component": "medical-rag",
+            "event": "Service unable to process LLM queries",
+            "is_root_cause": false
+          }
+        ],
+        "blast_radius": [
+          "medical-rag"
+        ],
+        "confidence": 1.0
+      },
+      "rca_target": "Agent",
+      "data_sources": [
+        "langfuse"
+      ],
+      "total_logs_analyzed": 7,
+      "processing_time_ms": 7184.84
+    },
+    "recommendations": {
+      "recommendations": {
+        "recommendation_summary": "To resolve the incident, reconfigure the 'medical-rag' service to disable demo error mode and enable LLM access. This will restore the service's ability to process queries requiring LLM capabilities.",
+        "solutions": [
+          {
+            "rank": 1,
+            "title": "Disable Demo Error Mode in 'medical-rag' Service",
+            "description": "Reconfigure the 'medical-rag' service to disable demo error mode and enable LLM access. This will directly address the root cause by allowing the service to access the LLM and process queries as intended.",
+            "category": "config_change",
+            "effort": "quick_fix",
+            "addresses_root_cause": true,
+            "affected_components": [
+              "medical-rag"
+            ],
+            "expected_outcome": "The 'medical-rag' service will regain access to the LLM, restoring its full functionality.",
+            "error_ids": [
+              "ERR-001"
+            ]
+          }
+        ],
+        "root_cause_addressed": "The 'medical-rag' service was configured in demo error mode, which disabled LLM access.",
+        "confidence": 1.0
+      },
+      "processing_time_ms": 2263.87
+    },
+    "pipeline_steps": [
+      {
+        "agent": "normalization",
+        "status": "completed",
+        "processing_time_ms": 4924.43,
+        "error": null
+      },
+      {
+        "agent": "correlation",
+        "status": "completed",
+        "processing_time_ms": 67341.97,
+        "error": null
+      },
+      {
+        "agent": "error_analysis",
+        "status": "completed",
+        "processing_time_ms": 5036.11,
+        "error": null
+      },
+      {
+        "agent": "rca",
+        "status": "completed",
+        "processing_time_ms": 7185.24,
+        "error": null
+      },
+      {
+        "agent": "recommendation",
+        "status": "completed",
+        "processing_time_ms": 2264.15,
+        "error": null
+      }
+    ],
+    "total_processing_time_ms": 86791.04,
+    "completed": true
+  }
+}
