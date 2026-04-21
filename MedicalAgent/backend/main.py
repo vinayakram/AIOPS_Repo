@@ -1,8 +1,9 @@
 import json
+import time
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, Depends, HTTPException
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
@@ -14,6 +15,8 @@ from .tracing.langfuse_client import tracer
 from .tracing.aiops_client import send_trace as aiops_send_trace
 from .config import settings
 from . import state
+from .monitoring import metrics_response, observe_http_request, observe_query, track_query
+from .pod_guard import pod_resource_guard
 
 rag_pipeline: RAGPipeline = None
 
@@ -45,6 +48,43 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
+@app.middleware("http")
+async def pod_resource_guard_middleware(request, call_next):
+    if request.url.path not in {"/metrics", "/api/health"}:
+        state_snapshot = pod_resource_guard.check()
+        if state_snapshot.breached:
+            return JSONResponse(
+                status_code=503,
+                content={
+                    "detail": "application is not reachable",
+                    "reason": state_snapshot.reason,
+                    "cpu_percent": state_snapshot.cpu_percent,
+                    "cpu_threshold_percent": state_snapshot.cpu_threshold_percent,
+                    "memory_percent": state_snapshot.memory_percent,
+                    "memory_threshold_percent": state_snapshot.memory_threshold_percent,
+                },
+            )
+    return await call_next(request)
+
+
+@app.middleware("http")
+async def prometheus_metrics_middleware(request, call_next):
+    started_at = time.perf_counter()
+    status_code = 500
+    try:
+        response = await call_next(request)
+        status_code = response.status_code
+        return response
+    finally:
+        observe_http_request(
+            method=request.method,
+            path=request.url.path,
+            status_code=status_code,
+            duration_seconds=time.perf_counter() - started_at,
+        )
+
+
 app.include_router(auth_router)
 app.mount("/static", StaticFiles(directory="frontend/static"), name="static")
 
@@ -53,6 +93,7 @@ class QueryRequest(BaseModel):
     query: str
     max_articles: int = 30
     top_k: int = 5
+    scenario: str | None = None
 
 
 # ── Pages ─────────────────────────────────────────────────────────────────────
@@ -77,6 +118,11 @@ async def dashboard_page():
     return FileResponse("frontend/dashboard.html")
 
 
+@app.get("/demo-scenarios")
+async def demo_scenarios_page():
+    return FileResponse("frontend/scenarios.html")
+
+
 # ── Query API ─────────────────────────────────────────────────────────────────
 
 @app.post("/api/query")
@@ -92,13 +138,20 @@ async def query_endpoint(
 
     # Create Langfuse trace
     ctx = tracer.new_trace(query=req.query.strip(), user_id=current_user.username)
+    query_started_at = time.perf_counter()
 
     try:
-        result = rag_pipeline.query(
-            req.query.strip(), req.max_articles, req.top_k, trace_ctx=ctx
-        )
+        with track_query():
+            result = rag_pipeline.query(
+                req.query.strip(),
+                req.max_articles,
+                req.top_k,
+                trace_ctx=ctx,
+                scenario=req.scenario,
+            )
     except Exception as e:
         err_msg = str(e)
+        observe_query(query_started_at, "error")
         # Close Langfuse trace with ERROR level so sync derives correct status
         tracer.finish_trace(ctx, {"answer": ""}, error=err_msg)
         # Send error trace to AIops (non-blocking)
@@ -125,6 +178,8 @@ async def query_endpoint(
         except Exception as log_error:
             print(f"[Trace] Failed to save error trace log: {log_error}")
         raise HTTPException(status_code=500, detail=err_msg)
+
+    observe_query(query_started_at, "success", result.get("total_fetched", 0))
 
     # Finish Langfuse trace
     tracer.finish_trace(ctx, result)
@@ -246,8 +301,22 @@ async def set_llm_access(enabled: bool, current_user: User = Depends(get_current
 
 @app.get("/api/health")
 async def health():
+    resource_state = pod_resource_guard.check()
     return {
-        "status": "ok",
+        "status": "degraded" if resource_state.breached else "ok",
         "pipeline_ready": rag_pipeline is not None,
         "langfuse_enabled": tracer.enabled,
+        "pod_resource_guard": {
+            "breached": resource_state.breached,
+            "reason": resource_state.reason,
+            "cpu_percent": resource_state.cpu_percent,
+            "cpu_threshold_percent": resource_state.cpu_threshold_percent,
+            "memory_percent": resource_state.memory_percent,
+            "memory_threshold_percent": resource_state.memory_threshold_percent,
+        },
     }
+
+
+@app.get("/metrics")
+async def metrics():
+    return metrics_response()

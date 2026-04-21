@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from enum import Enum
-from typing import Optional
+from typing import Any, Optional
 
 from pydantic import BaseModel, Field, model_validator
 
@@ -60,6 +60,10 @@ class RecommendationRequest(BaseModel):
         ...,
         description="Name of the AI agent under investigation",
         examples=["summarizer-v2", "retrieval-agent"],
+    )
+    deployment_context: Optional[dict[str, Any]] = Field(
+        None,
+        description="Runtime and configuration context for concrete remediation recommendations.",
     )
 
 

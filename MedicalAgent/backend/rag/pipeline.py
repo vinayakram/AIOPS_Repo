@@ -12,6 +12,8 @@ from .faiss_index import FAISSIndex
 from .pagerank import PageRankScorer
 from ..pubmed.client import PubMedClient
 from ..config import settings
+from ..llm_rate_limit_demo import SCENARIO as LLM_RATE_LIMIT_SCENARIO
+from ..llm_rate_limit_demo import low_rate_limit_client
 from ..tracing.langfuse_client import tracer, TraceContext
 from .. import state as app_state
 
@@ -84,6 +86,7 @@ class RAGPipeline:
         max_articles: int = 30,
         top_k: int = 5,
         trace_ctx: TraceContext = None,
+        scenario: str | None = None,
     ) -> Dict:
         ctx = trace_ctx  # may be None if called without a trace
 
@@ -101,6 +104,37 @@ class RAGPipeline:
 
         if not (user_query or "").strip():
             raise ValueError("Query cannot be empty after removing unsupported special characters.")
+
+        if scenario == LLM_RATE_LIMIT_SCENARIO:
+            _start("openai_generation", {
+                "scenario": LLM_RATE_LIMIT_SCENARIO,
+                "deployment": low_rate_limit_client.deployment,
+                "model": low_rate_limit_client.model,
+                "limit_per_minute": low_rate_limit_client.limit,
+            })
+            llm_result = low_rate_limit_client.call(user_query)
+            answer = llm_result["answer"]
+            _end("openai_generation", {
+                "scenario": LLM_RATE_LIMIT_SCENARIO,
+                "deployment": low_rate_limit_client.deployment,
+                "model": low_rate_limit_client.model,
+                "current_window_hits": llm_result["current_window_hits"],
+                "limit_per_minute": llm_result["limit_per_minute"],
+                "remaining": llm_result["remaining"],
+                "answer_length": len(answer),
+            })
+            return {
+                "answer": answer,
+                "sources": [],
+                "total_fetched": 0,
+                "pagerank_method": "llm-rate-limit-azure",
+                "scenario": LLM_RATE_LIMIT_SCENARIO,
+                "deployment": low_rate_limit_client.deployment,
+                "model": low_rate_limit_client.model,
+                "current_window_hits": llm_result["current_window_hits"],
+                "limit_per_minute": llm_result["limit_per_minute"],
+                "remaining": llm_result["remaining"],
+            }
 
         if not app_state.llm_enabled:
             _start("openai_generation", {

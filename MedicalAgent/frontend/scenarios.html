@@ -1,0 +1,292 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>AIOps Demo Scenarios</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f6f8fb;
+      --panel: #ffffff;
+      --text: #172033;
+      --muted: #687386;
+      --line: #d9e0ea;
+      --blue: #1769e0;
+      --red: #c62828;
+      --green: #087a3b;
+      --amber: #a86400;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
+    header {
+      padding: 22px 28px 12px;
+      border-bottom: 1px solid var(--line);
+      background: var(--panel);
+    }
+    h1 { margin: 0 0 6px; font-size: 22px; letter-spacing: 0; }
+    header p { margin: 0; color: var(--muted); max-width: 980px; line-height: 1.5; }
+    main { padding: 22px 28px 36px; display: grid; gap: 18px; }
+    .toolbar, .grid, .log {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 16px;
+    }
+    .toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: end;
+    }
+    label { display: grid; gap: 5px; color: var(--muted); font-size: 12px; font-weight: 700; }
+    input {
+      min-width: 130px;
+      height: 36px;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      padding: 0 10px;
+      font-size: 14px;
+      color: var(--text);
+      background: #fff;
+    }
+    button {
+      height: 36px;
+      border: 1px solid transparent;
+      border-radius: 6px;
+      padding: 0 13px;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      background: var(--blue);
+      color: #fff;
+    }
+    button.secondary { background: #eef4ff; color: var(--blue); border-color: #b9cff8; }
+    button.danger { background: #fff0f0; color: var(--red); border-color: #efb8b8; }
+    button:disabled { opacity: .55; cursor: wait; }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(260px, 1fr));
+      gap: 14px;
+    }
+    .scenario {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 16px;
+      display: grid;
+      gap: 12px;
+      align-content: start;
+    }
+    .scenario h2 { margin: 0; font-size: 17px; }
+    .scenario p { margin: 0; color: var(--muted); line-height: 1.5; }
+    .controls { display: flex; flex-wrap: wrap; gap: 8px; align-items: end; }
+    .status {
+      min-height: 24px;
+      font-size: 13px;
+      color: var(--muted);
+    }
+    .status.ok { color: var(--green); }
+    .status.warn { color: var(--amber); }
+    .status.err { color: var(--red); }
+    pre {
+      margin: 0;
+      min-height: 260px;
+      max-height: 420px;
+      overflow: auto;
+      white-space: pre-wrap;
+      line-height: 1.45;
+      font-size: 12px;
+      color: #263246;
+    }
+    @media (max-width: 780px) {
+      .grid { grid-template-columns: 1fr; }
+      main, header { padding-left: 16px; padding-right: 16px; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>AIOps Demo Scenarios</h1>
+    <p>Trigger production-style incidents from MedicalAgent. The buttons call the real app APIs; AIopsTelemetry detects issues from traces and Prometheus metrics when scraping is configured.</p>
+  </header>
+  <main>
+    <section class="toolbar">
+      <label>Username <input id="username" value="admin" autocomplete="username"></label>
+      <label>Password <input id="password" value="admin" type="password" autocomplete="current-password"></label>
+      <button class="secondary" id="loginBtn">Login</button>
+      <span id="authStatus" class="status">Not logged in</span>
+    </section>
+
+    <section class="grid">
+      <article class="scenario">
+        <h2>Concurrent Users</h2>
+        <p>Launches many real `/api/query` calls in parallel. This drives p95 latency and max concurrency metrics.</p>
+        <div class="controls">
+          <label>Users <input id="loadUsers" type="number" min="1" max="200" value="40"></label>
+          <label>Requests <input id="loadRequests" type="number" min="1" max="500" value="80"></label>
+          <button id="loadBtn">Run Load</button>
+        </div>
+        <div id="loadStatus" class="status"></div>
+      </article>
+
+      <article class="scenario">
+        <h2>LLM Rate Limit</h2>
+        <p>Sends rapid calls to the low-rate Azure OpenAI deployment. Provider 429 responses are captured as trace errors and AIOps incidents.</p>
+        <div class="controls">
+          <label>Calls <input id="llmCalls" type="number" min="11" max="30" value="12"></label>
+          <button class="danger" id="llmBtn">Trigger LLM Limit</button>
+        </div>
+        <div id="llmStatus" class="status"></div>
+      </article>
+    </section>
+
+    <section class="log">
+      <pre id="log"></pre>
+    </section>
+  </main>
+
+  <script>
+    let token = "";
+    const prompts = [
+      "What are common symptoms of hypertension?",
+      "Summarize treatment options for type 2 diabetes.",
+      "What are warning signs for sepsis?",
+      "Explain asthma rescue inhaler usage.",
+      "What lifestyle advice helps high cholesterol?"
+    ];
+
+    const $ = id => document.getElementById(id);
+    const log = msg => {
+      const now = new Date().toLocaleTimeString();
+      $("log").textContent += `[${now}] ${msg}\n`;
+      $("log").scrollTop = $("log").scrollHeight;
+    };
+
+    async function login() {
+      const form = new URLSearchParams();
+      form.set("username", $("username").value);
+      form.set("password", $("password").value);
+      const res = await fetch("/auth/login", {
+        method: "POST",
+        headers: {"Content-Type": "application/x-www-form-urlencoded"},
+        body: form
+      });
+      if (!res.ok) throw new Error(`login failed: HTTP ${res.status}`);
+      const data = await res.json();
+      token = data.access_token;
+      $("authStatus").textContent = "Logged in";
+      $("authStatus").className = "status ok";
+      log("Authenticated.");
+    }
+
+    async function ensureLogin() {
+      if (!token) await login();
+    }
+
+    async function postQuery(payload) {
+      const res = await fetch("/api/query", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`,
+          "X-AIOPS-DEMO": payload.scenario || "load_test"
+        },
+        body: JSON.stringify(payload)
+      });
+      const text = await res.text();
+      let data = {};
+      try { data = text ? JSON.parse(text) : {}; } catch { data = {raw: text}; }
+      if (!res.ok) {
+        const detail = data.detail || data.raw || `HTTP ${res.status}`;
+        throw new Error(detail);
+      }
+      return data;
+    }
+
+    async function runLoad() {
+      await ensureLogin();
+      const users = Number($("loadUsers").value);
+      const total = Number($("loadRequests").value);
+      $("loadBtn").disabled = true;
+      $("loadStatus").textContent = "Running...";
+      $("loadStatus").className = "status warn";
+      const started = performance.now();
+      let ok = 0, failed = 0;
+      let next = 0;
+
+      async function worker(workerId) {
+        while (next < total) {
+          const index = next++;
+          const prompt = prompts[index % prompts.length];
+          try {
+            const data = await postQuery({query: prompt, max_articles: 30, top_k: 5});
+            ok++;
+            log(`load #${index + 1} ok trace=${(data.trace_id || "").slice(0, 8)}`);
+          } catch (err) {
+            failed++;
+            log(`load #${index + 1} failed: ${err.message}`);
+          }
+        }
+      }
+
+      await Promise.all(Array.from({length: users}, (_, i) => worker(i)));
+      const elapsed = ((performance.now() - started) / 1000).toFixed(1);
+      $("loadStatus").textContent = `Done: ${ok} ok, ${failed} failed, ${elapsed}s`;
+      $("loadStatus").className = failed ? "status warn" : "status ok";
+      $("loadBtn").disabled = false;
+    }
+
+    async function runLlmLimit() {
+      await ensureLogin();
+      const total = Number($("llmCalls").value);
+      $("llmBtn").disabled = true;
+          $("llmStatus").textContent = "Sending Azure OpenAI calls...";
+      $("llmStatus").className = "status warn";
+      let ok = 0, failed = 0;
+
+      for (let i = 0; i < total; i++) {
+        try {
+          const data = await postQuery({
+            query: `LLM low rate limit demo request ${i + 1}`,
+            max_articles: 1,
+            top_k: 1,
+            scenario: "llm_rate_limit"
+          });
+          ok++;
+          log(`llm #${i + 1} ok remaining=${data.remaining}`);
+        } catch (err) {
+          failed++;
+          log(`llm #${i + 1} failed: ${err.message}`);
+        }
+      }
+
+      $("llmStatus").textContent = `Done: ${ok} ok, ${failed} rate-limited/errors`;
+      $("llmStatus").className = failed ? "status err" : "status ok";
+      $("llmBtn").disabled = false;
+    }
+
+    $("loginBtn").addEventListener("click", () => login().catch(err => {
+      $("authStatus").textContent = err.message;
+      $("authStatus").className = "status err";
+      log(err.message);
+    }));
+    $("loadBtn").addEventListener("click", () => runLoad().catch(err => {
+      $("loadStatus").textContent = err.message;
+      $("loadStatus").className = "status err";
+      $("loadBtn").disabled = false;
+      log(err.message);
+    }));
+    $("llmBtn").addEventListener("click", () => runLlmLimit().catch(err => {
+      $("llmStatus").textContent = err.message;
+      $("llmStatus").className = "status err";
+      $("llmBtn").disabled = false;
+      log(err.message);
+    }));
+  </script>
+</body>
+</html>

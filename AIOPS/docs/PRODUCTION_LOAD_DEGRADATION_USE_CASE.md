@@ -197,10 +197,10 @@ Output:
 
 ## Recommended Implementation Increments
 
-1. Add a load-generation script and demo issue seed.
-2. Add NFR detection rules for p95 latency and 5xx rate.
-3. Add RCA prompt/context assembly for traces plus system metrics.
-4. Add remediation-type classification in the plan output.
+1. Add a load-generation script and demo issue seed. Status: initial script added at `MedicalAgent/scripts/load_concurrent_users.py`.
+2. Add NFR detection rules for p95 latency and 5xx rate. Status: p95 latency rules added as `NFR-7p95` and `NFR-7p95a`; existing 5xx rules remain `NFR-8` and `NFR-8a`.
+3. Add RCA prompt/context assembly for traces plus system metrics. Status: RCA prompt now asks for remediation type and infra handoff guidance.
+4. Add remediation-type classification in the plan output. Status: RCA output supports remediation classification and handoff plan fields.
 5. Add infra handoff artifact generation.
 6. Add one repo-managed config remediation path and one infra-handoff path to
    demonstrate both outcomes.

@@ -141,6 +141,12 @@ async def _run_rca(analysis_id: int, issue_id: int) -> None:
             "timestamp": timestamp,
             "trace_id": trace_id,
             "agent_name": agent_name,
+            "issue_type": issue.issue_type,
+            "rule_id": issue.rule_id,
+            "severity": issue.severity,
+            "title": issue.title,
+            "description": issue.description or "",
+            "deployment_context": _deployment_context_for_issue(issue),
         }
         logger.info(
             "External RCA request — issue #%d trace=%s agent=%s",
@@ -231,6 +237,54 @@ def _extract_params(db, issue: Issue) -> tuple[Optional[str], str, str]:
         else datetime.utcnow().isoformat()
     )
     return trace_id, agent_name, ts
+
+
+def _deployment_context_for_issue(issue: Issue) -> Optional[dict]:
+    """Attach deployment hints so external RCA can recommend the right config file."""
+    app_name = (issue.app_name or "").lower()
+    issue_type = (issue.issue_type or "").lower()
+    title = (issue.title or "").lower()
+    trace_id = (issue.trace_id or "").lower()
+
+    is_medical_rag = app_name in {"medical-rag", "medical_rag", "medicalagent"}
+    is_pod_threshold = (
+        "pod_resource_threshold" in issue_type
+        or "pod resource threshold" in title
+        or trace_id.startswith("pod-threshold-")
+    )
+
+    if not is_medical_rag and not is_pod_threshold:
+        return None
+
+    return {
+        "application": "Medical RAG",
+        "runtime": "docker",
+        "orchestrator": "docker compose",
+        "service_name": "medical-rag-pod",
+        "container_name": "medical-rag-pod",
+        "ports": ["8002:8002"],
+        "config_files": [
+            "MedicalAgent/Dockerfile",
+            "MedicalAgent/docker-compose.yml",
+            "MedicalAgent/.env",
+        ],
+        "threshold_env_vars": [
+            "POD_CPU_THRESHOLD_PERCENT",
+            "POD_MEMORY_THRESHOLD_PERCENT",
+        ],
+        "current_cpu_threshold_percent": 90,
+        "current_memory_threshold_percent": 90,
+        "required_fix": (
+            "Update the Docker-managed threshold configuration in "
+            "MedicalAgent/Dockerfile and/or MedicalAgent/docker-compose.yml, "
+            "then recreate the service with `docker compose up -d --build medical-rag-pod`."
+        ),
+        "validation": (
+            "Run MedicalAgent/scripts/test_pod_cpu_threshold.sh and verify the app "
+            "returns `application is not reachable` only when the configured pod "
+            "threshold is breached."
+        ),
+    }
 
 
 def _store_result(db, analysis: IssueAnalysis, rca_data: dict) -> None:

@@ -97,6 +97,8 @@ async def _run_analysis(analysis_id: int, issue_id: int):
         analysis.likely_cause        = result.get("likely_cause", "")
         analysis.evidence            = result.get("evidence", "")
         analysis.recommended_action  = result.get("recommended_action", "")
+        analysis.remediation_type    = result.get("remediation_type", "")
+        analysis.handoff_plan        = result.get("handoff_plan", "")
         analysis.full_summary        = result.get("full_summary", "")
         analysis.model_used          = result.get("model", "unknown")
         analysis.status              = "done"
@@ -295,6 +297,8 @@ Respond in this exact JSON format (no markdown fences, pure JSON):
   "likely_cause": "<one-sentence most probable root cause>",
   "evidence": "<2-4 bullet points citing specific metric values or error messages that support the diagnosis>",
   "recommended_action": "<concrete next step the on-call engineer should take>",
+  "remediation_type": "code_change | config_change | infra_change | runbook_change | investigation_only | human_handoff",
+  "handoff_plan": "<if remediation_type is infra_change or human_handoff, provide exact operator steps, validation checks, and rollback guidance; otherwise empty string>",
   "confidence": "high | medium | low"
 }}"""
 
@@ -358,6 +362,8 @@ def _rule_based_analysis(context: dict) -> dict:
     causes   = []
     evidence = []
     actions  = []
+    remediation_type = "investigation_only"
+    handoff_plan = ""
 
     def _avg(key):
         m = metrics.get(key)
@@ -380,12 +386,14 @@ def _rule_based_analysis(context: dict) -> dict:
         causes.append(f"High CPU utilization ({cpu_avg:.1f}% avg) is throttling agent processing")
         evidence.append(f"• CPU avg {cpu_avg:.1f}%, peak {_max('cpu_percent'):.1f}% during issue window")
         actions.append("Scale up compute or reduce parallel agent concurrency")
+        remediation_type = "infra_change"
 
     # Memory pressure
     if mem_avg and mem_avg > 85:
         causes.append(f"Memory pressure ({mem_avg:.1f}% used) causing GC pauses or OOM risk")
         evidence.append(f"• Memory avg {mem_avg:.1f}%, peak {_max('mem_percent'):.1f}%")
         actions.append("Check for memory leaks; consider increasing heap or restarting the agent")
+        remediation_type = "infra_change"
 
     # High error rate
     if err_rate and err_rate > 20:
@@ -395,6 +403,7 @@ def _rule_based_analysis(context: dict) -> dict:
             sample_err = errors[0].get("error_message", "")[:120]
             evidence.append(f"• Error sample: {sample_err}")
         actions.append("Check upstream LLM / tool API status; review error messages in trace spans")
+        remediation_type = "config_change"
 
     # Network saturation
     if net_r and net_r > 10_000_000:  # 10 MB/s
@@ -408,12 +417,15 @@ def _rule_based_analysis(context: dict) -> dict:
         causes.append(f"High number of active TCP connections ({conns:.0f}) suggests connection pool pressure")
         evidence.append(f"• {conns:.0f} active connections observed")
         actions.append("Tune connection pool size; check for connection leaks")
+        remediation_type = "config_change"
 
     # Slow avg duration
     if avg_dur and avg_dur > 8000:
         causes.append(f"Agent average response time ({avg_dur:.0f}ms) is abnormally high")
         evidence.append(f"• Avg trace duration {avg_dur:.0f}ms, max {stats.get('max_duration_ms','?')}ms")
         actions.append("Profile slow spans; check LLM timeout config and tool response times")
+        if remediation_type == "investigation_only":
+            remediation_type = "config_change"
 
     # No specific signal found
     if not causes:
@@ -422,10 +434,24 @@ def _rule_based_analysis(context: dict) -> dict:
         evidence.append("• The issue may stem from upstream API instability or application logic")
         actions.append("Review trace-level error messages and check upstream LLM / tool API status pages")
 
+    if remediation_type == "infra_change":
+        handoff_plan = (
+            "1. Confirm current deployment capacity, worker count, CPU/memory limits, and autoscaling settings for the affected service.\n"
+            "2. If a repo-managed IaC or Helm value exists, open a PR to raise replicas/resources within approved limits; otherwise have the platform owner apply the scaling change in the target environment.\n"
+            "3. Validate by rerunning the concurrent-load test and confirming p95 latency and error rate return below Sev thresholds.\n"
+            "4. Roll back by restoring the previous replica/resource values if saturation remains or cost/risk exceeds the approved window."
+        )
+    elif remediation_type == "config_change":
+        handoff_plan = (
+            "Repo-managed config change is preferred. If the runtime config is not accessible to Codex, ask the service owner to update worker, timeout, or connection-pool settings, then rerun the same load validation and keep the prior values ready for rollback."
+        )
+
     return {
         "likely_cause":       causes[0],
         "evidence":           "\n".join(evidence),
         "recommended_action": actions[0] if actions else "Investigate trace-level errors.",
+        "remediation_type":    remediation_type,
+        "handoff_plan":        handoff_plan,
         "full_summary":       f"Rule-based analysis (no LLM credits). Causes identified: {len(causes)}.",
         "model":              "rule-based",
     }
@@ -444,11 +470,15 @@ def _parse_llm_response(raw: str, model: str) -> dict:
         result["likely_cause"]       = data.get("likely_cause", "")
         result["evidence"]           = data.get("evidence", "")
         result["recommended_action"] = data.get("recommended_action", "")
+        result["remediation_type"]   = data.get("remediation_type", "")
+        result["handoff_plan"]       = data.get("handoff_plan", "")
     except (json.JSONDecodeError, KeyError):
         # LLM returned free text — use it as full_summary
         result["likely_cause"]       = raw[:300]
         result["evidence"]           = ""
         result["recommended_action"] = "Review the full summary for details."
+        result["remediation_type"]   = "investigation_only"
+        result["handoff_plan"]       = ""
     return result
 
 
@@ -464,6 +494,8 @@ def _analysis_to_dict(a: IssueAnalysis) -> dict:
         "likely_cause": a.likely_cause,
         "evidence": a.evidence,
         "recommended_action": a.recommended_action,
+        "remediation_type": a.remediation_type,
+        "handoff_plan": a.handoff_plan,
         "full_summary": a.full_summary,
     }
 

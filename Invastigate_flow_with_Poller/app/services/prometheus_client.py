@@ -12,6 +12,86 @@ from app.core import get_settings, logger
 
 DEFAULT_QUERIES: list[dict[str, str]] = [
     {
+        "name": "medical_rag_query_p95_latency",
+        "query": 'histogram_quantile(0.95, sum(rate(medical_rag_query_duration_seconds_bucket{{app="{agent}"}}[{window}])) by (le))',
+        "description": "MedicalAgent p95 RAG query latency",
+    },
+    {
+        "name": "medical_rag_query_p99_latency",
+        "query": 'histogram_quantile(0.99, sum(rate(medical_rag_query_duration_seconds_bucket{{app="{agent}"}}[{window}])) by (le))',
+        "description": "MedicalAgent p99 RAG query latency",
+    },
+    {
+        "name": "medical_rag_query_rate",
+        "query": 'sum(rate(medical_rag_query_requests_total{{app="{agent}"}}[{window}]))',
+        "description": "MedicalAgent RAG query throughput",
+    },
+    {
+        "name": "medical_rag_query_errors",
+        "query": 'sum(increase(medical_rag_query_requests_total{{app="{agent}",status="error"}}[{window}]))',
+        "description": "MedicalAgent RAG query errors",
+    },
+    {
+        "name": "medical_rag_current_concurrency",
+        "query": 'max(medical_rag_query_in_flight{{app="{agent}"}})',
+        "description": "MedicalAgent current in-flight RAG queries",
+    },
+    {
+        "name": "medical_rag_max_concurrency",
+        "query": 'max(medical_rag_query_max_concurrency{{app="{agent}"}})',
+        "description": "MedicalAgent maximum observed concurrent RAG queries",
+    },
+    {
+        "name": "medical_rag_articles_p95",
+        "query": 'histogram_quantile(0.95, sum(rate(medical_rag_query_articles_fetched_bucket{{app="{agent}"}}[{window}])) by (le))',
+        "description": "MedicalAgent p95 articles fetched per query",
+    },
+    {
+        "name": "medical_rag_llm_request_rate",
+        "query": 'sum(rate(medical_rag_llm_requests_total{{app="{agent}"}}[{window}])) by (scenario, deployment, model, status)',
+        "description": "MedicalAgent LLM request rate by scenario and status",
+    },
+    {
+        "name": "medical_rag_llm_rate_limited_total",
+        "query": 'sum(increase(medical_rag_llm_requests_total{{app="{agent}",status="rate_limited"}}[{window}])) by (scenario, deployment, model)',
+        "description": "MedicalAgent LLM requests rate-limited in the query window",
+    },
+    {
+        "name": "medical_rag_llm_current_window_hits",
+        "query": 'max(medical_rag_llm_rate_limit_current_window_hits{{app="{agent}"}}) by (scenario, deployment)',
+        "description": "MedicalAgent LLM current rolling-window request count",
+    },
+    {
+        "name": "medical_rag_llm_limit_per_minute",
+        "query": 'max(medical_rag_llm_rate_limit_per_minute{{app="{agent}"}}) by (scenario, deployment)',
+        "description": "MedicalAgent LLM configured requests-per-minute limit",
+    },
+    {
+        "name": "medical_rag_llm_remaining",
+        "query": 'min(medical_rag_llm_rate_limit_remaining{{app="{agent}"}}) by (scenario, deployment)',
+        "description": "MedicalAgent LLM remaining requests before rate limit",
+    },
+    {
+        "name": "medical_rag_pod_cpu_utilisation",
+        "query": 'max_over_time(medical_rag_pod_cpu_utilisation_percent{{app="{agent}"}}[{window}])',
+        "description": "MedicalAgent pod CPU utilisation over the last query window",
+    },
+    {
+        "name": "medical_rag_pod_cpu_threshold",
+        "query": 'max_over_time(medical_rag_pod_cpu_threshold_percent{{app="{agent}"}}[{window}])',
+        "description": "MedicalAgent configured pod CPU threshold",
+    },
+    {
+        "name": "medical_rag_pod_memory_utilisation",
+        "query": 'max_over_time(medical_rag_pod_memory_utilisation_percent{{app="{agent}"}}[{window}])',
+        "description": "MedicalAgent pod memory utilisation over the last query window",
+    },
+    {
+        "name": "medical_rag_pod_threshold_breaches",
+        "query": 'increase(medical_rag_pod_threshold_breaches_total[{window}])',
+        "description": "MedicalAgent pod threshold breach count in the query window",
+    },
+    {
         "name": "error_rate",
         "query": 'sum(rate(http_requests_total{{status=~"5..",job=~".*{agent}.*"}}[{window}]))',
         "description": "HTTP 5xx error rate",

@@ -69,6 +69,11 @@ class Orchestrator:
             timestamp=request.timestamp,
             trace_id=trace_id,
             agent_name=request.agent_name,
+            issue_type=request.issue_type,
+            rule_id=request.rule_id,
+            severity=request.severity,
+            title=request.title,
+            description=request.description,
         )
         await bus.publish(trace_id, {
             "type": "step_started", "agent": "normalization", "step": 1,
@@ -178,6 +183,7 @@ class Orchestrator:
         rca_req = RCARequest(
             error_analysis=ea_resp.analysis, rca_target=ea_resp.rca_target,
             incident=norm_resp.incident, trace_id=trace_id, agent_name=request.agent_name,
+            deployment_context=request.deployment_context,
         )
         await bus.publish(trace_id, {
             "type": "step_started", "agent": "rca", "step": 4,
@@ -212,6 +218,7 @@ class Orchestrator:
         step_start = time.perf_counter()
         rec_req = RecommendationRequest(
             error_analysis=ea_resp.analysis, rca=rca_resp.rca, agent_name=request.agent_name,
+            deployment_context=request.deployment_context,
         )
         await bus.publish(trace_id, {
             "type": "step_started", "agent": "recommendation", "step": 5,

@@ -1,0 +1,22 @@
+services:
+  medical-rag-pod:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: medical-rag-pod
+    ports:
+      - "8002:8002"
+    env_file:
+      - .env
+    environment:
+      AIOPS_SERVER_URL: "http://host.docker.internal:7000"
+      POD_CPU_THRESHOLD_ENABLED: "true"
+      POD_CPU_THRESHOLD_PERCENT: "90"
+      POD_MEMORY_THRESHOLD_ENABLED: "true"
+      POD_MEMORY_THRESHOLD_PERCENT: "90"
+      POD_THRESHOLD_TELEMETRY_MIN_INTERVAL_SECONDS: "1"
+    cpus: "0.50"
+    mem_limit: "1g"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    restart: unless-stopped

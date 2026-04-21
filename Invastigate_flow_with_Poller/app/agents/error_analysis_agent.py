@@ -53,6 +53,9 @@ You MUST NOT:
 - If only one data source has errors, analysis may be shorter — that is OK
 - If no external logs are available, analyze from correlation + normalization
   context alone. Set lower confidence when evidence is limited.
+- Do not claim CPU saturation, memory pressure, or resource utilization metrics
+  unless those exact metric entries are present. For latency-only evidence, use
+  capacity/throughput saturation or performance degradation wording.
 
 ## Correlation Context
 The upstream Correlation Agent identified:
@@ -210,7 +213,8 @@ class ErrorAnalysisAgent:
                 try:
                     langfuse_logs = await self._langfuse.fetch_trace(trace_id)
                     all_logs.extend(langfuse_logs)
-                    data_sources.append("langfuse")
+                    if langfuse_logs:
+                        data_sources.append("langfuse")
                     logger.info(
                         "ErrorAnalysis | Langfuse returned %d entries", len(langfuse_logs),
                     )
@@ -231,8 +235,6 @@ class ErrorAnalysisAgent:
                         "message": f"Langfuse trace fetch failed: {exc}",
                         "level": "WARN", "metadata": {"error": str(exc), "trace_id": trace_id},
                     }
-                    all_logs.append(err_entry)
-                    data_sources.append("langfuse")
                     await get_event_bus().publish(trace_id, {
                         "type": "logs_fetched", "agent": "error_analysis",
                         "source": "langfuse", "count": 0, "entries": [err_entry],
@@ -243,15 +245,15 @@ class ErrorAnalysisAgent:
                     "ErrorAnalysis | target=%s requires Langfuse but no trace_id provided",
                     analysis_target.value,
                 )
-                data_sources.append("langfuse")
-                all_logs.append({
+                missing_entry = {
                     "timestamp": timestamp,
                     "source": "langfuse",
                     "service": "langfuse",
                     "message": "No trace_id provided — cannot fetch Langfuse data",
                     "level": "WARN",
                     "metadata": {"error": "missing_trace_id"},
-                })
+                }
+                await TraceStore().save_fetched_logs("", "error_analysis", "langfuse", [missing_entry])
 
         # ── Prometheus (Infra metrics) ────────────────────────────────
         if fetch_prometheus:
@@ -267,7 +269,8 @@ class ErrorAnalysisAgent:
                     trace_end=trace_end,
                 )
                 all_logs.extend(prom_logs)
-                data_sources.append("prometheus")
+                if prom_logs:
+                    data_sources.append("prometheus")
                 logger.info(
                     "ErrorAnalysis | Prometheus returned %d entries", len(prom_logs),
                 )
@@ -284,8 +287,6 @@ class ErrorAnalysisAgent:
                     "message": f"Prometheus query failed: {exc}",
                     "level": "WARN", "metadata": {"error": str(exc)},
                 }
-                all_logs.append(err_entry)
-                data_sources.append("prometheus")
                 await get_event_bus().publish(trace_id or "", {
                     "type": "logs_fetched", "agent": "error_analysis",
                     "source": "prometheus", "count": 0, "entries": [err_entry],
@@ -392,9 +393,15 @@ class ErrorAnalysisAgent:
         """Send the prompt to GPT-4o and return the raw JSON response."""
         logger.debug("Calling LLM for error analysis with %d chars", len(user_message))
 
-        # Build data sources description for the system prompt
         target = correlation.analysis_target
-        if target == AnalysisDomain.AGENT:
+        if not data_sources:
+            ds_desc = (
+                "NO external log or metric entries were returned. "
+                "Use the correlation and normalization context to identify errors. "
+                "Do not cite Prometheus or Langfuse as evidence unless entries are present in the user message. "
+                "Set confidence lower since evidence is limited."
+            )
+        elif target == AnalysisDomain.AGENT:
             ds_desc = (
                 "Langfuse (AI agent traces/spans) only. "
                 "Deep-dive into agent execution errors, LLM failures, tool call issues."
@@ -411,8 +418,9 @@ class ErrorAnalysisAgent:
             )
         else:
             ds_desc = (
-                "NO external log sources returned data. "
+                "NO external log or metric entries were returned. "
                 "Use the correlation and normalization context to identify errors. "
+                "Do not cite Prometheus or Langfuse as evidence unless entries are present in the user message. "
                 "Set confidence lower since evidence is limited."
             )
 

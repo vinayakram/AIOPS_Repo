@@ -43,6 +43,68 @@ def send_trace(ctx, result: dict, user_id: str = None, error: str = None):
     threading.Thread(target=_post, args=(payload,), daemon=True).start()
 
 
+def send_pod_threshold_breach(
+    reason: str,
+    cpu_percent: float,
+    cpu_threshold_percent: float,
+    memory_percent: float | None,
+    memory_threshold_percent: float,
+) -> None:
+    """Emit a synthetic trace so AIops can ticket repeated pod breaches."""
+    if not settings.AIOPS_ENABLED:
+        return
+
+    now = datetime.now(timezone.utc)
+    trace_id = f"pod-threshold-{uuid.uuid4().hex}"
+    metadata = {
+        "scenario": "pod_threshold_breach",
+        "pod_name": "medical-rag-agent",
+        "cpu_percent": cpu_percent,
+        "cpu_threshold_percent": cpu_threshold_percent,
+        "memory_percent": memory_percent,
+        "memory_threshold_percent": memory_threshold_percent,
+        "recommended_fix": "Change the pod threshold config to raise POD_CPU_THRESHOLD_PERCENT and redeploy.",
+    }
+    payload = {
+        "id": trace_id,
+        "app_name": APP_NAME,
+        "status": "error",
+        "started_at": now.isoformat(),
+        "ended_at": now.isoformat(),
+        "total_duration_ms": 0,
+        "input_preview": "pod resource guard",
+        "output_preview": "application is not reachable",
+        "metadata": metadata,
+        "spans": [
+            {
+                "id": str(uuid.uuid4()),
+                "trace_id": trace_id,
+                "name": "pod_resource_guard",
+                "span_type": "tool",
+                "status": "error",
+                "started_at": now.isoformat(),
+                "ended_at": now.isoformat(),
+                "duration_ms": 0,
+                "input_preview": "cgroup pod resource sample",
+                "output_preview": f"cpu={cpu_percent:.1f}% threshold={cpu_threshold_percent:.1f}%",
+                "error_message": "application is not reachable",
+                "metadata": metadata,
+            }
+        ],
+        "logs": [
+            {
+                "trace_id": trace_id,
+                "level": "ERROR",
+                "logger": "pod_resource_guard",
+                "message": "application is not reachable",
+                "timestamp": now.isoformat(),
+                "metadata": metadata,
+            }
+        ],
+    }
+    threading.Thread(target=_post, args=(payload,), daemon=True).start()
+
+
 # ── Payload builder ───────────────────────────────────────────────────────────
 
 def _build_payload(ctx, result: dict, user_id: str, error: str = None) -> dict:

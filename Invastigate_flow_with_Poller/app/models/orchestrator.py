@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Optional
+from typing import Any, Optional
 
 from pydantic import BaseModel, Field
 
@@ -37,6 +37,30 @@ class InvestigationRequest(BaseModel):
         ...,
         description="Name of the AI agent that encountered the failure",
         examples=["summarizer-v2", "retrieval-agent", "planner-v1"],
+    )
+    issue_type: Optional[str] = Field(
+        None,
+        description="Upstream issue type, such as nfr_p95_response_time_under_load.",
+    )
+    rule_id: Optional[str] = Field(
+        None,
+        description="Upstream NFR or detection rule id, such as NFR-7p95.",
+    )
+    severity: Optional[str] = Field(
+        None,
+        description="Upstream severity such as high or critical.",
+    )
+    title: Optional[str] = Field(
+        None,
+        description="Upstream issue title.",
+    )
+    description: Optional[str] = Field(
+        None,
+        description="Upstream issue description or detector evidence.",
+    )
+    deployment_context: Optional[dict[str, Any]] = Field(
+        None,
+        description="Runtime and configuration context for deployment-aware RCA recommendations.",
     )
 
 

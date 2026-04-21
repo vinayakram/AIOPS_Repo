@@ -87,6 +87,52 @@ python run.py
 
 Open **http://localhost:8000** — you'll see the login page. Register a new account, then start querying.
 
+### Docker Pod Threshold Demo
+
+The Docker image includes pod resource guard thresholds as environment variables:
+
+```bash
+cd MedicalAgent
+docker compose up -d --build
+```
+
+The compose service limits the demo pod to `0.50` CPU and `1g` memory. When the
+MedicalAgent pod crosses `POD_CPU_THRESHOLD_PERCENT` or
+`POD_MEMORY_THRESHOLD_PERCENT`, normal app access returns HTTP `503` with
+`application is not reachable`. `/metrics` and `/api/health` stay available so
+Prometheus and operators can still observe it.
+
+To safely simulate the scenario without stressing the VM, run the bounded load
+inside the CPU-limited container:
+
+```bash
+./scripts/test_pod_cpu_threshold.sh
+```
+
+After 3 breaches in 5 minutes, AIops Telemetry raises `NFR-33` for
+`nfr_pod_resource_threshold_breach`. RCA should use the last 5 minutes of
+Langfuse/Prometheus evidence and recommend changing the pod threshold config
+(`POD_CPU_THRESHOLD_PERCENT` / `POD_MEMORY_THRESHOLD_PERCENT`) before redeploy.
+
+The demo CPU threshold is configured at `POD_CPU_THRESHOLD_PERCENT=90`.
+
+Prometheus can use the same target/label assignment shown in the Prometheus UI:
+
+```yaml
+scrape_configs:
+  - job_name: "medical-rag"
+    metrics_path: /metrics
+    static_configs:
+      - targets:
+          - "10.169.91.16:8002"
+        labels:
+          app: "medical-rag"
+```
+
+The same example is saved as `prometheus.yml`. With that assignment,
+Prometheus shows `job="medical-rag"`, `app="medical-rag"`, and
+`instance="10.169.91.16:8002"` for the `/metrics` endpoint.
+
 ---
 
 ## Project Structure
