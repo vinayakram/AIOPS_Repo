@@ -42,6 +42,18 @@ You MUST NOT:
 - Always output 4 solutions regardless — fewer is better than padding
 - Give vague advice like "improve monitoring" without specifics
 - Hallucinate components or services not mentioned in the analysis
+- Claim CPU or memory saturation unless the RCA includes explicit CPU or memory
+  metric evidence. For latency-only RCA, recommend capacity scaling,
+  concurrency/worker tuning, caching, or query-path optimization.
+- For Medical RAG pod resource threshold incidents, rank the pod threshold config
+  change first. Name POD_CPU_THRESHOLD_PERCENT and/or
+  POD_MEMORY_THRESHOLD_PERCENT explicitly, then validate by rerunning the bounded
+  pod CPU-utilisation script.
+- When Deployment Context is present, use it to make the recommendation concrete.
+  If runtime is docker or orchestrator is docker compose, rank 1 MUST mention the
+  listed Docker config file(s), especially MedicalAgent/Dockerfile and
+  MedicalAgent/docker-compose.yml for Medical RAG, and include recreating the
+  service with `docker compose up -d --build medical-rag-pod`.
 
 ## Ranking Rules
 - Rank 1: Directly fixes the root cause. This is the immediate action to take.
@@ -67,6 +79,9 @@ You MUST NOT:
 - Error Propagation Path: {error_propagation_path}
 
 {error_details_section}
+
+## Deployment Context
+{deployment_context}
 
 ## Output
 Respond with ONLY a valid JSON object matching the schema below.
@@ -108,6 +123,7 @@ class RecommendationAgent:
             error_analysis=request.error_analysis,
             rca=request.rca,
             agent_name=request.agent_name,
+            deployment_context=request.deployment_context,
         )
 
         # Step 2: Call GPT-4o
@@ -116,6 +132,7 @@ class RecommendationAgent:
             error_analysis=request.error_analysis,
             rca=request.rca,
             agent_name=request.agent_name,
+            deployment_context=request.deployment_context,
         )
 
         # Step 3: Validate
@@ -157,11 +174,27 @@ class RecommendationAgent:
             )
         return "\n".join(lines)
 
+    @staticmethod
+    def _format_deployment_context(deployment_context: dict[str, Any] | None) -> str:
+        """Format deployment context for concrete, file-aware recommendations."""
+        if not deployment_context:
+            return "No deployment context was provided."
+
+        lines: list[str] = []
+        for key, value in deployment_context.items():
+            if isinstance(value, list):
+                rendered = ", ".join(str(item) for item in value)
+            else:
+                rendered = str(value)
+            lines.append(f"- {key}: {rendered}")
+        return "\n".join(lines)
+
     def _build_user_message(
         self,
         error_analysis: ErrorAnalysisResult,
         rca: RCAResult,
         agent_name: str,
+        deployment_context: dict[str, Any] | None,
     ) -> str:
         """Build the user message with full context from both upstream agents."""
         lines: list[str] = [
@@ -193,6 +226,10 @@ class RecommendationAgent:
 
         if rca.blast_radius:
             lines.append(f"- Blast Radius: {', '.join(rca.blast_radius)}")
+
+        lines.append("")
+        lines.append("## Deployment Context")
+        lines.append(self._format_deployment_context(deployment_context))
 
         lines.append("")
         lines.append("## Error Analysis")
@@ -238,6 +275,7 @@ class RecommendationAgent:
         error_analysis: ErrorAnalysisResult,
         rca: RCAResult,
         agent_name: str,
+        deployment_context: dict[str, Any] | None,
     ) -> str:
         """Send the prompt to GPT-4o and return the raw JSON response."""
         logger.debug("Calling LLM for recommendation with %d chars", len(user_message))
@@ -274,6 +312,7 @@ class RecommendationAgent:
                 else "Not determined"
             ),
             error_details_section=self._format_error_details(error_analysis),
+            deployment_context=self._format_deployment_context(deployment_context),
             schema=self._response_schema,
         )
 

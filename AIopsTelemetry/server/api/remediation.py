@@ -249,6 +249,10 @@ async def start_remediation(issue_id: int, body: dict = {}, db: Session = Depend
     description = (base_description + rca_context).strip() or f"{issue.issue_type} detected in {issue.app_name}"
 
     
+    remediation_type = body.get("remediation_type", "code_change")
+    if issue.rule_id == "NFR-33" or issue.issue_type == "nfr_pod_resource_threshold_breach":
+        remediation_type = "config_change"
+
     payload = {
         "application_name": issue.app_name,
         "issue_id":         run_id,
@@ -256,7 +260,7 @@ async def start_remediation(issue_id: int, body: dict = {}, db: Session = Depend
         "description":      description,
         "source_system":    "aiops-telemetry",
         "source_issue_id":  str(issue_id),
-        "remediation_type": body.get("remediation_type", "code_change"),
+        "remediation_type": remediation_type,
         "requested_by":     body.get("requested_by", ""),
         "environment":      "production",
         **rca_handoff,

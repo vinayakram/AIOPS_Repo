@@ -32,6 +32,8 @@ def init_db():
         _add_column_if_missing(conn, "escalation_rules", "nfr_id", "VARCHAR")
         _add_column_if_missing(conn, "escalation_rules", "description", "TEXT")
         _add_column_if_missing(conn, "issue_analyses", "rca_json", "TEXT")
+        _add_column_if_missing(conn, "issue_analyses", "remediation_type", "VARCHAR")
+        _add_column_if_missing(conn, "issue_analyses", "handoff_plan", "TEXT")
         # Backfill base_fingerprint for rows created before recurrence tracking
         from sqlalchemy import text
         conn.execute(text(
@@ -47,9 +49,11 @@ _NFR_SEED_RULES = [
     ("NFR-2",   "Consecutive Trace Failures",        "3 consecutive trace failures → SEV1 critical",                   "repeated_error_count_gte", 3,     None),
     ("NFR-7",   "Response Time Target",              "Avg response time ≥ target ms → SEV2 high",                      "duration_ms_gt",           5000,  None),
     ("NFR-7a",  "Response Time 2× Target",           "Avg response time ≥ 2× target ms → SEV1 critical",               "duration_ms_gt",           10000, None),
+    ("NFR-7p95", "p95 Response Time Target",         "p95 response time ≥ target ms under concurrent load → SEV2 high", "duration_ms_gt",           5000,  None),
+    ("NFR-7p95a","p95 Response Time 2× Target",      "p95 response time ≥ 2× target ms under concurrent load → SEV1 critical", "duration_ms_gt",     10000, None),
     ("NFR-8",   "Error Rate ≥ 1%",                   "HTTP 5xx error rate ≥ 1% over check window → SEV2 high",         "error_rate_gt",            1.0,   None),
     ("NFR-8a",  "Error Rate ≥ 5%",                   "HTTP 5xx error rate ≥ 5% over check window → SEV1 critical",     "error_rate_gt",            5.0,   None),
-    ("NFR-9",   "Exception Count Spike",             "Current-week errors ≥ 2× previous week (min 5) → SEV3 medium",  "repeated_error_count_gte", 5,     None),
+    ("NFR-9",   "Exception Count Spike",             "Recent-window errors ≥ 2× previous window (min 5), excluding pod-threshold demo traces → SEV3 medium", "repeated_error_count_gte", 5, None),
     ("NFR-11",  "CPU Utilisation High",              "CPU utilisation ≥ 80% → SEV2 high",                              "error_rate_gt",            80.0,  None),
     ("NFR-11a", "CPU Utilisation Critical",          "CPU utilisation ≥ 95% → SEV1 critical",                          "error_rate_gt",            95.0,  None),
     ("NFR-12",  "Memory Utilisation High",           "Memory utilisation ≥ 80% → SEV2 high",                           "error_rate_gt",            80.0,  None),
@@ -67,6 +71,8 @@ _NFR_SEED_RULES = [
     ("NFR-29",  "Output Error Detection",            "Trace output contains ⚠️ / error patterns → SEV2/3",             "error_rate_gt",            0.0,   None),
     ("NFR-30",  "Query Preprocessing Error",         "Medical RAG query preprocessing failure → SEV2 high",            "repeated_error_count_gte", 1,     "query_validation"),
     ("NFR-31",  "LLM Disabled Query Burst",          "3 Medical RAG queries with LLM disabled within 10 min → SEV1 critical", "repeated_error_count_gte", 3, "openai_generation"),
+    ("NFR-32",  "LLM Rate Limit Exceeded",           "Medical RAG LLM deployment rate limit exceeded → SEV2 high",     "repeated_error_count_gte", 1,     "openai_generation"),
+    ("NFR-33",  "Pod Resource Threshold Breach",     "3 Medical RAG pod CPU/memory threshold breaches within 5 min → SEV1 critical", "repeated_error_count_gte", 3, "pod_resource_guard"),
 ]
 
 

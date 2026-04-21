@@ -56,6 +56,8 @@ class IssueAnalysis(Base):
     likely_cause = Column(Text, nullable=True)
     evidence = Column(Text, nullable=True)
     recommended_action = Column(Text, nullable=True)
+    remediation_type = Column(String, nullable=True)
+    handoff_plan = Column(Text, nullable=True)
     full_summary = Column(Text, nullable=True)    # raw LLM text
 
     # Snapshot of context used (JSON)

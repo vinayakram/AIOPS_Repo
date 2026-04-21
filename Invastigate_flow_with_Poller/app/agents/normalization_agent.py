@@ -69,6 +69,25 @@ _ERROR_KEYWORDS = [
     "unreachable", "unavailable", "rejected", "abort", "panic",
 ]
 
+_PERFORMANCE_RULE_IDS = {
+    "NFR-7",
+    "NFR-7a",
+    "NFR-7p95",
+    "NFR-7p95a",
+    "NFR-19",
+}
+
+_PERFORMANCE_ISSUE_KEYWORDS = (
+    "latency",
+    "response_time",
+    "response time",
+    "p95",
+    "under_load",
+    "under load",
+    "slow",
+    "degradation",
+)
+
 # Pre-compiled regex: matches keywords as whole words only
 # e.g. "error" matches "Connection error" but NOT "error_rate=0"
 _ERROR_PATTERN = re.compile(
@@ -104,6 +123,89 @@ def _has_error_signals(logs: list[dict[str, Any]]) -> bool:
                 return True
 
     return False
+
+
+def _has_performance_issue_hint(request: NormalizationRequest) -> bool:
+    rule_id = (request.rule_id or "").strip()
+    if rule_id in _PERFORMANCE_RULE_IDS:
+        return True
+
+    haystack = " ".join(
+        [
+            request.issue_type or "",
+            request.title or "",
+            request.description or "",
+        ]
+    ).lower()
+    return any(keyword in haystack for keyword in _PERFORMANCE_ISSUE_KEYWORDS)
+
+
+def _has_upstream_issue_hint(request: NormalizationRequest) -> bool:
+    return any(
+        [
+            request.issue_type,
+            request.rule_id,
+            request.severity,
+            request.title,
+            request.description,
+        ]
+    )
+
+
+def _incident_from_upstream_hint(
+    request: NormalizationRequest,
+    *,
+    extra_signal: str = "",
+) -> NormalizedIncident:
+    haystack = " ".join(
+        [
+            request.issue_type or "",
+            request.rule_id or "",
+            request.title or "",
+            request.description or "",
+        ]
+    ).lower()
+
+    if _has_performance_issue_hint(request) or any(
+        token in haystack for token in ("cpu", "memory", "storage", "resource", "saturation")
+    ):
+        error_type = ErrorType.INFRA
+    elif any(token in haystack for token in ("network", "connection", "dns", "unreachable")):
+        error_type = ErrorType.NETWORK
+    elif any(token in haystack for token in ("llm", "query", "preprocessing", "ai_agent", "genai")):
+        error_type = ErrorType.AI_AGENT
+    else:
+        error_type = ErrorType.UNKNOWN
+
+    summary = (
+        request.title
+        or request.description
+        or "Incident detected by upstream AIOps rule."
+    )
+    signals = [
+        signal
+        for signal in [
+            request.rule_id,
+            request.issue_type,
+            extra_signal,
+        ]
+        if signal
+    ]
+    if _has_performance_issue_hint(request):
+        signals.extend(["latency_slo_breach", "representative_trace_has_no_error_span"])
+
+    return NormalizedIncident(
+        error_type=error_type,
+        error_summary=summary[:300],
+        timestamp=request.timestamp,
+        confidence=0.85,
+        entities=Entities(
+            agent_id=request.agent_name,
+            service=request.agent_name,
+            trace_id=request.trace_id,
+        ),
+        signals=signals,
+    )
 
 
 class NormalizationAgent:
@@ -145,8 +247,33 @@ class NormalizationAgent:
         """
         start = time.perf_counter()
 
-        # Step 1 & 2: Route and fetch
-        raw_logs, data_source = await self._fetch_data(request)
+        # Step 1 & 2: Route and fetch. If the observability backend is rate
+        # limited/unavailable, keep RCA alive by falling back to upstream issue
+        # context supplied by AIopsTelemetry.
+        try:
+            raw_logs, data_source = await self._fetch_data(request)
+        except Exception as exc:
+            if not _has_upstream_issue_hint(request):
+                raise
+
+            data_source = DataSource.LANGFUSE if request.trace_id else DataSource.PROMETHEUS
+            elapsed_ms = (time.perf_counter() - start) * 1000
+            logger.warning(
+                "Observability fetch failed | source=%s trace=%s rule=%s — using upstream issue context: %s",
+                data_source.value,
+                request.trace_id,
+                request.rule_id,
+                str(exc)[:200],
+            )
+            return NormalizationResponse(
+                incident=_incident_from_upstream_hint(
+                    request,
+                    extra_signal="observability_fetch_failed",
+                ),
+                data_source=data_source,
+                raw_log_count=0,
+                processing_time_ms=round(elapsed_ms, 2),
+            )
 
         # Publish raw log entries so the monitor can show them live
         source_key = data_source.value.lower()
@@ -159,8 +286,11 @@ class NormalizationAgent:
         # Persist so they survive page refreshes
         await TraceStore().save_fetched_logs(request.trace_id or "", "normalization", source_key, raw_logs)
 
-        # Step 3: No-error short-circuit
-        if not raw_logs or not _has_error_signals(raw_logs):
+        # Step 3: No-error short-circuit. Performance/SLO incidents can have a
+        # clean representative trace, so upstream NFR hints must keep RCA alive.
+        has_error_signals = _has_error_signals(raw_logs)
+        has_performance_hint = _has_performance_issue_hint(request)
+        if (not raw_logs or not has_error_signals) and not has_performance_hint:
             elapsed_ms = (time.perf_counter() - start) * 1000
             logger.info(
                 "No error signals detected | source=%s agent=%s — returning NO_ERROR",
@@ -183,11 +313,30 @@ class NormalizationAgent:
                 processing_time_ms=round(elapsed_ms, 2),
             )
 
+        if has_performance_hint and not has_error_signals:
+            elapsed_ms = (time.perf_counter() - start) * 1000
+            logger.info(
+                "Performance incident hint detected | rule=%s issue_type=%s — continuing RCA",
+                request.rule_id,
+                request.issue_type,
+            )
+            return NormalizationResponse(
+                incident=_incident_from_upstream_hint(request),
+                data_source=data_source,
+                raw_log_count=len(raw_logs),
+                processing_time_ms=round(elapsed_ms, 2),
+            )
+
         # Step 4: Build the user message
         user_message = self._build_user_message(
             timestamp=request.timestamp,
             trace_id=request.trace_id,
             agent_name=request.agent_name,
+            issue_type=request.issue_type,
+            rule_id=request.rule_id,
+            severity=request.severity,
+            title=request.title,
+            description=request.description,
             data_source=data_source,
             logs=raw_logs,
         )
@@ -261,6 +410,11 @@ class NormalizationAgent:
         timestamp: str,
         trace_id: str | None,
         agent_name: str,
+        issue_type: str | None,
+        rule_id: str | None,
+        severity: str | None,
+        title: str | None,
+        description: str | None,
         data_source: DataSource,
         logs: list[dict[str, Any]],
     ) -> str:
@@ -273,6 +427,16 @@ class NormalizationAgent:
         ]
         if trace_id:
             lines.append(f"- Trace ID: {trace_id}")
+        if rule_id or issue_type or title or description:
+            lines.extend(
+                [
+                    f"- Upstream Rule ID: {rule_id or 'N/A'}",
+                    f"- Upstream Issue Type: {issue_type or 'N/A'}",
+                    f"- Upstream Severity: {severity or 'N/A'}",
+                    f"- Upstream Title: {title or 'N/A'}",
+                    f"- Upstream Description: {description or 'N/A'}",
+                ]
+            )
 
         lines.append("")
         lines.append(f"## Raw Data ({data_source.value})")

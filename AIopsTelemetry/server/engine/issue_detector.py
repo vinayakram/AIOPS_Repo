@@ -54,8 +54,9 @@ def detect_issues(db: Session) -> list[Issue]:
     # Section 1 — Health & Availability
     created.extend(_detect_consecutive_trace_failures(db))         # NFR-2 / NFR-5
     created.extend(_detect_http_error_rate(db, window))            # NFR-8 / NFR-8a
-    created.extend(_detect_exception_count_spike(db))              # NFR-9
+    created.extend(_detect_exception_count_spike(db, window))      # NFR-9
     created.extend(_detect_response_time_with_llm(db, window))     # NFR-7 / NFR-7a
+    created.extend(_detect_p95_response_time_under_load(db, window))  # NFR-7p95 / NFR-7p95a
 
     # Section 2 — Infrastructure
     # psutil-based host-metric detectors disabled on feature/rca-external-service
@@ -63,6 +64,7 @@ def detect_issues(db: Session) -> list[Issue]:
     # created.extend(_detect_cpu(db))                              # NFR-11 / NFR-11a
     # created.extend(_detect_memory(db))                           # NFR-12 / NFR-13
     # created.extend(_detect_storage(db))                          # NFR-14 / NFR-14a
+    created.extend(_detect_pod_resource_threshold_breaches(db, window))  # NFR-33
 
     # Section 3 — AI & System
     created.extend(_detect_execution_time_drift(db))               # NFR-19
@@ -74,6 +76,7 @@ def detect_issues(db: Session) -> list[Issue]:
     # Section 4 — Application-level output errors
     created.extend(_detect_output_errors(db, window))             # NFR-29
     created.extend(_detect_llm_disabled_query_burst(db))          # NFR-31
+    created.extend(_detect_llm_rate_limit_errors(db, window))     # NFR-32
     created.extend(_detect_special_character_query_failures(db, window))  # NFR-30
 
     # Legacy detectors (kept for backwards compat)
@@ -160,30 +163,54 @@ def _detect_http_error_rate(db: Session, window_mins: int) -> list[Issue]:
     return created
 
 
-def _detect_exception_count_spike(db: Session) -> list[Issue]:
-    """NFR-9: Exception count 2x vs previous week → SEV3."""
+def _detect_exception_count_spike(db: Session, window_mins: int) -> list[Issue]:
+    """NFR-9: Recent exception count 2x vs previous window → SEV3.
+
+    The previous implementation compared all current-week errors to last week.
+    Demo incidents can leave that condition true for days, so every resolved
+    NFR-9 immediately reappeared. Use adjacent rolling windows and ignore the
+    synthetic pod-threshold traces, which are handled by the pod-specific rule.
+    """
     created = []
     now = datetime.utcnow()
-    this_week = now - timedelta(days=7)
-    last_week_start = now - timedelta(days=14)
+    window = timedelta(minutes=max(window_mins, 10))
+    current_start = now - window
+    previous_start = current_start - window
     apps = [r[0] for r in db.query(Trace.app_name).distinct().all()]
     for app in apps:
-        current = db.query(Trace).filter(
+        current_q = db.query(Trace).filter(
             Trace.app_name == app, Trace.status == "error",
-            Trace.started_at >= this_week,
-        ).count()
-        previous = db.query(Trace).filter(
+            Trace.started_at >= current_start,
+        )
+        previous_q = db.query(Trace).filter(
             Trace.app_name == app, Trace.status == "error",
-            Trace.started_at >= last_week_start,
-            Trace.started_at < this_week,
-        ).count()
+            Trace.started_at >= previous_start,
+            Trace.started_at < current_start,
+        )
+
+        if app == "medical-rag":
+            current_q = current_q.filter(
+                ~Trace.id.like("pod-threshold-%"),
+                ~func.coalesce(Trace.metadata_json, "").contains("pod_threshold_breach"),
+            )
+            previous_q = previous_q.filter(
+                ~Trace.id.like("pod-threshold-%"),
+                ~func.coalesce(Trace.metadata_json, "").contains("pod_threshold_breach"),
+            )
+
+        current = current_q.count()
+        previous = previous_q.count()
         if previous > 0 and current >= previous * 2 and current >= 5:
             issue = _ensure_issue(
                 db, app_name=app, rule_id="NFR-9",
                 issue_type="nfr_exception_count",
                 severity="medium",
                 title=f"Exception count doubled in {app}",
-                description=f"This week: {current} errors vs last week: {previous} (2x increase)",
+                description=(
+                    f"Recent window: {current} errors vs previous window: "
+                    f"{previous} errors over {int(window.total_seconds() // 60)} min "
+                    "(2x increase)"
+                ),
             )
             if issue:
                 created.append(issue)
@@ -235,6 +262,83 @@ def _detect_response_time_with_llm(db: Session, window_mins: int) -> list[Issue]
                 severity="high",
                 title=f"Response time exceeds target in {app}",
                 description=f"Avg {avg:.0f}ms exceeds target ({target:.0f}ms) over last {window_mins} min",
+                trace_id=representative_trace_id,
+            )
+            if issue:
+                created.append(issue)
+    return created
+
+
+def _detect_p95_response_time_under_load(db: Session, window_mins: int) -> list[Issue]:
+    """NFR-7p95: p95 latency breach during concurrent-load windows.
+
+    This supports the production demo where many users hit an app at once. p95 is
+    a better user-impact signal than a simple average because it catches the slow
+    tail that makes the application feel unavailable.
+    """
+    created = []
+    cutoff = datetime.utcnow() - timedelta(minutes=max(window_mins, 180))
+    target = settings.NFR_RESPONSE_TIME_TARGET_MS
+    apps = [r[0] for r in db.query(Trace.app_name).distinct().all()]
+    for app in apps:
+        rows = (
+            db.query(Trace.id, Trace.total_duration_ms, Trace.metadata_json)
+            .filter(
+                Trace.app_name == app,
+                Trace.started_at >= cutoff,
+                Trace.total_duration_ms != None,
+            )
+            .order_by(Trace.started_at.desc())
+            .all()
+        )
+        if len(rows) < 20:
+            continue
+
+        durations = sorted(float(r[1]) for r in rows if r[1] is not None)
+        if not durations:
+            continue
+
+        idx = max(0, min(len(durations) - 1, int(len(durations) * 0.95) - 1))
+        p95 = durations[idx]
+        representative_trace_id = rows[0][0]
+        load_marker_count = sum(
+            1
+            for _trace_id, _duration, metadata_json in rows[:100]
+            if metadata_json and "load_test" in metadata_json
+        )
+        load_context = (
+            f"Detected {len(rows)} traces in the load window"
+            + (f"; {load_marker_count} include load-test metadata" if load_marker_count else "")
+        )
+
+        if p95 >= target * 2:
+            issue = _ensure_issue(
+                db,
+                app_name=app,
+                rule_id="NFR-7p95a",
+                issue_type="nfr_p95_response_time_under_load",
+                severity="critical",
+                title=f"p95 response time 2x target under load in {app}",
+                description=(
+                    f"p95 {p95:.0f}ms exceeds 2x target ({target:.0f}ms). "
+                    f"{load_context}."
+                ),
+                trace_id=representative_trace_id,
+            )
+            if issue:
+                created.append(issue)
+        elif p95 >= target:
+            issue = _ensure_issue(
+                db,
+                app_name=app,
+                rule_id="NFR-7p95",
+                issue_type="nfr_p95_response_time_under_load",
+                severity="high",
+                title=f"p95 response time exceeds target under load in {app}",
+                description=(
+                    f"p95 {p95:.0f}ms exceeds target ({target:.0f}ms). "
+                    f"{load_context}."
+                ),
                 trace_id=representative_trace_id,
             )
             if issue:
@@ -331,6 +435,74 @@ def _detect_storage(db: Session) -> list[Issue]:
 
 
 # ── Section 3 — AI & System ───────────────────────────────────────────────────
+
+def _detect_pod_resource_threshold_breaches(db: Session, window_mins: int) -> list[Issue]:
+    """NFR-33: 3 MedicalAgent pod resource-guard breaches → SEV1."""
+    created = []
+    cutoff = datetime.utcnow() - timedelta(minutes=max(window_mins, 5))
+    rows = (
+        db.query(
+            Trace.id,
+            Trace.output_preview,
+            Trace.metadata_json,
+            Span.error_message,
+            Span.started_at,
+        )
+        .join(Span, Span.trace_id == Trace.id)
+        .filter(
+            Trace.app_name == "medical-rag",
+            Trace.started_at >= cutoff,
+            Span.name == "pod_resource_guard",
+            Span.status == "error",
+        )
+        .order_by(Span.started_at.desc())
+        .limit(20)
+        .all()
+    )
+    if len(rows) < 3:
+        return created
+
+    latest_trace_id, output_preview, metadata_json, error_message, _started_at = rows[0]
+    metadata = {}
+    if metadata_json:
+        try:
+            metadata = json.loads(metadata_json)
+        except (json.JSONDecodeError, TypeError):
+            metadata = {}
+
+    cpu = metadata.get("cpu_percent")
+    cpu_threshold = metadata.get("cpu_threshold_percent")
+    mem = metadata.get("memory_percent")
+    mem_threshold = metadata.get("memory_threshold_percent")
+    evidence = (error_message or output_preview or "application is not reachable").replace("\n", " ")[:260]
+    metric_bits = []
+    if cpu is not None:
+        metric_bits.append(f"CPU {float(cpu):.1f}% / threshold {float(cpu_threshold or 0):.1f}%")
+    if mem is not None:
+        metric_bits.append(f"memory {float(mem):.1f}% / threshold {float(mem_threshold or 0):.1f}%")
+    metrics_text = "; ".join(metric_bits) or "pod resource threshold exceeded"
+
+    issue = _ensure_issue(
+        db,
+        app_name="medical-rag",
+        rule_id="NFR-33",
+        issue_type="nfr_pod_resource_threshold_breach",
+        severity="critical",
+        title="Medical RAG pod resource threshold breached 3 times",
+        description=(
+            "Medical RAG returned 'application is not reachable' after the pod "
+            f"resource guard breached 3 times in the last 5 minutes. {metrics_text}. "
+            "RCA should review Langfuse and Prometheus data for the last 5 minutes "
+            "and recommend changing the pod threshold config "
+            "(POD_CPU_THRESHOLD_PERCENT / POD_MEMORY_THRESHOLD_PERCENT). "
+            f"Latest evidence: {evidence}"
+        ),
+        span_name="pod_resource_guard",
+        trace_id=latest_trace_id,
+    )
+    if issue:
+        created.append(issue)
+    return created
 
 def _detect_execution_time_drift(db: Session) -> list[Issue]:
     """NFR-19: Execution time +20% above expected → SEV2."""
@@ -733,6 +905,74 @@ def _detect_special_character_query_failures(db: Session, window_mins: int) -> l
                 f"Latest error: {snippet}"
             ),
             span_name="query_validation",
+            trace_id=trace_id,
+        )
+        if issue:
+            created.append(issue)
+        break
+
+    return created
+
+
+def _detect_llm_rate_limit_errors(db: Session, window_mins: int) -> list[Issue]:
+    """NFR-32: Medical RAG LLM deployment rate limit error.
+
+    The app emits the actual rate-limit message from the failing LLM span, including
+    observed requests in the rolling window and the configured limit. RCA should use
+    that error text and Prometheus metrics rather than inventing generic failures.
+    """
+    created = []
+    cutoff = datetime.utcnow() - timedelta(minutes=max(window_mins, 180))
+    rows = (
+        db.query(
+            Trace.app_name,
+            Trace.id,
+            Trace.input_preview,
+            Span.name,
+            Span.error_message,
+            Span.started_at,
+        )
+        .join(Span, Span.trace_id == Trace.id)
+        .filter(
+            Trace.app_name == "medical-rag",
+            Span.name == "openai_generation",
+            Span.status == "error",
+            Span.error_message != None,
+            Span.started_at >= cutoff,
+        )
+        .order_by(Span.started_at.desc())
+        .limit(25)
+        .all()
+    )
+
+    for app, trace_id, trace_input, span_name, error_message, _started_at in rows:
+        msg = error_message or ""
+        msg_l = msg.lower()
+        if (
+            "rate limit" not in msg_l
+            and "requests/minute" not in msg_l
+            and "status=429" not in msg_l
+            and "too many requests" not in msg_l
+        ):
+            continue
+
+        snippet = msg.replace("\n", " ")[:260]
+        issue = _ensure_trace_scoped_issue(
+            db,
+            app_name=app,
+            rule_id="NFR-32",
+            issue_type="nfr_llm_rate_limit_exceeded",
+            severity="high",
+            title=f"LLM rate limit exceeded in {app}",
+            description=(
+                "Medical RAG hit the configured LLM deployment request limit. "
+                "RCA should inspect the failing openai_generation span and "
+                "Prometheus medical_rag_llm_* counters for observed request rate, "
+                "remaining quota, deployment name, and model. "
+                f"Query: {(trace_input or '').replace(chr(10), ' ')[:160]}. "
+                f"Latest error: {snippet}"
+            ),
+            span_name="openai_generation",
             trace_id=trace_id,
         )
         if issue:

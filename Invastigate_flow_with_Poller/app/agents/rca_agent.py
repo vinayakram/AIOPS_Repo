@@ -58,6 +58,21 @@ You MUST NOT:
 - If only one data source has relevant data, the analysis may be shorter — that is OK
 - If no external logs are available, perform RCA from error analysis context alone
   and set lower confidence
+- Do not claim CPU saturation, memory pressure, or resource utilization metrics
+  unless those exact metric entries are present in the logs/metrics. For
+  latency-only evidence, describe the cause as capacity/throughput saturation
+  or performance degradation under concurrent load.
+- For Medical RAG pod resource threshold incidents, fetch and use both Langfuse
+  and Prometheus data from the last 5 minutes when available. The fix to surface
+  is a pod threshold configuration change, specifically
+  POD_CPU_THRESHOLD_PERCENT and/or POD_MEMORY_THRESHOLD_PERCENT, followed by
+  redeploying the pod and rerunning the bounded CPU-utilisation scenario.
+- When Deployment Context is present, treat it as authoritative application
+  context. If runtime is docker or orchestrator is docker compose, RCA wording
+  MUST identify the Docker-managed configuration, including the listed config
+  files. For Medical RAG pod threshold incidents, the concrete configuration
+  location is MedicalAgent/Dockerfile and/or MedicalAgent/docker-compose.yml,
+  not a generic environment setting.
 
 ## Specificity Rules for root_cause and rca_summary
 - root_cause.description MUST state the exact error condition observed in the logs —
@@ -107,6 +122,9 @@ Affected Components: {affected_components}
 - Error Summary: {error_summary}
 - Signals: {signals}
 - Agent: {agent_name}
+
+## Deployment Context
+{deployment_context}
 
 ## Data Sources Analyzed
 {data_sources_description}
@@ -181,6 +199,7 @@ class RCAAgent:
             trace_id=request.trace_id,
             logs=all_logs,
             data_sources=data_sources,
+            deployment_context=request.deployment_context,
         )
 
         # Step 4: Call GPT-4o
@@ -191,6 +210,7 @@ class RCAAgent:
             agent_name=request.agent_name,
             rca_target=rca_target,
             data_sources=data_sources,
+            deployment_context=request.deployment_context,
         )
 
         # Step 5: Validate
@@ -253,7 +273,8 @@ class RCAAgent:
                 try:
                     langfuse_logs = await self._langfuse.fetch_trace(trace_id)
                     all_logs.extend(langfuse_logs)
-                    data_sources.append("langfuse")
+                    if langfuse_logs:
+                        data_sources.append("langfuse")
                     logger.info(
                         "RCA | Langfuse returned %d entries", len(langfuse_logs),
                     )
@@ -274,8 +295,6 @@ class RCAAgent:
                         "message": f"Langfuse trace fetch failed: {exc}",
                         "level": "WARN", "metadata": {"error": str(exc), "trace_id": trace_id},
                     }
-                    all_logs.append(err_entry)
-                    data_sources.append("langfuse")
                     await get_event_bus().publish(trace_id, {
                         "type": "logs_fetched", "agent": "rca",
                         "source": "langfuse", "count": 0, "entries": [err_entry],
@@ -286,15 +305,15 @@ class RCAAgent:
                     "RCA | rca_target=%s requires Langfuse but no trace_id provided",
                     rca_target.value,
                 )
-                data_sources.append("langfuse")
-                all_logs.append({
+                missing_entry = {
                     "timestamp": timestamp,
                     "source": "langfuse",
                     "service": "langfuse",
                     "message": "No trace_id provided — cannot fetch Langfuse data",
                     "level": "WARN",
                     "metadata": {"error": "missing_trace_id"},
-                })
+                }
+                await TraceStore().save_fetched_logs("", "rca", "langfuse", [missing_entry])
 
         # ── Prometheus (Infra metrics) ────────────────────────────────
         if fetch_prometheus:
@@ -310,7 +329,8 @@ class RCAAgent:
                     trace_end=trace_end,
                 )
                 all_logs.extend(prom_logs)
-                data_sources.append("prometheus")
+                if prom_logs:
+                    data_sources.append("prometheus")
                 logger.info(
                     "RCA | Prometheus returned %d entries", len(prom_logs),
                 )
@@ -327,8 +347,6 @@ class RCAAgent:
                     "message": f"Prometheus query failed: {exc}",
                     "level": "WARN", "metadata": {"error": str(exc)},
                 }
-                all_logs.append(err_entry)
-                data_sources.append("prometheus")
                 await get_event_bus().publish(trace_id or "", {
                     "type": "logs_fetched", "agent": "rca",
                     "source": "prometheus", "count": 0, "entries": [err_entry],
@@ -361,6 +379,21 @@ class RCAAgent:
             lines.append(f"  Evidence: {err.evidence}")
         return "\n".join(lines)
 
+    @staticmethod
+    def _format_deployment_context(deployment_context: dict[str, Any] | None) -> str:
+        """Format deployment context for the LLM without inventing missing details."""
+        if not deployment_context:
+            return "No deployment context was provided."
+
+        lines: list[str] = []
+        for key, value in deployment_context.items():
+            if isinstance(value, list):
+                rendered = ", ".join(str(item) for item in value)
+            else:
+                rendered = str(value)
+            lines.append(f"- {key}: {rendered}")
+        return "\n".join(lines)
+
     def _build_user_message(
         self,
         error_analysis: ErrorAnalysisResult,
@@ -369,6 +402,7 @@ class RCAAgent:
         trace_id: str | None,
         logs: list[dict[str, Any]],
         data_sources: list[str],
+        deployment_context: dict[str, Any] | None,
     ) -> str:
         """Build the user message with error analysis context + all fresh logs."""
         lines: list[str] = [
@@ -387,6 +421,11 @@ class RCAAgent:
         if incident.entities.service:
             lines.append(f"- Entity Service: {incident.entities.service}")
 
+        lines.append("")
+
+        # Deployment context
+        lines.append("## Deployment Context")
+        lines.append(self._format_deployment_context(deployment_context))
         lines.append("")
 
         # Error Analysis context
@@ -472,12 +511,19 @@ class RCAAgent:
         agent_name: str,
         rca_target: AnalysisDomain,
         data_sources: list[str],
+        deployment_context: dict[str, Any] | None,
     ) -> str:
         """Send the prompt to GPT-4o and return the raw JSON response."""
         logger.debug("Calling LLM for RCA with %d chars", len(user_message))
 
-        # Build data sources description
-        if rca_target == AnalysisDomain.AGENT:
+        if not data_sources:
+            ds_desc = (
+                "NO external log or metric entries were returned. "
+                "Use the error analysis and normalization context to determine root cause. "
+                "Do not cite Prometheus or Langfuse as evidence unless entries are present in the user message. "
+                "Set confidence lower since evidence is limited."
+            )
+        elif rca_target == AnalysisDomain.AGENT:
             ds_desc = (
                 "Langfuse (AI agent traces/spans) only. "
                 "Investigate agent execution flow, LLM calls, tool invocations, "
@@ -497,8 +543,9 @@ class RCAAgent:
             )
         else:
             ds_desc = (
-                "NO external log sources returned data. "
+                "NO external log or metric entries were returned. "
                 "Use the error analysis context to determine root cause. "
+                "Do not cite Prometheus or Langfuse as evidence unless entries are present in the user message. "
                 "Set confidence lower since evidence is limited."
             )
 
@@ -521,6 +568,7 @@ class RCAAgent:
             error_summary=incident.error_summary,
             signals=", ".join(incident.signals) if incident.signals else "none",
             agent_name=agent_name,
+            deployment_context=self._format_deployment_context(deployment_context),
             data_sources_description=ds_desc,
             schema=self._response_schema,
         )

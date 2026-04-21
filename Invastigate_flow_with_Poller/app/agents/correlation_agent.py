@@ -179,7 +179,8 @@ class CorrelationAgent:
             try:
                 langfuse_logs = await self._langfuse.fetch_trace(request.trace_id)
                 all_logs.extend(langfuse_logs)
-                data_sources.append("langfuse")
+                if langfuse_logs:
+                    data_sources.append("langfuse")
                 logger.info("Correlation | Langfuse returned %d entries", len(langfuse_logs))
                 trace_start, trace_end = self._langfuse.extract_timespan(langfuse_logs)
                 logger.info(
@@ -198,8 +199,6 @@ class CorrelationAgent:
                     "message": f"Langfuse trace fetch failed: {exc}",
                     "level": "WARN", "metadata": {"error": str(exc), "trace_id": request.trace_id},
                 }
-                all_logs.append(err_entry)
-                data_sources.append("langfuse")
                 await get_event_bus().publish(request.trace_id, {
                     "type": "logs_fetched", "agent": "correlation",
                     "source": "langfuse", "count": 0, "entries": [err_entry],
@@ -219,7 +218,8 @@ class CorrelationAgent:
                 trace_end=trace_end,
             )
             all_logs.extend(prom_logs)
-            data_sources.append("prometheus")
+            if prom_logs:
+                data_sources.append("prometheus")
             logger.info("Correlation | Prometheus returned %d entries", len(prom_logs))
             await get_event_bus().publish(request.trace_id or "", {
                 "type": "logs_fetched", "agent": "correlation",
@@ -234,8 +234,6 @@ class CorrelationAgent:
                 "message": f"Prometheus query failed: {exc}",
                 "level": "WARN", "metadata": {"error": str(exc)},
             }
-            all_logs.append(err_entry)
-            data_sources.append("prometheus")
             await get_event_bus().publish(request.trace_id or "", {
                 "type": "logs_fetched", "agent": "correlation",
                 "source": "prometheus", "count": 0, "entries": [err_entry],

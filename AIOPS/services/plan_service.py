@@ -33,6 +33,7 @@ def build_plan_prompt(
 Investigate RCA context:
 - Source: {issue.rca_source or issue.source_system or 'upstream telemetry'}
 - Trace ID: {issue.rca_trace_id or 'N/A'}
+- Remediation type requested: {issue.remediation_type.value}
 - RCA summary: {issue.rca_summary or 'N/A'}
 - RCA recommended action: {issue.rca_recommended_action or 'N/A'}
 
@@ -109,15 +110,17 @@ Planning rules:
 2. Focus only on what needs to change.
 3. Use the Investigate RCA context as primary evidence when it is present.
 4. The proposed approach must address the RCA recommended action unless repository inspection proves it is unsafe or irrelevant.
-5. Keep the plan short, clear, and implementation-focused.
-6. Avoid low-level technical breakdown unless it is essential.
-7. Summarize testing as scenarios, not detailed test implementation.
-8. Include only the required sections below.
-9. Output clean markdown only.
-10. The plan should read like a short engineering review note, not a coding walkthrough.
-11. Each section should be 2-5 short bullets or short prose lines, not long paragraphs.
-12. Keep language specific to this issue and repository context.
-13. Avoid vague phrases such as "update relevant files" or "make necessary changes"; name the impacted component or behavior in plain language.
+5. If the remediation type is infra_change or human_handoff and Codex does not have safe access to the target infrastructure, produce an operator handoff plan with exact steps, validation checks, and rollback guidance instead of pretending to change infrastructure.
+6. If the remediation is repo-managed code, config, or IaC, plan for a branch, validation evidence, and PR.
+7. Keep the plan short, clear, and implementation-focused.
+8. Avoid low-level technical breakdown unless it is essential.
+9. Summarize testing as scenarios, not detailed test implementation.
+10. Include only the required sections below.
+11. Output clean markdown only.
+12. The plan should read like a short engineering review note, not a coding walkthrough.
+13. Each section should be 2-5 short bullets or short prose lines, not long paragraphs.
+14. Keep language specific to this issue and repository context.
+15. Avoid vague phrases such as "update relevant files" or "make necessary changes"; name the impacted component or behavior in plain language.
 
 Return the final answer as markdown with exactly these sections only:
 # Plan for {issue.issue_id}

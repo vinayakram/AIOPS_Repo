@@ -51,6 +51,26 @@ class NormalizationRequest(BaseModel):
         description="Name of the AI agent that encountered the failure",
         examples=["summarizer-v2", "retrieval-agent", "planner-v1"],
     )
+    issue_type: Optional[str] = Field(
+        None,
+        description="Upstream issue type when RCA is launched from a detector.",
+    )
+    rule_id: Optional[str] = Field(
+        None,
+        description="Upstream NFR or detector rule id.",
+    )
+    severity: Optional[str] = Field(
+        None,
+        description="Upstream severity.",
+    )
+    title: Optional[str] = Field(
+        None,
+        description="Upstream issue title.",
+    )
+    description: Optional[str] = Field(
+        None,
+        description="Upstream issue description.",
+    )
 
 
 # ── Response Models (PRD-aligned Pydantic classes) ─────────────────────

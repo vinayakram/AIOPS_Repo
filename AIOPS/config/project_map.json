@@ -1,7 +1,7 @@
 {
   "medical-rag": {
     "repo_root": "/home/support/Documents/POCDEMO1/MedicalAgent_GitHub",
-    "allowed_folder": "/home/support/Documents/POCDEMO1/MedicalAgent_GitHub/backend",
+    "allowed_folder": "/home/support/Documents/POCDEMO1/MedicalAgent_GitHub",
     "test_command": "pytest -q",
     "base_branch": "main",
     "github_repo": "vinayakram/medical_agent",
@@ -15,7 +15,15 @@
       "latency",
       "high latency",
       "response time",
-      "generation"
+      "generation",
+      "docker",
+      "dockerfile",
+      "docker compose",
+      "pod",
+      "threshold",
+      "resource threshold",
+      "cpu threshold",
+      "memory threshold"
     ]
   },
   "multiagent-order-orchestrator": {
