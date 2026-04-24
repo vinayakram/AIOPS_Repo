@@ -441,9 +441,10 @@ def finalize_branch_pr_with_phases(
     if not branch_name:
         raise RuntimeError("Prepared implementation branch not found.")
 
+    pr_summary = _sanitize_pr_summary(payload.codex_final_message)
     pr_body = (
         f"Automated remediation for {issue.issue_id}\n\n"
-        f"## Summary\n{payload.codex_final_message.strip() or 'Codex implementation completed.'}\n"
+        f"## Summary\n{pr_summary or 'Codex implementation completed.'}\n"
     )
 
     try:
@@ -704,6 +705,42 @@ def _clean_summary_text(text: str) -> str:
     cleaned = re.sub(r"\([^)]*:\d+\)", "", cleaned)
     cleaned = re.sub(r"\s+([.,;:])", r"\1", cleaned)
     cleaned = re.sub(r"\s+", " ", cleaned).strip(" -")
+    return cleaned
+
+
+def _sanitize_pr_summary(text: str) -> str:
+    cleaned = (text or "").strip()
+    if not cleaned:
+        return ""
+
+    cleaned = re.sub(
+        r"(?im)^openai codex v[^\n]*\n(?:^(?:workdir|model|provider|approval|sandbox|reasoning effort|reasoning summaries|session id):[^\n]*\n?)+",
+        "",
+        cleaned,
+    )
+
+    blocked_prefixes = (
+        "workdir:",
+        "model:",
+        "provider:",
+        "approval:",
+        "sandbox:",
+        "reasoning effort:",
+        "reasoning summaries:",
+        "session id:",
+    )
+    filtered_lines: list[str] = []
+    for line in cleaned.splitlines():
+        stripped = line.strip()
+        lowered = stripped.lower()
+        if lowered.startswith("openai codex v"):
+            continue
+        if any(lowered.startswith(prefix) for prefix in blocked_prefixes):
+            continue
+        filtered_lines.append(line)
+
+    cleaned = "\n".join(filtered_lines)
+    cleaned = re.sub(r"\n{3,}", "\n\n", cleaned).strip()
     return cleaned
 
 

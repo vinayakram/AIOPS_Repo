@@ -316,7 +316,12 @@ function escapeHtml(value) {
 }
 
 function displayPath(value) {
-  return escapeHtml((value || '').replace(/\\/g, '/'));
+  const normalized = (value || '')
+    .replace(/\\/g, '/')
+    .replace(/MedicalAgent_GitHub/g, 'SampleAgent_GitHub')
+    .replace(/MedicalAgent/g, 'SampleAgent')
+    .replace(/medicalagent/g, 'sampleagent');
+  return escapeHtml(normalized);
 }
 
 function issueTitleFromIssue(issue) {

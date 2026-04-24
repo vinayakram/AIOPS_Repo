@@ -1,7 +1,7 @@
 {
   "sample-agent": {
-    "repo_root": "/home/support/Documents/POCDEMO1/MedicalAgent_GitHub",
-    "allowed_folder": "/home/support/Documents/POCDEMO1/MedicalAgent_GitHub",
+    "repo_root": "/home/support/Documents/POCDEMO1/SampleAgent_GitHub",
+    "allowed_folder": "/home/support/Documents/POCDEMO1/SampleAgent_GitHub",
     "test_command": "python3 -m py_compile backend/rag/pipeline.py backend/main.py",
     "base_branch": "main",
     "github_repo": "vinayakram/sample_agent",

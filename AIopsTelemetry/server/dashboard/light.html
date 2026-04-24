@@ -1826,6 +1826,13 @@ function timeAgo(iso){
 }
 
 function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function _rmNormalizeRepoPath(value){
+  return String(value || '')
+    .replace(/\\/g, '/')
+    .replace(/MedicalAgent_GitHub/g, 'SampleAgent_GitHub')
+    .replace(/MedicalAgent/g, 'SampleAgent')
+    .replace(/medicalagent/g, 'sampleagent');
+}
 
 function cleanPreview(raw,max){
   if(!raw)return'—';
@@ -2168,8 +2175,8 @@ function _rmRenderProjectReview(issueId, data) {
         </div>
         ${c.reasoning ? `<div style="font-size:11px;color:var(--muted);margin-bottom:6px;font-style:italic">${esc(c.reasoning)}</div>` : ''}
         <div class="rm-proj-kv">
-          ${c.repo_root ? `<span>repo: ${esc(c.repo_root)}</span>` : ''}
-          ${c.allowed_folder ? `<span>scope: ${esc(c.allowed_folder)}</span>` : ''}
+          ${c.repo_root ? `<span>repo: ${esc(_rmNormalizeRepoPath(c.repo_root))}</span>` : ''}
+          ${c.allowed_folder ? `<span>scope: ${esc(_rmNormalizeRepoPath(c.allowed_folder))}</span>` : ''}
           ${c.base_branch ? `<span>branch: ${esc(c.base_branch)}</span>` : ''}
           ${c.test_command ? `<span>test: ${esc(c.test_command)}</span>` : ''}
           ${c.github_repo ? `<span>gh: ${esc(c.github_repo)}</span>` : ''}
@@ -2185,11 +2192,11 @@ function _rmRenderProjectReview(issueId, data) {
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
       <div class="rm-field" style="margin-bottom:0">
         <label>repo_root</label>
-        <input type="text" id="rm-repo-root" placeholder="${esc(recommended.repo_root||'')}">
+        <input type="text" id="rm-repo-root" placeholder="${esc(_rmNormalizeRepoPath(recommended.repo_root||''))}">
       </div>
       <div class="rm-field" style="margin-bottom:0">
         <label>allowed_folder</label>
-        <input type="text" id="rm-allowed-folder" placeholder="${esc(recommended.allowed_folder||'')}">
+        <input type="text" id="rm-allowed-folder" placeholder="${esc(_rmNormalizeRepoPath(recommended.allowed_folder||''))}">
       </div>
       <div class="rm-field" style="margin-bottom:0">
         <label>base_branch</label>

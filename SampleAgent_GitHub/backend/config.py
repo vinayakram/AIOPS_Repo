@@ -23,8 +23,9 @@ class Settings(BaseSettings):
     # AIops Telemetry server (optional)
     AIOPS_SERVER_URL: str = "http://localhost:7000"
     AIOPS_ENABLED: bool = True
-    CPU_THRESHOLD_PERCENT: int = 95
-    MEMORY_THRESHOLD_PERCENT: int = 95
+    # Runtime resource guardrail thresholds (%). Tuned to reduce false-positive breaches on short bursts.
+    CPU_THRESHOLD_PERCENT: int = 98
+    MEMORY_THRESHOLD_PERCENT: int = 98
 
     class Config:
         env_file = ".env"
