@@ -1,12 +1,14 @@
 import json
 from datetime import datetime
 from typing import Optional
+import httpx
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from sqlalchemy import desc
 import logging
 
+from server.config import settings
 from server.database.engine import get_db
 from server.database.models import Issue
 
@@ -58,6 +60,7 @@ def list_issues(
         q = q.filter(Issue.severity == severity)
     total = q.count()
     issues = q.order_by(desc(Issue.created_at)).offset(offset).limit(limit).all()
+    _hydrate_remediation_metadata(db, issues)
     return {"total": total, "issues": [_issue_dict(i) for i in issues]}
 
 
@@ -116,6 +119,7 @@ def get_issue(issue_id: int, db: Session = Depends(get_db)):
     issue = db.query(Issue).filter(Issue.id == issue_id).first()
     if not issue:
         raise HTTPException(404, "Issue not found")
+    _hydrate_remediation_metadata(db, [issue])
     return _issue_dict(issue)
 
 
@@ -162,6 +166,8 @@ def _transition(issue_id: int, new_status: str, db: Session):
     issue = db.query(Issue).filter(Issue.id == issue_id).first()
     if not issue:
         raise HTTPException(404, "Issue not found")
+    if new_status == "RESOLVED":
+        _hydrate_remediation_metadata(db, [issue], force=True)
     issue.status = new_status
     issue.updated_at = datetime.utcnow()
     if new_status == "ACKNOWLEDGED":
@@ -174,13 +180,67 @@ def _transition(issue_id: int, new_status: str, db: Session):
     return _issue_dict(issue)
 
 
+def _read_issue_meta(issue: Issue) -> dict:
+    try:
+        return json.loads(issue.metadata_json) if issue.metadata_json else {}
+    except (json.JSONDecodeError, TypeError):
+        return {}
+
+
+def _remediation_meta_from_status(data: dict, run_id: str) -> dict:
+    status = data.get("status")
+    if not status:
+        return {}
+    meta = {
+        "remediation_run_id": run_id,
+        "remediation_status": status,
+    }
+    for key in ("pr_url", "pr_number", "job_phase", "job_error", "current_screen"):
+        if key in data:
+            meta[f"remediation_{key}"] = data.get(key)
+    return meta
+
+
+def _hydrate_remediation_metadata(db: Session, issues: list[Issue], force: bool = False) -> None:
+    """Recover remediation status from AIOPS when telemetry metadata is stale.
+
+    The dashboard relies on issue.metadata_json for its button state. Demo flows
+    can bypass the telemetry proxy fallback path, so this lightweight repair keeps
+    the board truthful without changing the existing frontend flow.
+    """
+    changed = False
+    base_url = settings.AIOPS_REMEDIATION_URL.rstrip("/")
+    if not base_url:
+        return
+    with httpx.Client(timeout=0.8) as client:
+        for issue in issues:
+            meta = _read_issue_meta(issue)
+            current = meta.get("remediation_status")
+            if not force and current == "PR_CREATED":
+                continue
+            run_id = str(meta.get("remediation_run_id") or f"AIOPS-{issue.id}")
+            try:
+                response = client.get(f"{base_url}/api/issues/{run_id}/status")
+            except httpx.HTTPError:
+                continue
+            if response.status_code == 404:
+                continue
+            if not response.is_success:
+                continue
+            updates = _remediation_meta_from_status(response.json(), run_id)
+            if not updates:
+                continue
+            meta.update(updates)
+            issue.metadata_json = json.dumps(meta)
+            changed = True
+    if changed:
+        db.commit()
+
+
 def _issue_dict(i: Issue) -> dict:
     # Parse metadata_json so the dashboard gets a live object (not a raw string).
     # This carries remediation_run_id / remediation_status written by the proxy.
-    try:
-        meta = json.loads(i.metadata_json) if i.metadata_json else {}
-    except (json.JSONDecodeError, TypeError):
-        meta = {}
+    meta = _read_issue_meta(i)
     return {
         "id": i.id,
         "app_name": i.app_name,

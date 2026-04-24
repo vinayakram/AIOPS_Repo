@@ -90,7 +90,7 @@ export default function Dashboard() {
                 <label className="form-label">Agent Name</label>
                 <input
                   className="form-input"
-                  placeholder="e.g. medical-rag, summarizer-v2"
+                  placeholder="e.g. sample-agent, summarizer-v2"
                   value={agentName}
                   onChange={e => setAgentName(e.target.value)}
                 />

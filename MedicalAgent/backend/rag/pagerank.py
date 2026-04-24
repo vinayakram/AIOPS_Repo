@@ -6,7 +6,7 @@ from sklearn.metrics.pairwise import cosine_similarity
 
 class PageRankScorer:
     """
-    PageIndex-based ranking system for medical articles.
+    PageIndex-based ranking system for sample articles.
 
     Two modes:
     1. Citation-based: Uses PubMed related-article links to build a directed graph.

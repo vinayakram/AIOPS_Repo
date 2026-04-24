@@ -68,7 +68,7 @@ AIops Telemetry is a **single-process FastAPI application** that provides:
 │                        Agent Applications                           │
 │                                                                     │
 │  ┌──────────────────┐   ┌──────────────────┐   ┌────────────────┐  │
-│  │  MedicalAgent    │   │  WebSearchAgent  │   │  CustomAgent   │  │
+│  │  SampleAgent    │   │  WebSearchAgent  │   │  CustomAgent   │  │
 │  │  (RAG pipeline)  │   │  (LangGraph)     │   │  (any app)     │  │
 │  └────────┬─────────┘   └────────┬─────────┘   └───────┬────────┘  │
 │           │                      │                      │           │
@@ -236,7 +236,7 @@ Accepts:
 ```json
 {
   "id": "trace-uuid",
-  "app_name": "medical-agent",
+  "app_name": "sample-agent",
   "status": "ok",
   "started_at": "2026-03-24T10:00:00Z",
   "ended_at": "2026-03-24T10:00:09.68Z",
@@ -448,7 +448,7 @@ You are an SRE assistant. Analyze this AI agent issue and return JSON.
 
 Issue:
   Type: nfr_output_error  Severity: high
-  Title: Application error returned in output by medical-agent
+  Title: Application error returned in output by sample-agent
   Description: 1 recent trace returned an error inside the response body...
 
 System Metrics (min/avg/max over last 6 min):
@@ -531,7 +531,7 @@ Webhook payload (POST):
 {
   "rule": "Escalate Critical Issues",
   "issue_id": 42,
-  "app_name": "medical-agent",
+  "app_name": "sample-agent",
   "title": "Application error returned in output",
   "severity": "high",
   "status": "OPEN",
@@ -553,7 +553,7 @@ _jobs: dict[str, dict] = {
     "abc12345": {
         "job_id": "abc12345",
         "issue_id": 42,
-        "app_name": "medical-agent",
+        "app_name": "sample-agent",
         "status": "running",   # running | completed | failed
         "output": "...",        # accumulated stdout/stderr
         "started_at": datetime,
@@ -569,8 +569,8 @@ _DOCS = Path(__file__).resolve().parents[3]  # Documents folder
 
 APP_FOLDERS = {
     "web-search-agent": str(_DOCS / "WebSearchAgent"),
-    "medical-agent":    str(_DOCS / "MedicalAgent"),
-    "medical-rag":      str(_DOCS / "MedicalAgent"),
+    "sample-agent":    str(_DOCS / "SampleAgent"),
+    "sample-agent":      str(_DOCS / "SampleAgent"),
 }
 ```
 

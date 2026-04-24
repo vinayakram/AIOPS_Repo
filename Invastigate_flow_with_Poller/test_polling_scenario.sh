@@ -47,7 +47,7 @@ python mock_aiops_server.py
 # Expected output:
 #   Mock AIOps Engine — http://localhost:9090
 #   Pre-loaded with 2 incidents:
-#     • trace-med-rag-001 (medical-rag)
+#     • trace-med-rag-001 (sample-agent)
 #     • trace-retrieval-dns-002 (retrieval-agent)
 
 

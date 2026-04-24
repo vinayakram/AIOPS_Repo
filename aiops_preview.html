@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>AIOps Demo Flow</title>
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        background: #f5f7fa;
+        margin: 0;
+        padding: 40px;
+        color: #1f2937;
+    }
+
+    .container {
+        max-width: 1100px;
+        margin: 0 auto;
+    }
+
+    h2 {
+        text-align: center;
+        margin-bottom: 30px;
+    }
+
+    .demo-layout {
+        display: grid;
+        grid-template-columns: minmax(340px, 460px) minmax(360px, 1fr);
+        gap: 24px;
+        align-items: start;
+    }
+
+    .steps-list {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .step {
+        background: #007BFF;
+        color: white;
+        padding: 15px;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: 0.3s;
+        text-align: left;
+        border: 2px solid transparent;
+    }
+
+    .step.completed {
+        background: #28a745;
+    }
+
+    .step.running {
+        background: #6f42c1;
+    }
+
+    .step.failed {
+        background: #dc3545;
+    }
+
+    .step.active {
+        border-color: #111827;
+        box-shadow: 0 8px 22px rgba(17, 24, 39, 0.16);
+    }
+
+    .step:hover {
+        opacity: 0.9;
+    }
+
+    .eng {
+        font-weight: bold;
+    }
+
+    .jp {
+        font-size: 13px;
+        opacity: 0.9;
+        margin-top: 4px;
+    }
+
+    .status {
+        font-size: 12px;
+        opacity: 0.95;
+        margin-top: 8px;
+        line-height: 1.35;
+    }
+
+    .step-actions {
+        margin-top: 10px;
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+    }
+
+    .controls {
+        margin-top: 20px;
+        text-align: center;
+    }
+
+    button {
+        padding: 10px 15px;
+        margin: 5px;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        background: #444;
+        color: white;
+    }
+
+    .step-actions button {
+        background: rgba(255, 255, 255, 0.18);
+        border: 1px solid rgba(255, 255, 255, 0.35);
+        font-size: 12px;
+        padding: 7px 10px;
+        margin: 0;
+    }
+
+    .details-panel {
+        background: white;
+        border: 1px solid #d7dde6;
+        border-radius: 8px;
+        padding: 22px;
+        min-height: 360px;
+        box-shadow: 0 8px 24px rgba(31, 41, 55, 0.08);
+        position: sticky;
+        top: 24px;
+    }
+
+    .details-title {
+        margin: 0 0 8px;
+        font-size: 22px;
+        color: #111827;
+    }
+
+    .details-title-jp {
+        margin: 0 0 18px;
+        color: #4b5563;
+        font-size: 14px;
+    }
+
+    .substeps {
+        margin: 0;
+        padding-left: 22px;
+    }
+
+    .substeps li {
+        margin-bottom: 16px;
+        line-height: 1.45;
+    }
+
+    .substeps .en {
+        font-weight: 700;
+        color: #1f2937;
+    }
+
+    .substeps .ja {
+        margin-top: 4px;
+        color: #4b5563;
+        font-size: 14px;
+    }
+
+    .substeps .en:only-child {
+        font-weight: 600;
+    }
+
+    .details-empty {
+        color: #6b7280;
+        line-height: 1.5;
+    }
+
+    @media (max-width: 820px) {
+        body {
+            padding: 20px;
+        }
+
+        .demo-layout {
+            grid-template-columns: 1fr;
+        }
+
+        .details-panel {
+            position: static;
+        }
+    }
+</style>
+</head>
+<body>
+
+<div class="container">
+    <h2>AIOps Demo Flow</h2>
+
+    <div class="demo-layout">
+        <div class="steps-list">
+            <div class="step" onclick="selectStep(this, 0)">
+                <div class="eng">Input agent/application</div>
+                
+            </div>
+
+            <div class="step" onclick="selectStep(this, 1)">
+                <div class="eng">Sample agent/application screen + Prometheus + Grafana + Langfuse</div>
+                
+            </div>
+
+            <div class="step" onclick="selectStep(this, 2)">
+                <div class="eng">Simulation script to show spike</div>
+                
+                <div class="step-actions">
+                    <button onclick="runSpikeSimulation(this.closest('.step'), 2, 10); event.stopPropagation();">Run 10s spike</button>
+                    <button onclick="runSpikeSimulation(this.closest('.step'), 2, 12); event.stopPropagation();">Run 12s spike</button>
+                    <button onclick="runSpikeSimulation(this.closest('.step'), 2, 30); event.stopPropagation();">Run 30s spike</button>
+                    <button onclick="runSpikeSimulation(this.closest('.step'), 2, 60); event.stopPropagation();">Run 60s spike</button>
+                    <button onclick="runSpikeSimulation(this.closest('.step'), 2, 90); event.stopPropagation();">Run 90s spike</button>
+                    <button onclick="runSpikeSimulation(this.closest('.step'), 2, 120); event.stopPropagation();">Run 120s spike</button>
+                </div>
+                <div class="status" id="simulation-status"></div>
+            </div>
+
+            <div class="step" onclick="selectStep(this, 3)">
+                <div class="eng">Langfuse logs when application becomes unreachable</div>
+                
+            </div>
+
+            <div class="step" onclick="selectStep(this, 4)">
+                <div class="eng">Prometheus metrics in Grafana (Pod view)</div>
+                
+            </div>
+
+            <div class="step" onclick="selectStep(this, 5)">
+                <div class="eng">Telemetry dashboard</div>
+                
+            </div>
+
+            <div class="step" onclick="selectStep(this, 6)">
+                <div class="eng">Click on issue -> Generate RCA</div>
+                
+            </div>
+
+            <div class="step" onclick="selectStep(this, 7)">
+                <div class="eng">Click on remediation -> AI remediation</div>
+                
+            </div>
+
+            <div class="step" onclick="selectStep(this, 8)">
+                <div class="eng">Pull request creation in GitHub</div>
+                
+            </div>
+
+            <div class="controls">
+                <button onclick="resetSteps()">Reset</button>
+                <button onclick="completeAll()">Mark All Complete</button>
+            </div>
+        </div>
+
+        <aside class="details-panel" id="details-panel">
+            <h3 class="details-title" id="details-title">Select a step</h3>
+            <div class="details-empty" id="details-content">
+                Click any step on the left to show the demo talking points.
+            </div>
+        </aside>
+    </div>
+</div>
+
+<script>
+    const DEMO_LAUNCHER_HOST = window.location.hostname || "localhost";
+    const DEMO_LAUNCHER_URL = `http://${DEMO_LAUNCHER_HOST}:8765/run-simulation`;
+    const STEP_DETAILS = [
+        {
+            title: "Input agent/application",
+            items: [
+                ["What the agent/application does"],
+                ["Where the agent/application logs are captured - Langfuse"],
+                ["Where the metrics of the containerized agent/application is stored - Prometheus/Grafana"]
+            ]
+        },
+        {
+            title: "Sample agent/application screen + Prometheus + Grafana + Langfuse",
+            items: [
+                ["Running SampleAgent application"],
+                ["Show normal traces in Langfuse before the spike."],
+                ["Show baseline container metrics in Prometheus/Grafana."]
+            ]
+        },
+        {
+            title: "Simulation script to show spike",
+            items: [
+                ["The script to increase the hits to application is triggered"],
+                ["Langfuse shows application not reachable"],
+                ["Grafana shows the container metrics"]
+            ]
+        },
+        {
+            title: "Langfuse logs when application becomes unreachable",
+            items: [
+                ["Open the threshold-breach trace."],
+                ["Confirm the error message: application is not reachable."],
+                ["Use the trace ID as the bridge into telemetry ticketing."]
+            ]
+        },
+        {
+            title: "Prometheus metrics in Grafana (Pod view)",
+            items: [
+                ["Open the Pod CPU usage panel."],
+                ["Confirm the spike after Prometheus scrape and Grafana refresh delay."],
+                ["Validate that the displayed metric aligns with the threshold breach."]
+            ]
+        },
+        {
+            title: "Telemetry dashboard",
+            items: [
+                ["New ticket raised"],
+                ["If it is the same error then de-duplication happens"]
+            ]
+        },
+        {
+            title: "Click on issue -> Generate RCA",
+            items: [
+                ["RCA agent checks what is the issue"],
+                ["States why the issue happened"],
+                ["Gives recommendation"]
+            ]
+        },
+        {
+            title: "Click on remediation -> AI remediation",
+            items: [
+                ["On clicking 'Send to Remediation', remediation pipeline is triggered"],
+                ["Human in Loop happens at project resolution, plan revision and PR approval"],
+                ["Git diff and artifacts are generated"],
+                ["PR is created in git"]
+            ]
+        },
+        {
+            title: "Pull request creation in GitHub",
+            items: [
+                ["Open the created pull request."],
+                ["Review the generated code change and summary."],
+                ["Use the PR as the final remediation handoff."]
+            ]
+        }
+    ];
+
+    function selectStep(element, index) {
+        document.querySelectorAll(".step").forEach(el => el.classList.remove("active"));
+        element.classList.add("active");
+        markStepCompleted(element, index);
+        renderDetails(index);
+    }
+
+    function markStepCompleted(element, index) {
+        element.classList.remove("failed", "running");
+        element.classList.add("completed");
+
+        let states = JSON.parse(localStorage.getItem("steps")) || [];
+        states[index] = true;
+        localStorage.setItem("steps", JSON.stringify(states));
+    }
+
+    function renderDetails(index) {
+        const detail = STEP_DETAILS[index];
+        if (!detail) return;
+
+        document.getElementById("details-title").textContent = detail.title;
+        document.getElementById("details-content").innerHTML = `
+            <ul class="substeps">
+                ${detail.items.map(([en, ja]) => `
+                    <li>
+                        <div class="en">${escapeHtml(en)}</div>
+                        ${ja ? `<div class="ja">${escapeHtml(ja)}</div>` : ""}
+                    </li>
+                `).join("")}
+            </ul>
+        `;
+    }
+
+    function escapeHtml(value) {
+        return String(value)
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
+    }
+
+    async function runSpikeSimulation(element, index, loadSeconds = 60) {
+        const status = document.getElementById("simulation-status");
+
+        if (element.classList.contains("running")) {
+            status.textContent = "Simulation is already running.";
+            return;
+        }
+
+        element.classList.remove("failed", "completed");
+        element.classList.add("running");
+        document.querySelectorAll(".step").forEach(el => el.classList.remove("active"));
+        element.classList.add("active");
+        renderDetails(index);
+        status.textContent = `Starting LOAD_SECONDS=${loadSeconds} CPU spike simulation... Purple only means the step is selected. The script runs only after clicking a Run xs spike button.`;
+
+        try {
+            const response = await fetch(DEMO_LAUNCHER_URL, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ load_seconds: loadSeconds })
+            });
+            const result = await response.json();
+
+            if (!response.ok || !result.ok) {
+                throw new Error(result.error || result.message || "Simulation failed");
+            }
+
+            element.classList.remove("running", "failed");
+            element.classList.add("completed");
+            status.textContent = `Started: ${result.command}`;
+
+            let states = JSON.parse(localStorage.getItem("steps")) || [];
+            states[index] = true;
+            localStorage.setItem("steps", JSON.stringify(states));
+        } catch (error) {
+            element.classList.remove("running", "completed");
+            element.classList.add("failed");
+            status.textContent = `Could not start simulation: ${error.message}. Start the local launcher with: python3 aiops_preview_launcher.py`;
+        }
+    }
+
+    function loadState() {
+        let states = JSON.parse(localStorage.getItem("steps")) || [];
+        document.querySelectorAll(".step").forEach((el, i) => {
+            if (states[i]) el.classList.add("completed");
+        });
+    }
+
+    function resetSteps() {
+        localStorage.removeItem("steps");
+        document.querySelectorAll(".step").forEach(el => el.classList.remove("completed", "running", "failed", "active"));
+        document.getElementById("simulation-status").textContent = "";
+        document.getElementById("details-title").textContent = "Select a step";
+        document.getElementById("details-content").innerHTML = "Click any step on the left to show the demo talking points.";
+    }
+
+    function completeAll() {
+        let steps = document.querySelectorAll(".step");
+        let states = [];
+        steps.forEach((el, i) => {
+            el.classList.add("completed");
+            states[i] = true;
+        });
+        localStorage.setItem("steps", JSON.stringify(states));
+    }
+
+    loadState();
+    const firstStep = document.querySelector(".step");
+    if (firstStep) {
+        firstStep.classList.add("active");
+        renderDetails(0);
+    }
+</script>
+
+</body>
+</html>

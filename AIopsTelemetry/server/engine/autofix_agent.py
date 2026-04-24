@@ -24,8 +24,8 @@ _DOCS = Path(__file__).resolve().parents[3]
 
 APP_FOLDERS: dict[str, str] = {
     "web-search-agent": str(_DOCS / "WebSearchAgent"),
-    "medical-rag":      str(_DOCS / "MedicalAgent"),
-    "medical-agent":    str(_DOCS / "MedicalAgent"),
+    "sample-agent":      str(_DOCS / "SampleAgent"),
+    "sample-agent":    str(_DOCS / "SampleAgent"),
 }
 
 # ── In-memory job store ───────────────────────────────────────────────────────

@@ -1,4 +1,4 @@
-# Medical RAG Agent — Claude Code Rules
+# Sample Agent Agent — Claude Code Rules
 
 This file is read automatically by Claude Code before every session.
 All rules below are **mandatory** — not suggestions.
@@ -110,7 +110,7 @@ chore(config): pin faiss-cpu to 1.8.x
 - Write a failing test before every implementation change (Red → Green → Refactor).
 - Unit tests for all RAG pipeline stages — mock `PubMedClient` and LLM API calls.
 - Integration tests for all FastAPI routes using `httpx.AsyncClient`.
-- Use in-memory SQLite (`StaticPool`) — never touch `medical_rag.db` in tests.
+- Use in-memory SQLite (`StaticPool`) — never touch `sample_agent.db` in tests.
 - Coverage target: ≥ 85% on `backend/`.
 
 ### Code Quality
@@ -121,7 +121,7 @@ chore(config): pin faiss-cpu to 1.8.x
 - Run `ruff check .` and `black --check .` before committing.
 
 ### Security
-- The `medical_rag.db` file is gitignored — never commit it.
+- The `sample_agent.db` file is gitignored — never commit it.
 - The `.env` file is gitignored — never commit it.
 - JWT secret must be a strong random string in production — never use the default value.
 - All query endpoints require a valid Bearer token — do not add unauthenticated query routes.
@@ -156,7 +156,7 @@ Before opening a PR and before merging, all of the following must be true:
 - Commit directly to `main`
 - Start feature work without first creating a branch and pushing it to `origin`
 - Let a branch go more than one session without pushing to `origin`
-- Commit `medical_rag.db`, `.env`, or any file containing secrets
+- Commit `sample_agent.db`, `.env`, or any file containing secrets
 - Leave `print()` or `console.log` in committed code
 - Add a `TODO` without a linked GitHub issue number
 - Add unauthenticated routes to the query API

@@ -24,7 +24,7 @@ AIops Telemetry collects distributed traces from LangGraph / LangChain agents, d
 ## Architecture
 
 ```
-Agent Apps (MedicalAgent, WebSearchAgent, …)
+Agent Apps (SampleAgent, WebSearchAgent, …)
        │  aiops_sdk (callback handler / manual SDK)
        │  POST /api/ingest/trace
        ▼
@@ -203,7 +203,7 @@ See [docs/CONTRIBUTING.md](docs/CONTRIBUTING.md) for the TDD workflow and [docs/
 ## Related Projects
 
 - [WebSearchAgent](https://github.com/kannan-prodapt/WebSearchAgent) — LangGraph web search agent instrumented with this SDK
-- [MedicalAgent](https://github.com/kannan-prodapt/MedicalAgent) — PubMed RAG pipeline instrumented with this SDK
+- [SampleAgent](https://github.com/kannan-prodapt/SampleAgent) — PubMed RAG pipeline instrumented with this SDK
 
 ---
 

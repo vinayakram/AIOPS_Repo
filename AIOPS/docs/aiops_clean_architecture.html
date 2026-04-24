@@ -217,7 +217,7 @@
     <h1>AIOps Clean Architecture</h1>
     <div class="meta">
       <span>Project: POCDEMO1</span>
-      <span>Application: MedicalAgent / medical-rag</span>
+      <span>Application: SampleAgent / sample-agent</span>
       <span>Observability: Prometheus, traces, RCA agents</span>
       <span>Updated: 17 April 2026</span>
     </div>
@@ -251,7 +251,7 @@
           </defs>
 
           <text x="34" y="36" class="diagram-title">AIOps left-to-right flow</text>
-          <text x="34" y="58" class="diagram-sub">Read from left to right: traffic enters MedicalAgent, telemetry is collected, issues are detected, RCA gathers evidence, and remediation acts.</text>
+          <text x="34" y="58" class="diagram-sub">Read from left to right: traffic enters SampleAgent, telemetry is collected, issues are detected, RCA gathers evidence, and remediation acts.</text>
 
           <rect x="30" y="84" width="1220" height="190" rx="10" class="swimlane"></rect>
           <text x="48" y="108" class="lane-label">Primary request path</text>
@@ -265,7 +265,7 @@
           <text x="78" y="224" class="node-text">k6 / Locust / load script</text>
 
           <rect x="312" y="118" width="220" height="135" rx="8" fill="#eaf7f0" stroke="#b9e2ca" filter="url(#shadow)"></rect>
-          <text x="332" y="146" class="node-title">2. MedicalAgent</text>
+          <text x="332" y="146" class="node-title">2. SampleAgent</text>
           <text x="332" y="172" class="node-text">FastAPI on port 8002</text>
           <text x="332" y="192" class="node-text">/api/query and /api/health</text>
           <text x="332" y="212" class="node-text">RAG pipeline</text>
@@ -280,7 +280,7 @@
           <rect x="58" y="372" width="205" height="130" rx="8" fill="#f1edff" stroke="#d4c9ff" filter="url(#shadow)"></rect>
           <text x="78" y="400" class="node-title">4A. Prometheus</text>
           <text x="78" y="426" class="node-text">10.169.82.55:9090</text>
-          <text x="78" y="446" class="node-text">Scrapes job=medical-rag</text>
+          <text x="78" y="446" class="node-text">Scrapes job=sample-agent</text>
           <text x="78" y="466" class="node-text">Target: 10.169.91.16:8002</text>
           <text x="78" y="486" class="node-text">Metrics: latency, errors, LLM</text>
 
@@ -335,7 +335,7 @@
       </div>
       <div class="legend">
         <div><span class="pill blue">Traffic</span> User and test requests.</div>
-        <div><span class="pill green">Application</span> MedicalAgent production workload.</div>
+        <div><span class="pill green">Application</span> SampleAgent production workload.</div>
         <div><span class="pill violet">Metrics</span> Prometheus numeric evidence.</div>
         <div><span class="pill red">Traces</span> Detailed request and error context.</div>
       </div>
@@ -354,8 +354,8 @@
         </thead>
         <tbody>
           <tr>
-            <td>MedicalAgent</td>
-            <td>Medical RAG application with PubMed retrieval and LLM answer generation</td>
+            <td>SampleAgent</td>
+            <td>Sample Agent application with PubMed retrieval and LLM answer generation</td>
             <td><code>http://localhost:8002</code>, <code>/api/query</code>, <code>/metrics</code></td>
             <td>Emits metrics and request traces</td>
           </tr>
@@ -396,18 +396,18 @@
     <section>
       <h2>Telemetry Flow</h2>
       <ol>
-        <li>User or test traffic calls <code>MedicalAgent /api/query</code>.</li>
-        <li>MedicalAgent records request status, duration, concurrency, article counts, and LLM call outcomes.</li>
-        <li>MedicalAgent exposes those values at <code>/metrics</code>.</li>
-        <li>Prometheus scrapes <code>http://10.169.91.16:8002/metrics</code> as <code>job="medical-rag"</code>.</li>
-        <li>MedicalAgent also emits request traces and span errors to the trace path used by the AIOps/RCA flow.</li>
+        <li>User or test traffic calls <code>SampleAgent /api/query</code>.</li>
+        <li>SampleAgent records request status, duration, concurrency, article counts, and LLM call outcomes.</li>
+        <li>SampleAgent exposes those values at <code>/metrics</code>.</li>
+        <li>Prometheus scrapes <code>http://10.169.91.16:8002/metrics</code> as <code>job="sample-agent"</code>.</li>
+        <li>SampleAgent also emits request traces and span errors to the trace path used by the AIOps/RCA flow.</li>
         <li>AIopsTelemetry detects issues such as p95 latency under load or LLM provider throttling.</li>
         <li>RCA calls Prometheus <code>query_range</code> and retrieves trace/span evidence for the same incident window.</li>
         <li>Remediation uses RCA output to suggest or implement code, config, or infrastructure changes.</li>
       </ol>
       <pre>Current Prometheus target:
 
-job="medical-rag"
+job="sample-agent"
 instance="10.169.91.16:8002"
 metrics_path="/metrics"
 prometheus="http://10.169.82.55:9090"</pre>
@@ -418,7 +418,7 @@ prometheus="http://10.169.82.55:9090"</pre>
       <div class="grid">
         <div class="card">
           <h3>Concurrent Users / Load Degradation</h3>
-          <p>Many users call MedicalAgent at once. p95 latency, error count, and max concurrency are captured through Prometheus metrics. AIOps can raise an NFR latency issue and RCA can recommend scaling, resource tuning, or backpressure.</p>
+          <p>Many users call SampleAgent at once. p95 latency, error count, and max concurrency are captured through Prometheus metrics. AIOps can raise an NFR latency issue and RCA can recommend scaling, resource tuning, or backpressure.</p>
           <p><span class="pill green">Covered</span><span class="pill amber">Needs pod validation for production realism</span></p>
         </div>
         <div class="card">
@@ -451,37 +451,37 @@ prometheus="http://10.169.82.55:9090"</pre>
         </thead>
         <tbody>
           <tr>
-            <td><code>medical_rag_query_duration_seconds</code></td>
+            <td><code>sample_agent_query_duration_seconds</code></td>
             <td>Request latency histogram</td>
             <td>Computes p95/p99 latency and identifies slow-user impact</td>
           </tr>
           <tr>
-            <td><code>medical_rag_query_requests_total</code></td>
+            <td><code>sample_agent_query_requests_total</code></td>
             <td>Request outcome counter</td>
             <td>Identifies success/error trends during the incident window</td>
           </tr>
           <tr>
-            <td><code>medical_rag_query_in_flight</code></td>
+            <td><code>sample_agent_query_in_flight</code></td>
             <td>Live concurrent request gauge</td>
             <td>Supports load saturation and queueing RCA</td>
           </tr>
           <tr>
-            <td><code>medical_rag_query_max_concurrency</code></td>
+            <td><code>sample_agent_query_max_concurrency</code></td>
             <td>Peak concurrency observed by the app</td>
             <td>Shows whether a burst of users occurred</td>
           </tr>
           <tr>
-            <td><code>medical_rag_llm_requests_total</code></td>
+            <td><code>sample_agent_llm_requests_total</code></td>
             <td>LLM outcome counter by deployment and status</td>
             <td>Shows success, provider error, and rate-limited outcomes</td>
           </tr>
           <tr>
-            <td><code>medical_rag_llm_rate_limit_current_window_hits</code></td>
+            <td><code>sample_agent_llm_rate_limit_current_window_hits</code></td>
             <td>Observed LLM calls in the current rolling 60-second window</td>
             <td>Supports rate-limit RCA with runtime request volume context</td>
           </tr>
           <tr>
-            <td><code>medical_rag_llm_rate_limit_per_minute</code></td>
+            <td><code>sample_agent_llm_rate_limit_per_minute</code></td>
             <td>Configured limit exported for context</td>
             <td>Shows the intended request-per-minute threshold for comparison</td>
           </tr>
@@ -506,7 +506,7 @@ prometheus="http://10.169.82.55:9090"</pre>
           <tr>
             <td>Numeric metric</td>
             <td>Prometheus</td>
-            <td><code>medical_rag_llm_requests_total{status="rate_limited"} 2</code></td>
+            <td><code>sample_agent_llm_requests_total{status="rate_limited"} 2</code></td>
           </tr>
           <tr>
             <td>Request-level error text</td>
@@ -525,10 +525,10 @@ prometheus="http://10.169.82.55:9090"</pre>
     <section>
       <h2>Kubernetes Pod Hosting Path</h2>
       <p>
-        MedicalAgent can be hosted as a Kubernetes pod. That is the right next step for validating concurrent-user failure in a production-like environment.
+        SampleAgent can be hosted as a Kubernetes pod. That is the right next step for validating concurrent-user failure in a production-like environment.
       </p>
       <ul>
-        <li>Create a <code>Deployment</code> for MedicalAgent with CPU and memory requests/limits.</li>
+        <li>Create a <code>Deployment</code> for SampleAgent with CPU and memory requests/limits.</li>
         <li>Expose it with a <code>Service</code> on port <code>8002</code>.</li>
         <li>Configure Prometheus scrape annotations or a <code>ServiceMonitor</code> for <code>/metrics</code>.</li>
         <li>Run load from <code>k6</code>, <code>Locust</code>, <code>hey</code>, or a Kubernetes Job.</li>
@@ -557,7 +557,7 @@ prometheus="http://10.169.82.55:9090"</pre>
             <td>Add bounded concurrency, provider-aware exponential backoff, <code>Retry-After</code> handling, timeout budgets, and user-safe fallback</td>
           </tr>
           <tr>
-            <td>MedicalAgent p95 latency rises under concurrent load</td>
+            <td>SampleAgent p95 latency rises under concurrent load</td>
             <td>RAG pipeline performs expensive synchronous work per request</td>
             <td>Add backpressure, queue limits, cache reuse, worker tuning, and clearer saturation metrics</td>
           </tr>
@@ -569,7 +569,7 @@ prometheus="http://10.169.82.55:9090"</pre>
       <h2>Current Limitations</h2>
       <ul>
         <li>Prometheus metrics are real, but raw application logs are not yet stored in a log backend.</li>
-        <li>Process-local gauges reset when MedicalAgent restarts.</li>
+        <li>Process-local gauges reset when SampleAgent restarts.</li>
         <li>For multiple pods, PromQL must aggregate across instances intentionally.</li>
         <li>Provider rate-limit behavior depends on Azure's actual throttling, which may allow short bursts.</li>
         <li>GitHub PR/push automation depends on credentials and repository access.</li>

@@ -2,7 +2,7 @@ from sqlalchemy import create_engine, Column, Integer, String, DateTime, Float, 
 from sqlalchemy.orm import declarative_base, sessionmaker
 from datetime import datetime
 
-SQLALCHEMY_DATABASE_URL = "sqlite:///./medical_rag.db"
+SQLALCHEMY_DATABASE_URL = "sqlite:///./sample_agent.db"
 
 engine = create_engine(
     SQLALCHEMY_DATABASE_URL,

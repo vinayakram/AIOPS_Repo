@@ -246,27 +246,27 @@ def _deployment_context_for_issue(issue: Issue) -> Optional[dict]:
     title = (issue.title or "").lower()
     trace_id = (issue.trace_id or "").lower()
 
-    is_medical_rag = app_name in {"medical-rag", "medical_rag", "medicalagent"}
+    is_sample_agent = app_name in {"sample-agent", "sample_agent", "sampleagent"}
     is_pod_threshold = (
         "pod_resource_threshold" in issue_type
         or "pod resource threshold" in title
         or trace_id.startswith("pod-threshold-")
     )
 
-    if not is_medical_rag and not is_pod_threshold:
+    if not is_sample_agent and not is_pod_threshold:
         return None
 
     return {
-        "application": "Medical RAG",
+        "application": "sample-agent",
         "runtime": "docker",
         "orchestrator": "docker compose",
-        "service_name": "medical-rag-pod",
-        "container_name": "medical-rag-pod",
+        "service_name": "sample-agent-pod",
+        "container_name": "sample-agent-pod",
         "ports": ["8002:8002"],
         "config_files": [
-            "MedicalAgent/Dockerfile",
-            "MedicalAgent/docker-compose.yml",
-            "MedicalAgent/.env",
+            "SampleAgent/Dockerfile",
+            "SampleAgent/docker-compose.yml",
+            "SampleAgent/.env",
         ],
         "threshold_env_vars": [
             "POD_CPU_THRESHOLD_PERCENT",
@@ -275,14 +275,13 @@ def _deployment_context_for_issue(issue: Issue) -> Optional[dict]:
         "current_cpu_threshold_percent": 90,
         "current_memory_threshold_percent": 90,
         "required_fix": (
-            "Update the Docker-managed threshold configuration in "
-            "MedicalAgent/Dockerfile and/or MedicalAgent/docker-compose.yml, "
-            "then recreate the service with `docker compose up -d --build medical-rag-pod`."
+            "Adjust the Docker-managed runtime threshold configuration for "
+            "sample-agent, then rebuild and restart the affected service."
         ),
         "validation": (
-            "Run MedicalAgent/scripts/test_pod_cpu_threshold.sh and verify the app "
-            "returns `application is not reachable` only when the configured pod "
-            "threshold is breached."
+            "Rerun the bounded availability-guard scenario and verify the app "
+            "only returns `application is not reachable` when the configured "
+            "runtime guardrail is actually crossed."
         ),
     }
 
@@ -385,10 +384,33 @@ def _store_result(db, analysis: IssueAnalysis, rca_data: dict) -> None:
         or rec_block.get("recommendation_summary")
         or "See recommendations section."
     )
+    analysis.recommended_action = _soften_recommendation(analysis.recommended_action)
 
     analysis.full_summary = json.dumps(inner, indent=2)
     analysis.status = "done"
     db.commit()
+
+
+def _soften_recommendation(text: str) -> str:
+    """Keep dashboard RCA actions operational without file-level instructions."""
+    if not text:
+        return text
+
+    lowered = text.lower()
+    if (
+        "pod_cpu_threshold_percent" in lowered
+        or "pod_memory_threshold_percent" in lowered
+        or "sampleagent/dockerfile" in lowered
+        or "sampleagent/docker-compose.yml" in lowered
+        or "docker compose up -d --build sample-agent-pod" in lowered
+    ):
+        return (
+            "Adjust the sample-agent runtime threshold configuration so the "
+            "availability guardrail matches expected workload behavior, then "
+            "rebuild/restart the affected service and rerun the bounded guardrail "
+            "scenario to confirm the symptom only appears during a real breach."
+        )
+    return text
 
 
 def _mark_failed(analysis_id: int, msg: str) -> None:

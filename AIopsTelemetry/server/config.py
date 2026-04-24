@@ -1,5 +1,8 @@
 from pydantic_settings import BaseSettings
+from pathlib import Path
 from typing import Optional
+
+APP_DIR = Path(__file__).resolve().parents[1]
 
 
 class Settings(BaseSettings):
@@ -37,9 +40,10 @@ class Settings(BaseSettings):
     # NFR thresholds (override via env if needed)
     NFR_RESPONSE_TIME_TARGET_MS: float = 5000.0   # baseline for rules 7/7a/19/23
     NFR_CHECK_WINDOW_MINUTES: int = 10             # rolling window for rate checks
+    NFR_DETECTOR_ALLOWLIST: str = ""               # comma-separated rule IDs to raise, e.g. NFR-33
 
     class Config:
-        env_file = ".env"
+        env_file = str(APP_DIR / ".env")
         env_prefix = "AIOPS_"
         extra = "ignore"   # ignore non-AIOPS_ env vars (e.g. ANTHROPIC_API_KEY)
 

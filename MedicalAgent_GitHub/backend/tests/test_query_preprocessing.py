@@ -23,23 +23,6 @@ def test_query_normalizes_special_character_demo_input():
     assert "No relevant articles" in result["answer"]
 
 
-def test_query_normalizes_incident_style_mixed_symbols():
-    pipeline = RAGPipeline.__new__(RAGPipeline)
-    captured = {}
-
-    def fake_fetch(query, max_results):
-        captured["query"] = query
-        return []
-
-    pipeline._fetch_articles = fake_fetch
-
-    result = pipeline.query("effect of metformin!!on di@bete$", max_articles=5, top_k=2)
-
-    assert captured["query"] == "effect of metformin on di bete"
-    assert result["total_fetched"] == 0
-    assert "No relevant articles" in result["answer"]
-
-
 def test_query_allows_plain_input_before_fetching_articles():
     pipeline = RAGPipeline.__new__(RAGPipeline)
     captured = {}

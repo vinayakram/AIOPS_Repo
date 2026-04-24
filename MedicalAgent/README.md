@@ -1,12 +1,12 @@
-# Medical RAG Agent
+# Sample Agent Agent
 
-> Evidence-based medical research assistant — PubMed article retrieval, PageRank re-ranking, FAISS vector search, and Claude/GPT-4o answer generation with JWT-secured user authentication.
+> Evidence-based sample research assistant — PubMed article retrieval, PageRank re-ranking, FAISS vector search, and Claude/GPT-4o answer generation with JWT-secured user authentication.
 
 ---
 
 ## Overview
 
-The Medical RAG Agent answers clinical and medical research questions by:
+The Sample Agent Agent answers clinical and sample research questions by:
 
 1. **Fetching** up to 50 relevant articles from PubMed via the Entrez API
 2. **Embedding** abstracts using `sentence-transformers/all-MiniLM-L6-v2` into a FAISS index
@@ -66,8 +66,8 @@ FastAPI  :8000  (backend/main.py)
 ### Install
 
 ```bash
-git clone https://github.com/kannan-prodapt/MedicalAgent.git
-cd MedicalAgent
+git clone https://github.com/kannan-prodapt/SampleAgent.git
+cd SampleAgent
 
 python -m venv venv
 source venv/bin/activate        # Windows: venv\Scripts\activate
@@ -92,12 +92,12 @@ Open **http://localhost:8000** — you'll see the login page. Register a new acc
 The Docker image includes pod resource guard thresholds as environment variables:
 
 ```bash
-cd MedicalAgent
+cd SampleAgent
 docker compose up -d --build
 ```
 
 The compose service limits the demo pod to `0.50` CPU and `1g` memory. When the
-MedicalAgent pod crosses `POD_CPU_THRESHOLD_PERCENT` or
+SampleAgent pod crosses `POD_CPU_THRESHOLD_PERCENT` or
 `POD_MEMORY_THRESHOLD_PERCENT`, normal app access returns HTTP `503` with
 `application is not reachable`. `/metrics` and `/api/health` stay available so
 Prometheus and operators can still observe it.
@@ -120,17 +120,17 @@ Prometheus can use the same target/label assignment shown in the Prometheus UI:
 
 ```yaml
 scrape_configs:
-  - job_name: "medical-rag"
+  - job_name: "sample-agent"
     metrics_path: /metrics
     static_configs:
       - targets:
           - "10.169.91.16:8002"
         labels:
-          app: "medical-rag"
+          app: "sample-agent"
 ```
 
 The same example is saved as `prometheus.yml`. With that assignment,
-Prometheus shows `job="medical-rag"`, `app="medical-rag"`, and
+Prometheus shows `job="sample-agent"`, `app="sample-agent"`, and
 `instance="10.169.91.16:8002"` for the `/metrics` endpoint.
 
 ---
@@ -138,7 +138,7 @@ Prometheus shows `job="medical-rag"`, `app="medical-rag"`, and
 ## Project Structure
 
 ```
-MedicalAgent/
+SampleAgent/
 ├── run.py                          # Entry point (uvicorn)
 ├── requirements.txt
 ├── .env.example
@@ -290,7 +290,7 @@ JWT_ALGORITHM=HS256
 ACCESS_TOKEN_EXPIRE_MINUTES=1440    # 24 hours
 
 # Database
-DATABASE_URL=sqlite:///./medical_rag.db
+DATABASE_URL=sqlite:///./sample_agent.db
 
 # Langfuse (optional)
 LANGFUSE_SECRET_KEY=
@@ -299,7 +299,7 @@ LANGFUSE_HOST=https://cloud.langfuse.com
 
 # AIops Telemetry (optional)
 AIOPS_SERVER_URL=http://localhost:7000
-AIOPS_APP_NAME=medical-agent
+AIOPS_APP_NAME=sample-agent
 AIOPS_API_KEY=
 ```
 
@@ -319,7 +319,7 @@ AIOPS_API_KEY=
 ## Integration with AIops Telemetry
 
 Every completed query is forwarded to AIops Telemetry with:
-- A root trace (`medical-rag-query`)
+- A root trace (`sample-agent-query`)
 - Child spans: `pubmed_fetch`, `embedding`, `pagerank`, `faiss_retrieval`, `openai_generation`
 - Token counts on the LLM span
 - Error details if any stage fails

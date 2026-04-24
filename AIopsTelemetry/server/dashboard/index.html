@@ -32,6 +32,8 @@ header{background:var(--surface);border-bottom:1px solid var(--border);padding:0
 .live-dot{width:7px;height:7px;border-radius:50%;background:var(--green);animation:pulse 2s infinite}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
 .refresh-ts{font-size:11px;color:var(--muted)}
+.lang-toggle{background:var(--surface-2);border:1px solid var(--border);color:var(--text-2);padding:4px 9px;border-radius:6px;cursor:pointer;font-size:11px;font-weight:600;line-height:1;transition:background .15s,color .15s,border-color .15s}
+.lang-toggle:hover{background:var(--surface-3);border-color:var(--accent);color:var(--text)}
 
 /* Layout */
 .container{max-width:1440px;margin:0 auto;padding:20px 24px}
@@ -447,6 +449,7 @@ tr:hover .copy-btn{opacity:.7}
     <button onclick="showPage('instrument-page',this)">Instrument</button>
   </nav>
   <div class="header-r">
+    <button class="lang-toggle" id="lang-toggle" onclick="toggleLanguage()" title="日本語で表示">日本語</button>
     <div class="live-dot"></div>
     <span class="refresh-ts" id="last-refresh">—</span>
   </div>
@@ -1355,6 +1358,8 @@ function issueRow(i){
   const sb=sevMap[i.severity]||'bsev4';
   const stb=statMap[i.status]||'bo';
   const sevLabel=i.sev_label||i.severity.toUpperCase();
+  const issueMeta = (i.metadata_json && typeof i.metadata_json === 'object') ? i.metadata_json : {};
+  const displayApp = issueMeta.display_app_name || (i.app_name === 'sample-agent' ? 'sample-agent' : i.app_name);
   const ruleId=i.rule_id?`<span style="font-family:monospace;font-size:11px;color:var(--muted)">${esc(i.rule_id)}</span>`:'<span style="color:var(--muted)">—</span>';
   const ack=i.status==='OPEN'?`<button class="action-btn ack" onclick="issueAction(${i.id},'acknowledge',event)">Ack</button>`:'';
   const esc2=(i.status==='OPEN'||i.status==='ACKNOWLEDGED')?`<button class="action-btn esc" onclick="issueAction(${i.id},'escalate',event)">Escalate</button>`:'';
@@ -1363,10 +1368,10 @@ function issueRow(i){
   const appEsc=i.app_name.replace(/'/g,"\\'");
   // Remediation button — label/class reflects per-issue run state stored in metadata_json
   let rmBtn = '';
-  if (i.status !== 'RESOLVED') {
-    const rmMeta = (i.metadata_json && typeof i.metadata_json === 'object') ? i.metadata_json : {};
-    const rmStatus = rmMeta.remediation_status || null;
-    const rmRunId  = rmMeta.remediation_run_id  || null;
+  const rmMeta = issueMeta;
+  const rmStatus = rmMeta.remediation_status || null;
+  const rmRunId  = rmMeta.remediation_run_id  || null;
+  if (i.status !== 'RESOLVED' || rmRunId) {
     if (!rmRunId) {
       rmBtn = `<button class="action-btn autofix" title="Send this issue to the remediation pipeline" onclick="openRemediationModal(${i.id},'${titleEsc}','${appEsc}',event)">&#x26A1; Send to Remediation</button>`;
     } else if (rmStatus === 'PR_CREATED') {
@@ -1379,11 +1384,11 @@ function issueRow(i){
   const recurBadge=i.recurrence_count>0?`<span class="badge" style="background:var(--warn-bg,#78350f);color:#fde68a;margin-left:4px" title="Previously seen ${i.recurrence_count}x — issue #${i.previous_issue_id}">&#x21A9; ${i.recurrence_count}x</span>`:'';
   return`<tr class="expandable" onclick="toggleAnalysis(${i.id},null)" style="cursor:pointer">
     <td style="color:var(--muted)">${i.id}</td>
-    <td style="font-weight:500">${i.app_name}</td>
+    <td style="font-weight:500">${esc(displayApp)}</td>
     <td><span class="badge ${sb}">${sevLabel}</span></td>
     <td>${ruleId}</td>
     <td><span class="badge ${stb}">${i.status}</span></td>
-    <td title="${i.description||''}">${i.title}${recurBadge}</td>
+    <td title="${esc(i.description||'')}">${esc(i.title)}${recurBadge}</td>
     <td style="color:var(--muted)">${timeAgo(i.created_at)}</td>
     <td onclick="event.stopPropagation()"><div style="display:flex;gap:4px;flex-wrap:wrap;min-height:22px;align-items:center">${ack}${esc2}${res}${rmBtn}${humanEsc}</div></td>
   </tr>
@@ -2057,7 +2062,7 @@ function _renderRca(issueId, a) {
   ].filter(Boolean).join(' ').toLowerCase();
   const likelySpecialChar = /special character|invalid character|preprocess|preprocessing|query_validation/.test(failureText);
   const likelyCodeArea = likelySpecialChar
-    ? 'MedicalAgent/backend/rag/pipeline.py query validation before retrieval'
+    ? 'sample-agent query validation before retrieval'
     : (rcPreview.component || firstErr.component || rcc.component || 'Trace span shown in evidence');
   const drillBody = `
     <div class="rca-kv">
@@ -2070,7 +2075,7 @@ function _renderRca(issueId, a) {
     ${likelySpecialChar ? `<div style="margin-top:8px;padding:8px;border:1px solid rgba(14,165,233,.35);background:rgba(14,165,233,.08);border-radius:6px">
       <div style="font-size:11px;font-weight:700;color:var(--cyan);margin-bottom:3px">Special-character demo path</div>
       <div style="font-size:11px;color:var(--text-2)">
-        MedicalAgent only emitted a generic preprocessing exception. RCA should connect that exception to missing input normalization
+        sample-agent only emitted a generic preprocessing exception. RCA should connect that exception to missing input normalization
         and recommend validating or escaping unsupported characters before retrieval/LLM calls.
       </div>
     </div>` : ''}
@@ -2231,10 +2236,10 @@ function _renderLegacyAnalysis(panel, a) {
   const combined = `${a.likely_cause || ''} ${a.recommended_action || ''} ${a.evidence || ''}`.toLowerCase();
   const likelySpecialChar = /special character|invalid character|preprocess|preprocessing|query_validation/.test(combined);
   const likelyCodeArea = likelySpecialChar
-    ? 'MedicalAgent/backend/rag/pipeline.py query validation before retrieval'
+    ? 'sample-agent query validation before retrieval'
     : 'Failing trace span shown in supporting evidence';
   const drillText = likelySpecialChar
-    ? 'MedicalAgent emitted a generic preprocessing exception; RCA links it to missing normalization for unsupported special characters.'
+    ? 'sample-agent emitted a generic preprocessing exception; RCA links it to missing normalization for unsupported special characters.'
     : (a.likely_cause || 'Inspect the failing span and associated exception context.');
 
   panel.innerHTML = `
@@ -2996,7 +3001,7 @@ async function autofixIssue(issueId, issueTitle, appName, event) {
 //  3. Panel open + user idle   (≥ 2 min)     → refresh anyway (user walked away)
 //  4. Switching between accordions            → still counts as active → stays deferred
 //  5. Auto-refresh toggled off               → interval still ticks but _doRefresh no-ops
-let _autoRefreshEnabled = true;
+let _autoRefreshEnabled = false;
 let _refreshPending  = false;
 let _lastInteraction = 0;
 const _IDLE_MS = 2 * 60 * 1000;   // 2 minutes
@@ -3050,7 +3055,77 @@ new MutationObserver(()=>{
   if(_refreshPending && !_anyPanelOpen()) _doRefresh();
 }).observe(document.body,{attributes:true,subtree:true,attributeFilter:['class']});
 
+
+// ── Language toggle (isolated to /ja and /dashboard/ja) ─────────────────────
+const _JA_PATHS = new Set(['/ja', '/dashboard/ja']);
+const _IS_JA = _JA_PATHS.has(window.location.pathname);
+const _JA_TEXT = new Map(Object.entries({
+  'AIops Telemetry':'AIops テレメトリー','live':'ライブ','Traces':'トレース','Issues':'問題','Metrics':'メトリクス','Escalation Rules':'エスカレーションルール','Instrument':'インストゥルメント',
+  'Total Traces':'総トレース数','all time':'全期間','Success Rate':'成功率','Avg Latency':'平均レイテンシ','P95 Latency':'P95 レイテンシ','Error Rate':'エラー率','Applications':'アプリケーション','distinct':'種類',
+  'Pipeline Flow':'パイプラインフロー','Search ID or input…':'ID または入力を検索…','All Time':'全期間','Last 1 Hour':'直近1時間','Last 6 Hours':'直近6時間','Last 24 Hours':'直近24時間','Last 7 Days':'直近7日','All Apps':'すべてのアプリ','All Status':'すべてのステータス','All Severity':'すべての重大度','Newest First':'新しい順','Oldest First':'古い順','Slowest First':'遅い順','Fastest First':'速い順','Errors First':'エラー優先','Refresh':'更新','Export CSV':'CSV エクスポート',
+  'Trace ID':'トレースID','Name':'名前','Status':'ステータス','Latency':'レイテンシ','Observations':'観測','Cost':'コスト','Tags / Scores':'タグ / スコア','Timestamp':'タイムスタンプ','Prev':'前へ','Next':'次へ',
+  'Issue ID':'問題ID','Rule':'ルール','Application':'アプリケーション','Severity':'重大度','Title':'タイトル','Created':'作成日時','Actions':'操作','Open':'オープン','Acknowledged':'確認済み','Escalated':'エスカレーション済み','Resolved':'解決済み','Ack':'確認','Escalate':'エスカレート','Resolve':'解決','Escalate to Human':'人へエスカレーション','Send to Remediation':'修復へ送信',
+  'Root Cause Analysis':'根本原因分析','Likely cause':'推定原因','Evidence':'証拠','Recommended action':'推奨アクション','Requesting analysis':'分析をリクエスト中','Analysis failed':'分析に失敗しました',
+  'CPU Usage':'CPU 使用率','Memory Usage':'メモリ使用率','Request Rate':'リクエスト率','Error Count':'エラー数','P95 Latency ms':'P95 レイテンシ ms','App':'アプリ','Window':'期間','Value':'値','Updated':'更新日時',
+  'Escalation Rule':'エスカレーションルール','NFR':'NFR','Enabled':'有効','Threshold':'しきい値','Cooldown':'クールダウン','Create Rule':'ルール作成','Save':'保存','Cancel':'キャンセル','Delete':'削除',
+  'Instrument Application':'アプリケーションを計測','Endpoint':'エンドポイント','API Key':'API キー','Generate':'生成','Copy':'コピー','Copied':'コピー済み',
+  'AI Remediation':'AI 修復','Remediation Options':'修復オプション','Remediation Type':'修復タイプ','Code Change':'コード変更','Config Change':'設定変更','Infra Change':'インフラ変更','Runbook Change':'ランブック変更','Investigation Only':'調査のみ','Human Handoff':'人手対応','Acceptance Criteria':'受け入れ基準','Requested By':'依頼者','Start Remediation':'修復を開始','Project Review':'プロジェクト確認','Generate Plan':'計画を生成','Implementation Plan':'実装計画','Approve Plan & Implement':'計画を承認して実装','Request Revision':'修正依頼','Reject':'却下','Close':'閉じる','Implementation Running':'実装中','Change Summary':'変更概要','Test Results':'テスト結果','Git Diff':'Git 差分','View Artifacts':'成果物を表示','Review Notes':'レビューコメント','Approve & Push PR':'承認してPRを作成','Request Changes':'変更を依頼','Remediation Complete':'修復完了','Changes pushed and PR created.':'変更がプッシュされ、PRが作成されました。',
+  'Auto':'自動','Paused':'一時停止','Auto-refresh ON — click to pause':'自動更新オン。クリックで一時停止','Auto-refresh OFF — click to resume':'自動更新オフ。クリックで再開','Loading…':'読み込み中…','Loading from Langfuse…':'Langfuse から読み込み中…','No data.':'データがありません。','No issues match the filters.':'条件に一致する問題はありません。','No app data.':'アプリデータがありません。','Application is not reachable':'アプリケーションに到達できません'
+}));
+const _JA_PREFIXES = [
+  ['Updated ', '更新 '], ['Error: ', 'エラー: '], ['Failed to ', '失敗: '], ['Cannot reach ', '接続できません: '], ['Issue ', '問題 '], ['Created ', '作成 ']
+];
+let _i18nBusy = false;
+function toggleLanguage(){ window.location.href = _IS_JA ? '/dashboard' : '/ja'; }
+function _jaTranslate(value){
+  if(!value) return value;
+  const trimmed = value.trim();
+  if(_JA_TEXT.has(trimmed)) return value.replace(trimmed, _JA_TEXT.get(trimmed));
+  for(const [from,to] of _JA_PREFIXES){ if(trimmed.startsWith(from)) return value.replace(from, to); }
+  return value;
+}
+function _jaApply(root=document.body){
+  if(!_IS_JA || _i18nBusy || !root) return;
+  _i18nBusy = true;
+  try{
+    const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
+      acceptNode(node){
+        const parent = node.parentElement;
+        if(!parent || ['SCRIPT','STYLE','NOSCRIPT'].includes(parent.tagName)) return NodeFilter.FILTER_REJECT;
+        return node.nodeValue.trim() ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT;
+      }
+    });
+    const nodes = [];
+    while(walker.nextNode()) nodes.push(walker.currentNode);
+    nodes.forEach(node=>{ const next = _jaTranslate(node.nodeValue); if(next !== node.nodeValue) node.nodeValue = next; });
+    root.querySelectorAll?.('[placeholder],[title],option,button,input[type=button],input[type=submit]').forEach(el=>{
+      ['placeholder','title','value'].forEach(attr=>{
+        if(el.hasAttribute?.(attr)){ const val = el.getAttribute(attr); const next = _jaTranslate(val); if(next !== val) el.setAttribute(attr,next); }
+      });
+    });
+  } finally { _i18nBusy = false; }
+}
+function setupLanguage(){
+  const btn = document.getElementById('lang-toggle');
+  if(btn){
+    btn.textContent = _IS_JA ? 'English' : '日本語';
+    btn.title = _IS_JA ? 'View in English' : '日本語で表示';
+  }
+  if(!_IS_JA) return;
+  document.documentElement.lang = 'ja';
+  document.title = 'AIops テレメトリー';
+  _jaApply(document.body);
+  new MutationObserver(mutations=>{
+    if(_i18nBusy) return;
+    mutations.forEach(m=>{
+      if(m.type === 'characterData') _jaApply(m.target.parentElement);
+      m.addedNodes.forEach(node=>{ if(node.nodeType === 1) _jaApply(node); });
+    });
+  }).observe(document.body,{childList:true,subtree:true,characterData:true});
+}
+
 // ── Init ─────────────────────────────────────────────────────────────────────
+setupLanguage();
 _updateAutoRefreshBtn();
 loadStats();
 loadTraces();

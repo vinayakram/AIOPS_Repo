@@ -73,9 +73,9 @@ class RAGPipeline:
         if not query:
             return ""
 
-        # Keep medically meaningful text (letters, digits, spaces, and common separators)
-        # and replace unsupported symbols with spaces.
-        cleaned = re.sub(r"[^\w\s\-/\.,:%+]", " ", query)
+        # Remove configured unsupported characters and normalize whitespace.
+        trigger_chars = re.escape(settings.SPECIAL_CHARACTER_DEMO_CHARS)
+        cleaned = re.sub(f"[{trigger_chars}]", " ", query)
         return re.sub(r"\s+", " ", cleaned).strip()
 
     def query(
@@ -95,16 +95,12 @@ class RAGPipeline:
             if ctx:
                 ctx.end_step(name, out)
 
-        original_query = user_query or ""
-        normalized_query = self._normalize_user_query(original_query)
+        if self._has_special_character_demo_trigger(user_query):
+            _start("query_validation", {"query": (user_query or "")[:120]})
+            user_query = self._normalize_user_query(user_query)
+            _end("query_validation", {"normalized_query": user_query[:120]})
 
-        if normalized_query != original_query or self._has_special_character_demo_trigger(original_query):
-            _start("query_validation", {"query": original_query[:120]})
-            _end("query_validation", {"normalized_query": normalized_query[:120]})
-
-        user_query = normalized_query
-
-        if not user_query.strip():
+        if not (user_query or "").strip():
             raise ValueError("Query cannot be empty after removing unsupported special characters.")
 
         if not app_state.llm_enabled:

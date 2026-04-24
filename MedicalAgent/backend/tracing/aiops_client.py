@@ -1,5 +1,5 @@
 """
-Thin client that forwards completed MedicalRAG traces to the AIops
+Thin client that forwards completed SampleAgent traces to the AIops
 Telemetry server (http://localhost:7000).
 
 Called from main.py after each /api/query finishes — non-blocking,
@@ -13,10 +13,15 @@ from datetime import datetime, timezone
 import requests
 
 from ..config import settings
+from .langfuse_client import tracer
 
 logger = logging.getLogger("aiops.client")
 
-APP_NAME = "medical-rag"
+APP_NAME = "sample-agent"
+DISPLAY_APP_NAME = "sample-agent"
+GENERIC_THRESHOLD_REASON = (
+    "runtime resource pressure crossed the configured availability guardrail"
+)
 
 # Span colours are purely cosmetic — the span_type drives dashboard colouring
 STEP_TYPE_MAP = {
@@ -50,19 +55,22 @@ def send_pod_threshold_breach(
     memory_percent: float | None,
     memory_threshold_percent: float,
 ) -> None:
-    """Emit a synthetic trace so AIops can ticket repeated pod breaches."""
+    """Emit a synthetic trace so AIops can ticket repeated availability failures."""
     if not settings.AIOPS_ENABLED:
         return
 
     now = datetime.now(timezone.utc)
-    trace_id = f"pod-threshold-{uuid.uuid4().hex}"
+    trace_uuid = uuid.uuid4().hex
+    trace_id = f"pod-threshold-{trace_uuid}"
     metadata = {
         "scenario": "pod_threshold_breach",
-        "pod_name": "medical-rag-agent",
+        "display_app_name": DISPLAY_APP_NAME,
+        "pod_name": "sample-agent-agent",
         "cpu_percent": cpu_percent,
         "cpu_threshold_percent": cpu_threshold_percent,
         "memory_percent": memory_percent,
         "memory_threshold_percent": memory_threshold_percent,
+        "reason": GENERIC_THRESHOLD_REASON,
         "recommended_fix": "Change the pod threshold config to raise POD_CPU_THRESHOLD_PERCENT and redeploy.",
     }
     payload = {
@@ -85,8 +93,8 @@ def send_pod_threshold_breach(
                 "started_at": now.isoformat(),
                 "ended_at": now.isoformat(),
                 "duration_ms": 0,
-                "input_preview": "cgroup pod resource sample",
-                "output_preview": f"cpu={cpu_percent:.1f}% threshold={cpu_threshold_percent:.1f}%",
+                "input_preview": "runtime availability guard sample",
+                "output_preview": GENERIC_THRESHOLD_REASON,
                 "error_message": "application is not reachable",
                 "metadata": metadata,
             }
@@ -103,6 +111,14 @@ def send_pod_threshold_breach(
         ],
     }
     threading.Thread(target=_post, args=(payload,), daemon=True).start()
+    tracer.record_pod_threshold_breach(
+        trace_id=trace_uuid,
+        reason=GENERIC_THRESHOLD_REASON,
+        cpu_percent=cpu_percent,
+        cpu_threshold_percent=cpu_threshold_percent,
+        memory_percent=memory_percent,
+        memory_threshold_percent=memory_threshold_percent,
+    )
 
 
 # ── Payload builder ───────────────────────────────────────────────────────────

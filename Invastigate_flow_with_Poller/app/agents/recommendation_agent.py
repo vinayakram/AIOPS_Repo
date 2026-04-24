@@ -45,15 +45,15 @@ You MUST NOT:
 - Claim CPU or memory saturation unless the RCA includes explicit CPU or memory
   metric evidence. For latency-only RCA, recommend capacity scaling,
   concurrency/worker tuning, caching, or query-path optimization.
-- For Medical RAG pod resource threshold incidents, rank the pod threshold config
-  change first. Name POD_CPU_THRESHOLD_PERCENT and/or
-  POD_MEMORY_THRESHOLD_PERCENT explicitly, then validate by rerunning the bounded
-  pod CPU-utilisation script.
+- For sample-agent availability guard incidents, rank the runtime threshold
+  configuration adjustment first. Mention CPU and/or memory guardrail settings
+  as the configuration area, then validate by rerunning the bounded
+  availability-guard scenario.
 - When Deployment Context is present, use it to make the recommendation concrete.
-  If runtime is docker or orchestrator is docker compose, rank 1 MUST mention the
-  listed Docker config file(s), especially MedicalAgent/Dockerfile and
-  MedicalAgent/docker-compose.yml for Medical RAG, and include recreating the
-  service with `docker compose up -d --build medical-rag-pod`.
+  If runtime is docker or orchestrator is docker compose, rank 1 should mention
+  the Docker-managed service configuration generally and tell the operator to
+  rebuild/restart the affected service. Do not prescribe exact file paths or a
+  full command unless the user explicitly asks for implementation detail.
 
 ## Ranking Rules
 - Rank 1: Directly fixes the root cause. This is the immediate action to take.

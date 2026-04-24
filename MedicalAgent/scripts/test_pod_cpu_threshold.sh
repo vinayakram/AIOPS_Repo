@@ -8,7 +8,7 @@ BREACHES_REQUIRED="${BREACHES_REQUIRED:-3}"
 LOAD_SECONDS="${LOAD_SECONDS:-12}"
 POLL_SECONDS="${POLL_SECONDS:-2}"
 
-echo "Medical RAG pod CPU threshold test"
+echo "Sample Agent pod CPU threshold test"
 echo "Container: ${CONTAINER_NAME}"
 echo "App URL:   ${APP_URL}"
 echo "AIops URL: ${AIOPS_URL}"
@@ -45,8 +45,8 @@ while time.time()<end:
   deadline=$((SECONDS + LOAD_SECONDS + 8))
   saw_breach=0
   while [ "${SECONDS}" -lt "${deadline}" ]; do
-    status="$(curl -sS -o /tmp/medical_rag_pod_threshold_body.txt -w '%{http_code}' "${APP_URL}/" || true)"
-    body="$(tr '\n' ' ' </tmp/medical_rag_pod_threshold_body.txt 2>/dev/null || true)"
+    status="$(curl -sS -o /tmp/sample_agent_pod_threshold_body.txt -w '%{http_code}' "${APP_URL}/" || true)"
+    body="$(tr '\n' ' ' </tmp/sample_agent_pod_threshold_body.txt 2>/dev/null || true)"
     if [ "${status}" = "503" ] && printf '%s' "${body}" | grep -qi "application is not reachable"; then
       saw_breach=1
       breaches=$((breaches + 1))
@@ -71,7 +71,7 @@ fi
 
 echo "Waiting for AIops detector to open the NFR-33 ticket..."
 for _ in $(seq 1 20); do
-  issues="$(curl -fsS "${AIOPS_URL}/api/issues?app_name=medical-rag&status=OPEN&limit=20" || true)"
+  issues="$(curl -fsS "${AIOPS_URL}/api/issues?app_name=sample-agent&status=OPEN&limit=20" || true)"
   if printf '%s' "${issues}" | grep -q "nfr_pod_resource_threshold_breach"; then
     echo "AIops ticket raised:"
     printf '%s\n' "${issues}"

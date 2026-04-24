@@ -159,7 +159,7 @@ Say:
 Use this as the next version of the demo narrative.
 
 Scenario:
-- `MedicalAgent` receives high concurrent traffic on the chat/query endpoint.
+- `SampleAgent` receives high concurrent traffic on the chat/query endpoint.
 - p95 latency breaches the SLO or users see intermittent failures.
 - `AIopsTelemetry` raises a Sev ticket from NFR rules.
 - RCA agents inspect traces, logs, metrics, and code/config context.

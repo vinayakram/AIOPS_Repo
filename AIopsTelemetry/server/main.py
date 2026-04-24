@@ -10,7 +10,7 @@ from fastapi.responses import FileResponse
 from server.database.engine import init_db
 from server.engine import escalation_engine, process_manager
 # metrics_collector disabled on feature/rca-external-service — host-OS psutil data
-# is not a valid data source for this branch (only medical-rag trace data is used)
+# is not a valid data source for this branch (only sample-agent trace data is used)
 # from server.engine import metrics_collector
 from server.api import ingest, traces, issues, escalations, metrics, health, agent, langfuse_traces
 from server.api import autofix as autofix_api
@@ -35,10 +35,10 @@ def _register_agents():
         cwd=ws_folder,
     )
 
-    med_folder = str(_DOCS / "MedicalAgent")
-    med_server = str(_DOCS / "MedicalAgent" / "run.py")
+    med_folder = str(_DOCS / "SampleAgent")
+    med_server = str(_DOCS / "SampleAgent" / "run.py")
     process_manager.register(
-        "medical-agent",
+        "sample-agent",
         cmd=[python, med_server],
         cwd=med_folder,
     )
@@ -51,7 +51,7 @@ async def lifespan(app: FastAPI):
     _register_agents()
     global _escalation_task, _metrics_task
     _escalation_task = asyncio.create_task(escalation_engine.start())
-    # metrics_collector disabled — only medical-rag trace data is the intended source
+    # metrics_collector disabled — only sample-agent trace data is the intended source
     # _metrics_task = asyncio.create_task(metrics_collector.start())
     yield
     # Shutdown
@@ -95,6 +95,15 @@ if os.path.isdir(_DASHBOARD_DIR):
 @app.get("/")
 @app.get("/dashboard")
 async def serve_dashboard():
+    index = os.path.join(_DASHBOARD_DIR, "index.html")
+    if os.path.isfile(index):
+        return FileResponse(index)
+    return {"message": "AIops Telemetry Server", "docs": "/docs"}
+
+
+@app.get("/ja")
+@app.get("/dashboard/ja")
+async def serve_japanese_dashboard():
     index = os.path.join(_DASHBOARD_DIR, "index.html")
     if os.path.isfile(index):
         return FileResponse(index)

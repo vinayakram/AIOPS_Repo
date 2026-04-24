@@ -783,10 +783,10 @@ for fname, ftype, fdesc in schema_fields:
 
 # Example
 add_textbox(slide, 0.3, 2.9, 12.7, 0.28,
-            "EXAMPLE  —  LLM Access Disabled in 'medical-rag' service", font_size=10, bold=True, color=C_ACCENT)
+            "EXAMPLE  —  LLM Access Disabled in 'sample-agent' service", font_size=10, bold=True, color=C_ACCENT)
 
 example_whys = [
-    ("Problem", "medical-rag fails to process requests — LLM access is disabled",
+    ("Problem", "sample-agent fails to process requests — LLM access is disabled",
      "LLM access is disabled (demo error mode) log entry"),
     ("Why 1",   "LLM access is disabled in the service",
      "Log: LLM access is disabled (demo error mode). Click Enable LLM Access..."),

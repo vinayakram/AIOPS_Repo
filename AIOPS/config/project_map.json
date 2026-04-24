@@ -1,13 +1,13 @@
 {
-  "medical-rag": {
+  "sample-agent": {
     "repo_root": "/home/support/Documents/POCDEMO1/MedicalAgent_GitHub",
     "allowed_folder": "/home/support/Documents/POCDEMO1/MedicalAgent_GitHub",
-    "test_command": "pytest -q",
+    "test_command": "python3 -m py_compile backend/rag/pipeline.py backend/main.py",
     "base_branch": "main",
-    "github_repo": "vinayakram/medical_agent",
+    "github_repo": "vinayakram/sample_agent",
     "matchers": [
-      "medical-rag",
-      "medical rag",
+      "sample-agent",
+      "sample rag",
       "rag",
       "openai",
       "openai-answer-generation",

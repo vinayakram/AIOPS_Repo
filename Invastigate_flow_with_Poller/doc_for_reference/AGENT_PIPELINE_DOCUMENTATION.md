@@ -599,7 +599,7 @@ The Five Whys is an iterative interrogation technique where each answer becomes 
 
 **Example chain for an LLM access disabled incident:**
 ```
-Problem: medical-rag fails to process requests
+Problem: sample-agent fails to process requests
 Why 1: LLM access is disabled
 Why 2: Service is in demo error mode
 Why 3: Demo mode config flag was toggled

@@ -11,6 +11,7 @@ from services.codex_cli_service import CodexCLI
 from services.repo_service import (
     build_remediation_branch_name,
     commit_all_changes,
+    create_branch_and_pull_request_via_api_from_worktree,
     create_backup,
     create_pull_request,
     diff_text,
@@ -130,7 +131,8 @@ Implementation handoff summary:
 {handoff_summary}
 """
 
-    validation_command = issue.validation_command or issue.test_command or "No validation command configured"
+    configured_validation_command = issue.validation_command or issue.test_command or ""
+    validation_command = "disabled by remediation service for this demo run"
     remediation_guidance = {
         RemediationType.CODE_CHANGE: "Make the smallest safe code fix that satisfies the approved plan.",
         RemediationType.INFRA_CHANGE: "Apply the smallest safe infrastructure or deployment change within the allowed scope.",
@@ -141,15 +143,17 @@ Implementation handoff summary:
     }[issue.remediation_type]
 
     validation_rule = (
-        "Verification checks are temporarily disabled by the remediation service. You may mention the intended validation command, but do not block completion on test execution."
-        if validation_command and validation_command != "No validation command configured"
-        else "If no validation command is configured, explain what manual validation is required."
+        f"Verification checks are temporarily disabled by the remediation service. "
+        f"Do not run `{configured_validation_command}` or any pytest command during implementation. "
+        "You may mention the intended validation command in your final answer, but do not block completion on test execution."
+        if configured_validation_command
+        else "Verification checks are temporarily disabled by the remediation service. Explain what manual validation is required."
     )
 
     environment_rules = """
 13. The runtime may be Windows PowerShell or Linux shell depending on deployment. Use portable commands where possible and avoid shell-specific tricks.
 14. Do NOT emit shell-based patch commands such as `apply_patch <<'PATCH'` or heredoc wrappers. Use direct file editing only.
-15. If a shell command fails, do not retry with alternate shells. Continue by editing files directly and then run the configured validation command plainly when available.
+15. If a shell command fails, do not retry with alternate shells. Continue by editing files directly; validation is handled outside this Codex implementation run.
 """
 
     return f"""You are running inside Codex CLI in repo: {repo_root}
@@ -166,6 +170,7 @@ Issue details:
 - Base branch: {issue.base_branch}
 - Allowed folder: {allowed_folder}
 - Validation command: {validation_command}
+- Intended validation command, for human review only: {configured_validation_command or 'No validation command configured'}
 
 Issue description:
 {issue.description or 'No description provided.'}
@@ -192,7 +197,7 @@ Execution rules:
 8. {validation_rule}
 9. Leave the branch ready for the remediation service to commit, push, and open the PR.
 10. In your final summary, clearly state whether the changes are ready for human review and commit/push.
-11. Include a short summary, the validation command used, and the key files changed.
+11. Include a short summary, state that automated validation was skipped by the remediation service, and list the key files changed.
 12. Avoid spending time on optional cleanups, broad refactors, extra observability work, or schema changes unless the current issue cannot be resolved without them.
 {environment_rules}
 
@@ -436,6 +441,11 @@ def finalize_branch_pr_with_phases(
     if not branch_name:
         raise RuntimeError("Prepared implementation branch not found.")
 
+    pr_body = (
+        f"Automated remediation for {issue.issue_id}\n\n"
+        f"## Summary\n{payload.codex_final_message.strip() or 'Codex implementation completed.'}\n"
+    )
+
     try:
         if phase_callback:
             phase_callback("pushing")
@@ -453,17 +463,21 @@ def finalize_branch_pr_with_phases(
         if phase_callback:
             phase_callback("pr")
         append_progress(issue.issue_id, "Creating PR or compare-link handoff.")
-        pr_body = (
-            f"Automated remediation for {issue.issue_id}\n\n"
-            f"## Summary\n{payload.codex_final_message.strip() or 'Codex implementation completed.'}\n"
-        )
         pr_url, pr_number = create_pull_request(issue, branch_name, body=pr_body)
     except Exception as exc:
-        if not settings.demo_dummy_pr_on_failure:
-            raise
-        append_progress(issue.issue_id, f"Real branch / PR creation failed; creating dummy PR handoff: {exc}")
-        pr_url, pr_number = _dummy_pr_url(issue, branch_name), None
-        save_text(run_dir / "pr_info.txt", f"url={pr_url}\nnumber=\nmode=dummy\nreason={exc}\n")
+        append_progress(issue.issue_id, f"Local Git branch / PR creation failed: {exc}")
+        try:
+            if phase_callback:
+                phase_callback("pr")
+            append_progress(issue.issue_id, "Trying GitHub API branch / PR fallback using configured token.")
+            pr_url, pr_number = create_branch_and_pull_request_via_api_from_worktree(issue, branch_name, body=pr_body)
+            append_progress(issue.issue_id, f"GitHub API branch / PR fallback completed: {pr_url}")
+        except Exception as api_exc:
+            if not settings.demo_dummy_pr_on_failure:
+                raise api_exc from exc
+            append_progress(issue.issue_id, f"GitHub API branch / PR fallback failed; creating dummy PR handoff: {api_exc}")
+            pr_url, pr_number = _dummy_pr_url(issue, branch_name), None
+            save_text(run_dir / "pr_info.txt", f"url={pr_url}\nnumber=\nmode=dummy\nreason={api_exc}\nlocal_reason={exc}\n")
     if pr_number:
         append_progress(issue.issue_id, f"Pull request created: {pr_url}")
     elif pr_url:

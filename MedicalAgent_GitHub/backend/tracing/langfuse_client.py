@@ -1,5 +1,5 @@
 """
-Langfuse tracing wrapper for the Medical RAG pipeline.
+Langfuse tracing wrapper for the SampleAgent pipeline.
 
 Each call to /api/query creates one Langfuse trace with child spans for:
   pubmed_fetch → embedding → pagerank → faiss_retrieval → openai_generation
@@ -184,10 +184,10 @@ class LangfuseTracer:
             try:
                 root_cm = self._client.start_as_current_observation(
                     trace_context=LFTraceContext(trace_id=trace_id),
-                    name="medical-rag",
+                    name="sample-agent",
                     as_type="span",
                     input={"query": query},
-                    metadata={"user_id": user_id, "tags": ["medical-rag", "pubmed", "pagerank"]},
+                    metadata={"user_id": user_id, "tags": ["sample-agent", "pubmed", "pagerank"]},
                 )
                 root_obs = root_cm.__enter__()
                 ctx._lf_root_obs = root_obs

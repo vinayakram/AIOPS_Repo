@@ -751,10 +751,10 @@ for fname, ftype, fdesc in schema_fields:
     y += 0.28
 
 add_textbox(slide, 0.3, 2.9, 12.7, 0.28,
-            "例  —  'medical-rag'サービスでのLLMアクセス無効化", font_size=10, bold=True, color=C_ACCENT)
+            "例  —  'sample-agent'サービスでのLLMアクセス無効化", font_size=10, bold=True, color=C_ACCENT)
 
 example_whys = [
-    ("問題",    "medical-ragがリクエスト処理に失敗 — LLMアクセスが無効化されている",
+    ("問題",    "sample-agentがリクエスト処理に失敗 — LLMアクセスが無効化されている",
      "LLMアクセスが無効（デモエラーモード）のログエントリ"),
     ("なぜ1",   "サービスのLLMアクセスが無効化されている",
      "ログ: LLM access is disabled (demo error mode). Click Enable LLM Access..."),

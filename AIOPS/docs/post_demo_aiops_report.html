@@ -123,7 +123,7 @@
     <div class="meta">
       <span>Date: 17 April 2026</span>
       <span>Project: POCDEMO1</span>
-      <span>Primary app: MedicalAgent / medical-rag</span>
+      <span>Primary app: SampleAgent / sample-agent</span>
       <span>Telemetry: AIopsTelemetry, RCA Investigation Flow, Prometheus</span>
     </div>
   </header>
@@ -132,7 +132,7 @@
     <section>
       <h2>Executive Summary</h2>
       <p>
-        After the demo review, the POC was extended from a generic incident demo into a more production-like AIOps flow. The main target application is the MedicalAgent RAG service, observed as <code>medical-rag</code>. The flow now supports concurrent-user load degradation, real Azure OpenAI rate-limit failures, Prometheus metric evidence, trace/span evidence, RCA generation, and remediation planning.
+        After the demo review, the POC was extended from a generic incident demo into a more production-like AIOps flow. The main target application is the SampleAgent RAG service, observed as <code>sample-agent</code>. The flow now supports concurrent-user load degradation, real Azure OpenAI rate-limit failures, Prometheus metric evidence, trace/span evidence, RCA generation, and remediation planning.
       </p>
       <div class="callout">
         No secret values are documented here. API keys must remain only in local environment files or a production secrets manager.
@@ -152,7 +152,7 @@
         </thead>
         <tbody>
           <tr>
-            <td>Concurrent users causing slow or unavailable MedicalAgent responses</td>
+            <td>Concurrent users causing slow or unavailable SampleAgent responses</td>
             <td>Multiple parallel <code>/api/query</code> calls from the demo page or load script</td>
             <td>Trace duration, p95/p99 query latency, query error counts, in-flight query count, max concurrency</td>
             <td>Issue such as <code>NFR-7p95</code> for p95 latency under load, followed by RCA and remediation guidance</td>
@@ -161,7 +161,7 @@
             <td>Real Azure OpenAI low-rate deployment throttling</td>
             <td>Rapid calls to deployment <code>low-ratelimit-gpt-4o-mini</code></td>
             <td>Provider error span from <code>openai_generation</code>, LLM request counters, rate-limited counter, current request window, configured limit</td>
-            <td>Issue <code>NFR-32</code>: LLM rate limit exceeded in <code>medical-rag</code></td>
+            <td>Issue <code>NFR-32</code>: LLM rate limit exceeded in <code>sample-agent</code></td>
           </tr>
           <tr>
             <td>RCA normalization and evidence quality fixes</td>
@@ -180,13 +180,13 @@
     </section>
 
     <section>
-      <h2>MedicalAgent and Prometheus Linkage</h2>
+      <h2>SampleAgent and Prometheus Linkage</h2>
       <p>
-        MedicalAgent does not push logs to Prometheus. It exposes a Prometheus-compatible metrics endpoint, and Prometheus scrapes it.
+        SampleAgent does not push logs to Prometheus. It exposes a Prometheus-compatible metrics endpoint, and Prometheus scrapes it.
       </p>
-      <pre>MedicalAgent
+      <pre>SampleAgent
   exposes: http://10.169.91.16:8002/metrics
-  job label in Prometheus: medical-rag
+  job label in Prometheus: sample-agent
 
 Prometheus
   endpoint: http://10.169.82.55:9090
@@ -197,7 +197,7 @@ RCA / Investigation Flow
   reads Prometheus API: http://10.169.82.55:9090/api/v1/query_range
   converts metric samples into evidence rows displayed as source=prometheus</pre>
       <p>
-        The displayed rows such as <code>medical_rag_llm_current_window_hits=12</code> are not raw Prometheus logs. They are RCA evidence entries generated from PromQL results.
+        The displayed rows such as <code>sample_agent_llm_current_window_hits=12</code> are not raw Prometheus logs. They are RCA evidence entries generated from PromQL results.
       </p>
     </section>
 
@@ -213,42 +213,42 @@ RCA / Investigation Flow
         </thead>
         <tbody>
           <tr>
-            <td><code>medical_rag_query_duration_seconds</code></td>
-            <td>Histogram of MedicalAgent query latency</td>
+            <td><code>sample_agent_query_duration_seconds</code></td>
+            <td>Histogram of SampleAgent query latency</td>
             <td>Measured around real <code>/api/query</code> requests</td>
           </tr>
           <tr>
-            <td><code>medical_rag_query_requests_total</code></td>
+            <td><code>sample_agent_query_requests_total</code></td>
             <td>Successful and failed query count</td>
-            <td>Incremented by MedicalAgent per request outcome</td>
+            <td>Incremented by SampleAgent per request outcome</td>
           </tr>
           <tr>
-            <td><code>medical_rag_query_in_flight</code></td>
-            <td>Current concurrent MedicalAgent query requests</td>
-            <td>Runtime gauge maintained by MedicalAgent</td>
+            <td><code>sample_agent_query_in_flight</code></td>
+            <td>Current concurrent SampleAgent query requests</td>
+            <td>Runtime gauge maintained by SampleAgent</td>
           </tr>
           <tr>
-            <td><code>medical_rag_query_max_concurrency</code></td>
+            <td><code>sample_agent_query_max_concurrency</code></td>
             <td>Maximum observed concurrency since process start</td>
-            <td>Runtime gauge maintained by MedicalAgent</td>
+            <td>Runtime gauge maintained by SampleAgent</td>
           </tr>
           <tr>
-            <td><code>medical_rag_llm_requests_total</code></td>
+            <td><code>sample_agent_llm_requests_total</code></td>
             <td>LLM request outcomes by status, deployment, model, and scenario</td>
             <td>Incremented after Azure OpenAI call success, provider rate limit, or provider error</td>
           </tr>
           <tr>
-            <td><code>medical_rag_llm_rate_limit_current_window_hits</code></td>
+            <td><code>sample_agent_llm_rate_limit_current_window_hits</code></td>
             <td>Number of LLM scenario calls seen in the active rolling 60-second window</td>
-            <td>Calculated in MedicalAgent process memory from actual call timestamps</td>
+            <td>Calculated in SampleAgent process memory from actual call timestamps</td>
           </tr>
           <tr>
-            <td><code>medical_rag_llm_rate_limit_per_minute</code></td>
+            <td><code>sample_agent_llm_rate_limit_per_minute</code></td>
             <td>Configured request-per-minute limit for the low-rate deployment scenario</td>
-            <td>Read from MedicalAgent config, exported as a gauge for RCA context</td>
+            <td>Read from SampleAgent config, exported as a gauge for RCA context</td>
           </tr>
           <tr>
-            <td><code>medical_rag_llm_rate_limit_remaining</code></td>
+            <td><code>sample_agent_llm_rate_limit_remaining</code></td>
             <td>Remaining requests in the local observed rolling window</td>
             <td>Calculated as configured limit minus current observed window hits</td>
           </tr>
@@ -267,35 +267,35 @@ RCA / Investigation Flow
       </ol>
       <pre>Example PromQL used by RCA:
 
-max(medical_rag_llm_rate_limit_current_window_hits{app="medical-rag"}) by (scenario, deployment)
-max(medical_rag_llm_rate_limit_per_minute{app="medical-rag"}) by (scenario, deployment)
-sum(increase(medical_rag_llm_requests_total{app="medical-rag",status="rate_limited"}[5m])) by (scenario, deployment, model)
-histogram_quantile(0.95, sum(rate(medical_rag_query_duration_seconds_bucket{app="medical-rag"}[5m])) by (le))</pre>
+max(sample_agent_llm_rate_limit_current_window_hits{app="sample-agent"}) by (scenario, deployment)
+max(sample_agent_llm_rate_limit_per_minute{app="sample-agent"}) by (scenario, deployment)
+sum(increase(sample_agent_llm_requests_total{app="sample-agent",status="rate_limited"}[5m])) by (scenario, deployment, model)
+histogram_quantile(0.95, sum(rate(sample_agent_query_duration_seconds_bucket{app="sample-agent"}[5m])) by (le))</pre>
     </section>
 
     <section>
       <h2>Current Limitations</h2>
       <ul>
         <li>Prometheus captures numeric metrics, not application log lines. Detailed error text still comes from traces/spans.</li>
-        <li>Runtime gauges such as current rolling-window hits reset when the MedicalAgent process restarts. Prometheus retains scraped historical samples, but the live application memory starts fresh.</li>
+        <li>Runtime gauges such as current rolling-window hits reset when the SampleAgent process restarts. Prometheus retains scraped historical samples, but the live application memory starts fresh.</li>
         <li>Prometheus <code>increase()</code> may return fractional values because it extrapolates between scrape intervals. RCA display should round human-facing count evidence where appropriate.</li>
         <li>The Azure OpenAI rate-limit scenario depends on the provider actually returning a throttle response. If Azure allows burst traffic, the incident may not occur exactly on request 11.</li>
-        <li>The MedicalAgent metrics exporter is dependency-light and process-local. In production, use a standard metrics library or OpenTelemetry collector pattern if multi-process workers are used.</li>
+        <li>The SampleAgent metrics exporter is dependency-light and process-local. In production, use a standard metrics library or OpenTelemetry collector pattern if multi-process workers are used.</li>
         <li>For multiple replicas, per-pod in-memory counters must be aggregated in Prometheus. A single pod's current-window gauge should not be treated as global cluster truth unless the query sums or maxes across pods intentionally.</li>
         <li>Remediation can plan infrastructure changes, but actual cluster changes require Kubernetes/cloud permissions.</li>
       </ul>
     </section>
 
     <section>
-      <h2>Can MedicalAgent Be Hosted as a Pod?</h2>
+      <h2>Can SampleAgent Be Hosted as a Pod?</h2>
       <p>
-        Yes. The MedicalAgent can be hosted as a Kubernetes pod and tested under real concurrent traffic. This is the preferred production-like validation for the load scenario.
+        Yes. The SampleAgent can be hosted as a Kubernetes pod and tested under real concurrent traffic. This is the preferred production-like validation for the load scenario.
       </p>
       <div class="grid">
         <div>
           <h3>Recommended Kubernetes Setup</h3>
           <ul>
-            <li>Create a <code>Deployment</code> for MedicalAgent with CPU and memory requests/limits.</li>
+            <li>Create a <code>Deployment</code> for SampleAgent with CPU and memory requests/limits.</li>
             <li>Expose it with a <code>Service</code> on port <code>8002</code>.</li>
             <li>Add Prometheus scrape annotations or a <code>ServiceMonitor</code> for <code>/metrics</code>.</li>
             <li>Store API keys in Kubernetes <code>Secret</code>, not in container images.</li>
@@ -308,20 +308,20 @@ histogram_quantile(0.95, sum(rate(medical_rag_query_duration_seconds_bucket{app=
             <li>Run <code>k6</code>, <code>Locust</code>, or <code>hey</code> against the service endpoint.</li>
             <li>Scale replicas from 1 to N and compare p95 latency, error rate, and max concurrency.</li>
             <li>Set low CPU/memory limits intentionally in a test namespace to demonstrate saturation.</li>
-            <li>Let Prometheus capture pod CPU, memory, request latency, HTTP errors, and MedicalAgent custom metrics.</li>
+            <li>Let Prometheus capture pod CPU, memory, request latency, HTTP errors, and SampleAgent custom metrics.</li>
           </ul>
         </div>
       </div>
       <pre>Example validation target:
 
-http://medical-rag.&lt;namespace&gt;.svc.cluster.local:8002/api/query
+http://sample-agent.&lt;namespace&gt;.svc.cluster.local:8002/api/query
 
 Key Prometheus signals:
-up{job="medical-rag"}
-medical_rag_query_in_flight{job="medical-rag"}
-medical_rag_query_max_concurrency{job="medical-rag"}
-medical_rag_query_requests_total{job="medical-rag",status="error"}
-histogram_quantile(0.95, sum(rate(medical_rag_query_duration_seconds_bucket{job="medical-rag"}[5m])) by (le))</pre>
+up{job="sample-agent"}
+sample_agent_query_in_flight{job="sample-agent"}
+sample_agent_query_max_concurrency{job="sample-agent"}
+sample_agent_query_requests_total{job="sample-agent",status="error"}
+histogram_quantile(0.95, sum(rate(sample_agent_query_duration_seconds_bucket{job="sample-agent"}[5m])) by (le))</pre>
       <p>
         This pod-based test can produce a realistic incident where user traffic overwhelms the service, Prometheus captures the degraded metrics, AIOps raises an issue, RCA identifies resource or concurrency pressure, and remediation recommends scaling, resource tuning, or code-level backpressure.
       </p>
@@ -347,7 +347,7 @@ histogram_quantile(0.95, sum(rate(medical_rag_query_duration_seconds_bucket{job=
             <td>Add provider-aware retry/backoff that honors <code>Retry-After</code>, bounded concurrency, request queueing, and a clear user-facing fallback response</td>
           </tr>
           <tr>
-            <td>MedicalAgent p95 latency spikes under concurrent traffic</td>
+            <td>SampleAgent p95 latency spikes under concurrent traffic</td>
             <td>Common when expensive RAG work is done synchronously per request</td>
             <td>Add request backpressure, cache reuse, timeout budgets, and safer worker/concurrency configuration</td>
           </tr>
@@ -366,8 +366,8 @@ histogram_quantile(0.95, sum(rate(medical_rag_query_duration_seconds_bucket{job=
     <section>
       <h2>Suggested Demo Storyline</h2>
       <ol>
-        <li>Show MedicalAgent functioning normally.</li>
-        <li>Show Prometheus target <code>medical-rag</code> in <span class="ok">UP</span> state.</li>
+        <li>Show SampleAgent functioning normally.</li>
+        <li>Show Prometheus target <code>sample-agent</code> in <span class="ok">UP</span> state.</li>
         <li>Trigger concurrent load or Azure OpenAI rate-limit traffic.</li>
         <li>Show AIOps dashboard issue creation.</li>
         <li>Open RCA and point out trace/span evidence plus Prometheus metric evidence.</li>

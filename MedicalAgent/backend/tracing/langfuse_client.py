@@ -1,5 +1,5 @@
 """
-Langfuse tracing wrapper for the Medical RAG pipeline.
+Langfuse tracing wrapper for the Sample Agent pipeline.
 
 Each call to /api/query creates one Langfuse trace with child spans for:
   pubmed_fetch → embedding → pagerank → faiss_retrieval → openai_generation
@@ -184,10 +184,10 @@ class LangfuseTracer:
             try:
                 root_cm = self._client.start_as_current_observation(
                     trace_context=LFTraceContext(trace_id=trace_id),
-                    name="medical-rag",
+                    name="sample-agent",
                     as_type="span",
                     input={"query": query},
-                    metadata={"user_id": user_id, "tags": ["medical-rag", "pubmed", "pagerank"]},
+                    metadata={"user_id": user_id, "tags": ["sample-agent", "pubmed", "pagerank"]},
                 )
                 root_obs = root_cm.__enter__()
                 ctx._lf_root_obs = root_obs
@@ -241,6 +241,85 @@ class LangfuseTracer:
             self._client.flush()
         except Exception as e:
             print(f"[Langfuse] finish_trace error: {e}")
+
+    def record_pod_threshold_breach(
+        self,
+        trace_id: str,
+        reason: str,
+        cpu_percent: float,
+        cpu_threshold_percent: float,
+        memory_percent: float | None,
+        memory_threshold_percent: float,
+    ) -> None:
+        """Record the Docker pod resource-guard failure in Langfuse.
+
+        The synthetic AIops trace keeps its pod-threshold-* id, while Langfuse
+        receives the 32-character UUID part because Langfuse v4 validates trace
+        ids as lowercase hex. RCA can still correlate by timestamp and metadata.
+        """
+        if not (self.enabled and self._client and LANGFUSE_V4):
+            return
+        metadata = {
+            "scenario": "pod_threshold_breach",
+            "display_app_name": "sample-agent",
+            "pod_name": "sample-agent-agent",
+            "runtime": "docker",
+            "orchestrator": "docker compose",
+            "cpu_percent": cpu_percent,
+            "cpu_threshold_percent": cpu_threshold_percent,
+            "memory_percent": memory_percent,
+            "memory_threshold_percent": memory_threshold_percent,
+            "aiops_trace_id": f"pod-threshold-{trace_id}",
+            "reason": "runtime resource pressure crossed the configured availability guardrail",
+            "recommended_fix": "Review the runtime threshold configuration and redeploy the sample-agent service.",
+        }
+        root_cm = span_cm = None
+        try:
+            root_cm = self._client.start_as_current_observation(
+                trace_context=LFTraceContext(trace_id=trace_id),
+                name="sample-agent",
+                as_type="span",
+                input={"event": "pod_resource_guard"},
+                metadata=metadata,
+            )
+            root_obs = root_cm.__enter__()
+            if hasattr(root_obs, "update"):
+                root_obs.update(
+                    level="ERROR",
+                    status_message="application is not reachable",
+                    output={
+                        "error": "application is not reachable",
+                        "reason": metadata["reason"],
+                    },
+                    metadata=metadata,
+                )
+
+            span_cm = self._client.start_as_current_observation(
+                name="pod_resource_guard",
+                as_type="span",
+                input={"resource_sample": metadata},
+                metadata=metadata,
+            )
+            span_obs = span_cm.__enter__()
+            if hasattr(span_obs, "update"):
+                span_obs.update(
+                    level="ERROR",
+                    status_message="application is not reachable",
+                    output={"reason": metadata["reason"], "context": metadata},
+                )
+            span_cm.__exit__(None, None, None)
+            span_cm = None
+            root_cm.__exit__(None, None, None)
+            root_cm = None
+            self._client.flush()
+        except Exception as e:
+            print(f"[Langfuse] record_pod_threshold_breach error: {e}")
+            for cm in (span_cm, root_cm):
+                if cm:
+                    try:
+                        cm.__exit__(None, None, None)
+                    except Exception:
+                        pass
 
     def add_generation(
         self,

@@ -336,12 +336,12 @@ class TestLangfuseClient:
         """
         trace = {
             "id": "589eff300d4e35ea",
-            "name": "medical-rag (589eff30)",
+            "name": "sample-agent (589eff30)",
             "startTime": "2026-04-10T04:19:55.204Z",
             "endTime": "2026-04-10T04:19:57.964Z",
             "input": '{"query": "Effect of metformin on diabetes"}',
             "output": '{"error": "LLM access is disabled (demo error mode)."}',
-            "metadata": '{"user_id":"admin","tags":["medical-rag","pubmed"]}',
+            "metadata": '{"user_id":"admin","tags":["sample-agent","pubmed"]}',
         }
         observations = [
             {

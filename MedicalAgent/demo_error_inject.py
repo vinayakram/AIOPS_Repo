@@ -4,7 +4,7 @@ Demo script: inject a synthetic error trace into AIops Telemetry.
 Usage:
     python demo_error_inject.py
 
-Simulates a failed medical query where:
+Simulates a failed sample query where:
   - pubmed_fetch succeeded
   - embedding succeeded
   - openai_generation FAILED (e.g. rate-limit / context-length error)
@@ -104,7 +104,7 @@ span_llm = {
 # ── Build trace ────────────────────────────────────────────────────────────────
 trace_payload = {
     "id":                trace_id,
-    "app_name":          "medical-rag",
+    "app_name":          "sample-agent",
     "user_id":           "demo-user",
     "status":            "error",
     "started_at":        ms(t_start),

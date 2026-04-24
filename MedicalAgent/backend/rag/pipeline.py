@@ -169,7 +169,7 @@ class RAGPipeline:
             return {
                 "answer": (
                     "No relevant articles with abstracts found on PubMed for your query. "
-                    "Try different or broader medical keywords."
+                    "Try different or broader sample keywords."
                 ),
                 "sources": [],
                 "total_fetched": 0,
@@ -322,7 +322,7 @@ class RAGPipeline:
         context = self._build_context(articles)
 
         system_prompt = (
-            "You are a helpful medical research assistant. "
+            "You are a helpful sample research assistant. "
             "Use ONLY the provided PubMed context. "
             "If evidence is insufficient, say so explicitly. "
             "Be concise, accurate, and include key study findings."
@@ -364,7 +364,7 @@ class RAGPipeline:
         context = self._build_context(articles)
 
         system_prompt = (
-            "You are a helpful medical research assistant. "
+            "You are a helpful sample research assistant. "
             "Use ONLY the provided PubMed context. "
             "If evidence is insufficient, say so explicitly. "
             "Be concise, accurate, and include key study findings."

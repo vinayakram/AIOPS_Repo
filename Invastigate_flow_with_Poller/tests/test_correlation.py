@@ -111,7 +111,7 @@ class TestCorrelationResponseModels:
     def test_full_correlation_result(self):
         result = CorrelationResult(
             correlation_chain=[
-                "LLM access disabled → openai_generation failure → medical-rag agent error"
+                "LLM access disabled → openai_generation failure → sample-agent agent error"
             ],
             peer_components=[
                 PeerComponent(
@@ -120,7 +120,7 @@ class TestCorrelationResponseModels:
                     evidence="LLM access disabled error in output",
                 ),
                 PeerComponent(
-                    component="medical-rag",
+                    component="sample-agent",
                     role=ComponentRole.CONTRIBUTING_FACTOR,
                     evidence="Agent returned error output downstream",
                 ),
@@ -133,8 +133,8 @@ class TestCorrelationResponseModels:
                 ),
                 TimelineEvent(
                     timestamp="2026-04-10T04:19:57.964Z",
-                    event="medical-rag returned error in output",
-                    service="medical-rag",
+                    event="sample-agent returned error in output",
+                    service="sample-agent",
                 ),
             ],
             root_cause_candidate=RootCauseCandidate(

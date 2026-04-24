@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>MedicalRAG — Research Chat</title>
+  <title>SampleAgent — Research Chat</title>
   <link rel="stylesheet" href="/static/css/styles.css">
 </head>
 <body>
@@ -12,7 +12,7 @@
     <header class="app-header">
       <div class="header-brand">
         <span class="logo">⚕️</span>
-        <span>MedicalRAG</span>
+        <span>SampleAgent</span>
       </div>
       <div class="header-user">
         <span class="user-badge" id="userBadge">User</span>
@@ -26,14 +26,14 @@
     <main class="chat-body" id="chatBody">
       <div class="chat-empty" id="emptyState">
         <div class="empty-icon">🔬</div>
-        <h2>Medical Research Assistant</h2>
-        <p>Ask any medical or clinical question. I'll search PubMed, rank results using PageRank + FAISS similarity, and generate an evidence-based answer using Claude.</p>
+        <h2>Research Assistant</h2>
+        <p>Ask any research question. I'll search relevant literature, rank results using PageRank + FAISS similarity, and generate an evidence-based answer using Claude.</p>
         <div class="example-queries">
-          <button class="example-btn" onclick="fillQuery(this)">Effect of metformin on diabetes</button>
-          <button class="example-btn" onclick="fillQuery(this)">COVID-19 vaccine efficacy studies</button>
-          <button class="example-btn" onclick="fillQuery(this)">Alzheimer's disease treatment options</button>
-          <button class="example-btn" onclick="fillQuery(this)">CRISPR gene therapy cancer</button>
-          <button class="example-btn" onclick="fillQuery(this)">Gut microbiome mental health</button>
+          <button class="example-btn" onclick="fillQuery(this)">Impact of retrieval reranking on answer quality</button>
+          <button class="example-btn" onclick="fillQuery(this)">Recent studies on battery recycling methods</button>
+          <button class="example-btn" onclick="fillQuery(this)">Best practices for climate adaptation planning</button>
+          <button class="example-btn" onclick="fillQuery(this)">How graph ranking improves document retrieval</button>
+          <button class="example-btn" onclick="fillQuery(this)">Trends in distributed systems observability</button>
         </div>
       </div>
     </main>
@@ -57,7 +57,7 @@
       <div class="input-row">
         <textarea
           id="queryInput"
-          placeholder="Ask a medical research question..."
+          placeholder="Ask a research question..."
           rows="1"
         ></textarea>
         <button class="btn-send" id="sendBtn" onclick="sendQuery()" title="Send (Enter)">➤</button>

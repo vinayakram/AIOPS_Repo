@@ -238,20 +238,20 @@ class TestOutputErrors:
         """⚠️ prefix in output should be detected even when status='ok'."""
         _make_trace(
             db_session, "t1",
-            app_name="medical-agent",
+            app_name="sample-agent",
             status="ok",
             output_preview='{"answer_preview": "⚠️ Error generating response: Error code: 400"}',
         )
         issues = detect_issues(db_session)
         output_error_issues = [i for i in issues if i.issue_type == "nfr_output_error"]
         assert len(output_error_issues) >= 1
-        assert output_error_issues[0].app_name == "medical-agent"
+        assert output_error_issues[0].app_name == "sample-agent"
 
     def test_anthropic_credit_error_in_output_creates_issue(self, db_session):
         """Anthropic credit balance error in output should raise an issue."""
         _make_trace(
             db_session, "t1",
-            app_name="medical-agent",
+            app_name="sample-agent",
             status="ok",
             output_preview='{"answer_preview": "⚠️ Error generating response: Error code: 400 - credit balance is too low"}',
         )
@@ -276,7 +276,7 @@ class TestOutputErrors:
         """JSON error type 'invalid_request_error' in output is detected."""
         _make_trace(
             db_session, "t1",
-            app_name="medical-agent",
+            app_name="sample-agent",
             status="ok",
             output_preview='{"error": {"type": "invalid_request_error", "message": "Bad request"}}',
         )
@@ -288,7 +288,7 @@ class TestOutputErrors:
         """Normal successful output must not raise a false positive."""
         _make_trace(
             db_session, "t1",
-            app_name="medical-agent",
+            app_name="sample-agent",
             status="ok",
             output_preview='{"answer_preview": "Alzheimer disease is treated with cholinesterase inhibitors."}',
         )
@@ -298,7 +298,7 @@ class TestOutputErrors:
 
     def test_trace_with_no_output_does_not_trigger(self, db_session):
         """Traces with null output_preview must not raise an issue."""
-        _make_trace(db_session, "t1", app_name="medical-agent", status="ok", output_preview=None)
+        _make_trace(db_session, "t1", app_name="sample-agent", status="ok", output_preview=None)
         issues = detect_issues(db_session)
         output_error_issues = [i for i in issues if i.issue_type == "nfr_output_error"]
         assert output_error_issues == []
@@ -307,7 +307,7 @@ class TestOutputErrors:
         """Same output error on second detector run must not create a duplicate issue."""
         _make_trace(
             db_session, "t1",
-            app_name="medical-agent",
+            app_name="sample-agent",
             status="ok",
             output_preview='{"answer_preview": "⚠️ Error generating response: Error code: 400"}',
         )
@@ -319,7 +319,7 @@ class TestOutputErrors:
         assert output_error_second == []  # deduplicated — no new issue
 
 
-# ── NFR-31: Medical RAG LLM disabled burst ───────────────────────────────────
+# ── NFR-31: Sample Agent LLM disabled burst ───────────────────────────────────
 
 class TestLlmDisabledBurst:
     def test_three_disabled_llm_outputs_in_10_minutes_create_critical_issue(self, db_session):
@@ -331,10 +331,10 @@ class TestLlmDisabledBurst:
             _make_trace(
                 db_session,
                 f"llm-disabled-{i}",
-                app_name="medical-rag",
+                app_name="sample-agent",
                 status="ok",
                 offset_minutes=i,
-                input_preview=f"medical query {i}",
+                input_preview=f"sample query {i}",
                 output_preview=disabled_output,
             )
 
@@ -356,7 +356,7 @@ class TestLlmDisabledBurst:
             _make_trace(
                 db_session,
                 f"llm-disabled-{i}",
-                app_name="medical-rag",
+                app_name="sample-agent",
                 status="ok",
                 offset_minutes=i,
                 output_preview=disabled_output,

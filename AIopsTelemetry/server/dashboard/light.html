@@ -53,6 +53,8 @@ header{background:var(--surface);border-bottom:1px solid var(--border);padding:0
 .live-dot{width:7px;height:7px;border-radius:50%;background:var(--green);animation:pulse 2s infinite}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
 .refresh-ts{font-size:11px;color:var(--muted)}
+.lang-toggle{background:var(--surface-2);border:1px solid var(--border);color:var(--text-2);padding:4px 9px;border-radius:6px;cursor:pointer;font-size:11px;font-weight:600;line-height:1;transition:background .15s,color .15s,border-color .15s}
+.lang-toggle:hover{background:var(--surface-3);border-color:var(--accent);color:var(--text)}
 
 /* Layout */
 .container{max-width:1440px;margin:0 auto;padding:20px 24px}
@@ -401,6 +403,7 @@ tr:hover .copy-btn{opacity:.7}
     <button onclick="showPage('instrument-page',this)">Instrument</button>
   </nav>
   <div class="header-r">
+    <button class="lang-toggle" id="lang-toggle" onclick="toggleLanguage()" title="日本語で表示">日本語</button>
     <div class="live-dot"></div>
     <span class="refresh-ts" id="last-refresh">—</span>
   </div>
@@ -775,6 +778,133 @@ let _allTraces=[];
 let _filtered=[];
 let _page=0;
 const PAGE_SIZE=50;
+
+
+// ── Language toggle for /light (?lang=ja) ───────────────────────────────────
+const _LANG_PARAMS = new URLSearchParams(window.location.search);
+const _IS_JA = _LANG_PARAMS.get('lang') === 'ja';
+const _JA_TEXT = new Map(Object.entries({
+  'AIops Telemetry':'AIops テレメトリー','live':'ライブ','Issues':'問題','Metrics':'メトリクス','Escalation Rules':'エスカレーションルール','Instrument':'インストゥルメント',
+  'Total Traces':'総トレース数','all time':'全期間','Success Rate':'成功率','Avg Latency':'平均レイテンシ','P95 Latency':'P95 レイテンシ','Error Rate':'エラー率','Applications':'アプリケーション','distinct':'種類','Pipeline Flow':'パイプラインフロー',
+  'Issue ID':'問題ID','Rule':'ルール','Application':'アプリケーション','Severity':'重大度','Title':'タイトル','Status':'ステータス','Created':'作成日時','Actions':'操作','Open':'オープン','Acknowledged':'確認済み','Escalated':'エスカレーション済み','Resolved':'解決済み','Ack':'確認','Escalate':'エスカレート','Resolve':'解決','Escalate to Human':'人へエスカレーション','Send to Remediation':'修復へ送信',
+  'CPU Usage':'CPU 使用率','Memory Usage':'メモリ使用率','Request Rate':'リクエスト率','Error Count':'エラー数','P95 Latency ms':'P95 レイテンシ ms','App':'アプリ','Window':'期間','Value':'値','Updated':'更新日時','No app data.':'アプリデータがありません。',
+  'Root Cause Analysis':'根本原因分析','AI Root-Cause Analysis':'AI 根本原因分析','Most Likely Cause':'最も可能性の高い原因','Supporting Evidence':'根拠','Problem Drill-down':'問題の掘り下げ','Recommended Action':'推奨アクション','Likely code area:':'想定されるコード領域:','Why:':'理由:','Requesting analysis…':'分析をリクエスト中…','Analysis failed:':'分析に失敗しました:','Failed to trigger RCA:':'RCAの起動に失敗しました:',
+  'Escalation Rule':'エスカレーションルール','NFR':'NFR','Enabled':'有効','Threshold':'しきい値','Cooldown':'クールダウン','Create Rule':'ルール作成','Save':'保存','Cancel':'キャンセル','Delete':'削除',
+  'Instrument Application':'アプリケーションを計測','AIops Server URL':'AIops サーバーURL','Generate':'生成','Copy':'コピー','Copied':'コピー済み','Close':'閉じる','Loading…':'読み込み中…',
+  'AI Remediation':'AI 修復','Remediation Options':'修復オプション','Remediation Type':'修復タイプ','Code Change':'コード変更','Config Change':'設定変更','Infra Change':'インフラ変更','Runbook Change':'ランブック変更','Investigation Only':'調査のみ','Human Handoff':'人手対応','Acceptance Criteria':'受け入れ基準','Requested By':'依頼者','Start Remediation':'修復を開始','Project Review':'プロジェクト確認','Generate Plan':'計画を生成','Implementation Plan':'実装計画','Approve Plan & Implement':'計画を承認して実装','Request Revision':'修正依頼','Reject':'却下','Implementation Running':'実装中','Change Summary':'変更概要','Test Results':'テスト結果','Git Diff':'Git 差分','Review Notes':'レビューコメント','Approve & Push PR':'承認してPRを作成','Request Changes':'変更を依頼','Remediation Complete':'修復完了',
+  'Application is not reachable':'アプリケーションに到達できません','application is not reachable':'アプリケーションに到達できません','Docker Compose':'Docker Compose','Dockerfile':'Dockerfile','Prometheus':'Prometheus','Langfuse':'Langfuse','cAdvisor':'cAdvisor'
+}));
+const _JA_REPLACEMENTS = [
+  [/AI ROOT-CAUSE ANALYSIS/gi, 'AI 根本原因分析'],
+  [/Exception count doubled in ([A-Za-z0-9_-]+)/g, '$1 の例外数が倍増'],
+  [/Application not reachable for sample-agent/g, 'sample-agent に到達できません'],
+  [/Error spike in pod_resource_guard/g, 'Podリソースガードでエラー急増'],
+  [/The root cause of the incident was the SampleAgent pod CPU使用率 exceeding the configured threshold of ([0-9.]+)%, reaching ([0-9.]+)%, which led to a critical degradation in service performance and an increased exception count\./g, 'インシデントの根本原因は、SampleAgent Pod のCPU使用率が設定しきい値 $1% を超えて $2% に達し、サービス性能の重大な低下と例外数の増加を引き起こしたことです。'],
+  [/The root cause of the incident was the SampleAgent pod CPU usage exceeding the configured threshold of ([0-9.]+)%, reaching ([0-9.]+)%, which led to a critical degradation in service performance and an increased exception count\./g, 'インシデントの根本原因は、SampleAgent Pod のCPU使用率が設定しきい値 $1% を超えて $2% に達し、サービス性能の重大な低下と例外数の増加を引き起こしたことです。'],
+  [/This was due to a misconfiguration in the CPU threshold settings in the SampleAgent\/Dockerfile and\/or SampleAgent\/docker-compose\.yml\./g, 'これは SampleAgent/Dockerfile または SampleAgent/docker-compose.yml のCPUしきい値設定ミスによるものです。'],
+  [/Five Whys root cause:/g, 'Five Whys 根本原因:'],
+  [/Lack of proper capacity planning and testing led to static CPU threshold settings that did not accommodate peak load scenarios\./g, '適切な容量計画と負荷試験が不足していたため、ピーク負荷を吸収できない固定CPUしきい値設定になっていました。'],
+  [/Why ([0-9]+): Because the SampleAgent pod CPU使用率 reached ([0-9.]+)%\./g, 'なぜ$1: SampleAgent Pod のCPU使用率が $2% に達したため。'],
+  [/Why ([0-9]+): Because the CPU使用率 exceeded the configured threshold of ([0-9.]+)%\./g, 'なぜ$1: CPU使用率が設定しきい値 $2% を超えたため。'],
+  [/SampleAgent pod CPU使用率 exceeded ([0-9.]+)% → SampleAgent pod CPU使用率 reached ([0-9.]+)%/g, 'SampleAgent Pod のCPU使用率が $1% を超過 → $2% に到達'],
+  [/SampleAgent pod CPU使用率 reached ([0-9.]+)% → Increased exception count in ([A-Za-z0-9_-]+)/g, 'SampleAgent Pod のCPU使用率が $1% に到達 → $2 の例外数が増加'],
+  [/Contributing \(primary\): Misconfigured CPU threshold settings/g, '寄与要因（主要）: CPUしきい値設定ミス'],
+  [/\[prometheus:([0-9]+)\]/g, '[Prometheus:$1]'],
+  [/svc=sample-agent/g, 'サービス=sample-agent'],
+  [/level=INFO/g, 'レベル=INFO'],
+  [/msg=SampleAgent pod CPU使用率 over the last query window/g, 'メッセージ=SampleAgent Pod の直近クエリ期間CPU使用率'],
+  [/msg=SampleAgent configured pod CPU threshold/g, 'メッセージ=SampleAgent の設定済みPod CPUしきい値'],
+  [/exported_app=sample-agent/g, '対象アプリ=sample-agent'],
+  [/instance=([^,|]+)/g, 'インスタンス=$1'],
+  [/job=sample-agent/g, 'ジョブ=sample-agent'],
+  [/Likely code area:/g, '想定されるコード領域:'],
+  [/Why:/g, '理由:'],
+  [/The root cause of the incident was/g, 'インシデントの根本原因は'],
+  [/exceeding the configured threshold/g, '設定しきい値を超過'],
+  [/which led to/g, 'その結果'],
+  [/critical degradation in service performance/g, 'サービス性能の重大な低下'],
+  [/increased exception count/g, '例外数の増加'],
+  [/misconfiguration/g, '設定ミス'],
+  [/CPU threshold settings/g, 'CPUしきい値設定'],
+  [/configured pod CPU threshold/g, '設定済みPod CPUしきい値'],
+  [/pod resource threshold/g, 'Podリソースしきい値'],
+  [/pod resource guard/g, 'Podリソースガード'],
+  [/threshold breached/g, 'しきい値を超過'],
+  [/CPU utilisation/g, 'CPU使用率'], [/CPU utilization/g, 'CPU使用率'], [/CPU usage/g, 'CPU使用率'], [/CPU 使用率/g, 'CPU使用率'],
+  [/memory utilisation/g, 'メモリ使用率'], [/memory utilization/g, 'メモリ使用率'],
+  [/Docker-managed threshold configuration/g, 'Docker管理のしきい値設定'],
+  [/Change the pod threshold config/g, 'Podしきい値設定を変更'],
+  [/raise POD_CPU_THRESHOLD_PERCENT/g, 'POD_CPU_THRESHOLD_PERCENTを引き上げ'],
+  [/increase POD_CPU_THRESHOLD_PERCENT/g, 'POD_CPU_THRESHOLD_PERCENTを引き上げ'],
+  [/increase POD_MEMORY_THRESHOLD_PERCENT/g, 'POD_MEMORY_THRESHOLD_PERCENTを引き上げ'],
+  [/last 5 minutes/g, '直近5分'], [/last five minutes/g, '直近5分'],
+  [/Prometheus metrics/g, 'Prometheusメトリクス'], [/Langfuse traces/g, 'Langfuseトレース'],
+  [/No action required\./g, '対応は不要です。'], [/No error detected/g, 'エラーは検出されませんでした'],
+  [/Inspect the failing span and associated exception context\./g, '失敗したスパンと関連する例外コンテキストを確認してください。'],
+  [/Failing trace span shown in supporting evidence/g, '根拠に表示されている失敗トレーススパン'],
+  [/sample-agent emitted a generic preprocessing exception; RCA links it to missing normalization for unsupported special characters\./g, 'sample-agent が汎用的な前処理例外を出力しており、RCAは未対応特殊文字の正規化不足に関連付けています。'],
+  [/Resolved Repository Candidates/g, '解決候補リポジトリ'], [/Override \(optional\)/g, '上書き（任意）'],
+  [/Creating remediation run…/g, '修復実行を作成中…'], [/Failed to start remediation:/g, '修復開始に失敗しました:'],
+  [/No repository candidates found for this application\./g, 'このアプリケーションの候補リポジトリが見つかりません。'],
+  [/Plan generation failed:/g, '計画生成に失敗しました:'], [/Approving plan/g, '計画を承認中'],
+  [/starting implementation/g, '実装を開始中'], [/Implementation failed/g, '実装に失敗しました'],
+  [/No file list available/g, 'ファイル一覧はありません'], [/No test results available/g, 'テスト結果はありません'],
+  [/No diff available/g, '差分はありません'], [/Show diff/g, '差分を表示'], [/Loading artifacts…/g, '成果物を読み込み中…'],
+  [/No artifacts available yet\./g, '利用可能な成果物はまだありません。'], [/Failed to load artifacts:/g, '成果物の読み込みに失敗しました:'],
+  [/View Remediation Steps/g, '修復手順を表示'], [/Remediation Done/g, '修復完了'], [/Remediation complete/g, '修復完了'],
+  [/Planning changes…/g, '変更を計画中…'], [/Writing code changes…/g, 'コード変更を作成中…'], [/Running validation tests…/g, '検証テストを実行中…'], [/Finalising changes…/g, '最終処理中…'], [/Implementation complete\./g, '実装完了。'],
+  [/Unknown error/g, '不明なエラー'], [/Unknown/g, '不明'], [/Done/g, '完了'], [/Error/g, 'エラー']
+];
+let _i18nBusy = false;
+function toggleLanguage(){
+  const target = new URL(window.location.href);
+  if(_IS_JA) target.searchParams.delete('lang'); else target.searchParams.set('lang','ja');
+  window.location.href = target.pathname + target.search;
+}
+function _jaText(value){
+  if(!_IS_JA || !value) return value;
+  let next = String(value);
+  const trimmed = next.trim();
+  if(_JA_TEXT.has(trimmed)) next = next.replace(trimmed, _JA_TEXT.get(trimmed));
+  for(const [from,to] of _JA_REPLACEMENTS) next = next.replace(from,to);
+  return next;
+}
+function _jaApply(root=document.body){
+  if(!_IS_JA || _i18nBusy || !root) return;
+  _i18nBusy = true;
+  try{
+    const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
+      acceptNode(node){
+        const parent = node.parentElement;
+        if(!parent || ['SCRIPT','STYLE','NOSCRIPT'].includes(parent.tagName)) return NodeFilter.FILTER_REJECT;
+        return node.nodeValue.trim() ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT;
+      }
+    });
+    const nodes=[];
+    while(walker.nextNode()) nodes.push(walker.currentNode);
+    nodes.forEach(node=>{ const next=_jaText(node.nodeValue); if(next!==node.nodeValue) node.nodeValue=next; });
+    root.querySelectorAll?.('[placeholder],[title],option,button,input[type=button],input[type=submit]').forEach(el=>{
+      ['placeholder','title','value'].forEach(attr=>{
+        if(el.hasAttribute?.(attr)){ const val=el.getAttribute(attr); const next=_jaText(val); if(next!==val) el.setAttribute(attr,next); }
+      });
+    });
+  } finally { _i18nBusy = false; }
+}
+function setupLanguage(){
+  const btn=document.getElementById('lang-toggle');
+  if(btn){ btn.textContent=_IS_JA?'English':'日本語'; btn.title=_IS_JA?'View in English':'日本語で表示'; }
+  if(!_IS_JA) return;
+  document.documentElement.lang='ja';
+  document.title='AIops テレメトリー — Light';
+  _jaApply(document.body);
+  new MutationObserver(mutations=>{
+    if(_i18nBusy) return;
+    mutations.forEach(m=>{
+      if(m.type==='characterData') _jaApply(m.target.parentElement);
+      m.addedNodes.forEach(node=>{ if(node.nodeType===1) _jaApply(node); });
+    });
+  }).observe(document.body,{childList:true,subtree:true,characterData:true});
+}
 
 // ── Navigation ──────────────────────────────────────────────────────────────
 function showPage(id,btn){
@@ -1370,6 +1500,8 @@ function issueRow(i){
   const sb=sevMap[i.severity]||'bsev4';
   const stb=statMap[i.status]||'bo';
   const sevLabel=i.sev_label||i.severity.toUpperCase();
+  const issueMeta = (i.metadata_json && typeof i.metadata_json === 'object') ? i.metadata_json : {};
+  const displayApp = issueMeta.display_app_name || (i.app_name === 'sample-agent' ? 'sample-agent' : i.app_name);
   const ruleId=i.rule_id?`<span style="font-family:monospace;font-size:11px;color:var(--muted)">${esc(i.rule_id)}</span>`:'<span style="color:var(--muted)">—</span>';
   const ack=i.status==='OPEN'?`<button class="action-btn ack" onclick="issueAction(${i.id},'acknowledge',event)">Ack</button>`:'';
   const esc2=(i.status==='OPEN'||i.status==='ACKNOWLEDGED')?`<button class="action-btn esc" onclick="issueAction(${i.id},'escalate',event)">Escalate</button>`:'';
@@ -1378,10 +1510,10 @@ function issueRow(i){
   const appEsc=i.app_name.replace(/'/g,"\\'");
   // Remediation button — label/class reflects per-issue run state stored in metadata_json
   let rmBtn = '';
-  if (i.status !== 'RESOLVED') {
-    const rmMeta = (i.metadata_json && typeof i.metadata_json === 'object') ? i.metadata_json : {};
-    const rmStatus = rmMeta.remediation_status || null;
-    const rmRunId  = rmMeta.remediation_run_id  || null;
+  const rmMeta = issueMeta;
+  const rmStatus = rmMeta.remediation_status || null;
+  const rmRunId  = rmMeta.remediation_run_id  || null;
+  if (i.status !== 'RESOLVED' || rmRunId) {
     if (!rmRunId) {
       rmBtn = `<button class="action-btn autofix" title="Send this issue to the remediation pipeline" onclick="openRemediationModal(${i.id},'${titleEsc}','${appEsc}',event)">&#x26A1; Send to Remediation</button>`;
     } else if (rmStatus === 'PR_CREATED') {
@@ -1394,11 +1526,11 @@ function issueRow(i){
   const recurBadge=i.recurrence_count>0?`<span class="badge" style="background:var(--warn-bg,#78350f);color:#fde68a;margin-left:4px" title="Previously seen ${i.recurrence_count}x — issue #${i.previous_issue_id}">&#x21A9; ${i.recurrence_count}x</span>`:'';
   return`<tr class="expandable" onclick="toggleAnalysis(${i.id},null)" style="cursor:pointer">
     <td style="color:var(--muted)">${i.id}</td>
-    <td style="font-weight:500">${i.app_name}</td>
+    <td style="font-weight:500">${esc(displayApp)}</td>
     <td><span class="badge ${sb}">${sevLabel}</span></td>
     <td>${ruleId}</td>
     <td><span class="badge ${stb}">${i.status}</span></td>
-    <td title="${i.description||''}">${i.title}${recurBadge}</td>
+    <td title="${esc(i.description||'')}">${esc(i.title)}${recurBadge}</td>
     <td style="color:var(--muted)">${timeAgo(i.created_at)}</td>
     <td onclick="event.stopPropagation()"><div style="display:flex;gap:4px;flex-wrap:wrap;min-height:22px;align-items:center">${ack}${esc2}${res}${rmBtn}${humanEsc}</div></td>
   </tr>
@@ -1844,10 +1976,10 @@ function _renderAnalysis(issueId, a){
   const combined = `${a.likely_cause || ''} ${a.recommended_action || ''} ${ev}`.toLowerCase();
   const likelySpecialChar = /special character|invalid character|preprocess|preprocessing|query_validation/.test(combined);
   const likelyCodeArea = likelySpecialChar
-    ? 'MedicalAgent/backend/rag/pipeline.py query validation before retrieval'
+    ? 'sample-agent query validation before retrieval'
     : 'Failing trace span shown in supporting evidence';
   const drillText = likelySpecialChar
-    ? 'MedicalAgent emitted a generic preprocessing exception; RCA links it to missing normalization for unsupported special characters.'
+    ? 'sample-agent emitted a generic preprocessing exception; RCA links it to missing normalization for unsupported special characters.'
     : (a.likely_cause || 'Inspect the failing span and associated exception context.');
   panel.innerHTML=`
     <div class="analysis-hdr">
@@ -2602,7 +2734,7 @@ function _startPolling(jobId) {
 //  3. Panel open + user idle   (≥ 2 min)     → refresh anyway (user walked away)
 //  4. Switching between accordions            → still counts as active → stays deferred
 //  5. Auto-refresh toggled off               → interval still ticks but _doRefresh no-ops
-let _autoRefreshEnabled = true;
+let _autoRefreshEnabled = false;
 let _refreshPending  = false;
 
 function toggleAutoRefresh(){
@@ -2657,6 +2789,7 @@ new MutationObserver(()=>{
 }).observe(document.body,{attributes:true,subtree:true,attributeFilter:['class']});
 
 // ── Init ─────────────────────────────────────────────────────────────────────
+setupLanguage();
 _updateAutoRefreshBtn();
 loadIssues();
 setInterval(()=>{

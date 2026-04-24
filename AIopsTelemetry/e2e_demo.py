@@ -2,7 +2,7 @@
 """
 Guided end-to-end demo runner for:
 
-  MedicalAgent -> AIopsTelemetry -> Invastigate RCA -> Remediation
+  SampleAgent -> AIopsTelemetry -> Invastigate RCA -> Remediation
 
 This script is demo-first rather than validator-first:
 - narrates the architecture in English or Japanese
@@ -44,16 +44,16 @@ DEMO_SPEEDS: dict[str, float] = {
 TEXT: dict[str, dict[str, str]] = {
     "en": {
         "title": "AIops Guided Demo",
-        "subtitle": "MedicalAgent -> AIopsTelemetry -> Invastigate RCA -> Remediation",
+        "subtitle": "SampleAgent -> AIopsTelemetry -> Invastigate RCA -> Remediation",
         "intro": (
-            "This walkthrough shows how a real Medical RAG request becomes an operational "
+            "This walkthrough shows how a real Sample Agent request becomes an operational "
             "incident, how the RCA pipeline reasons over Langfuse and Prometheus evidence, "
             "and how the platform can continue into remediation."
         ),
         "services": "Services",
         "flow": "Story Flow",
         "flow_body": (
-            "1. Ask a real medical question.\n"
+            "1. Ask a real sample question.\n"
             "2. Capture the trace and sync it into AIopsTelemetry.\n"
             "3. Raise a latency issue using synthetic pressure plus the real trace.\n"
             "4. Run the external multi-agent RCA pipeline.\n"
@@ -67,10 +67,10 @@ TEXT: dict[str, dict[str, str]] = {
             "Invastigate provides staged RCA across multiple agents."
         ),
         "step_health": "Health-check all services",
-        "step_auth": "Authenticate with MedicalAgent",
+        "step_auth": "Authenticate with SampleAgent",
         "step_cleanup": "Resolve stale open latency issues",
         "step_seed": "Inject synthetic slow traces",
-        "step_query": "Send real medical query",
+        "step_query": "Send real sample query",
         "step_register": "Register the real trace in AIopsTelemetry",
         "step_issue": "Wait for AIopsTelemetry to raise an issue",
         "step_trace": "Verify trace correlation",
@@ -84,8 +84,8 @@ TEXT: dict[str, dict[str, str]] = {
         "narr_auth": "We authenticate as a real user because the request should look like a normal product flow, not a mocked backend-only test.",
         "narr_cleanup": "We clear old open latency issues so this run creates a fresh, easy-to-explain incident.",
         "narr_seed": "We add synthetic slow traces to build enough pressure for the latency rule to fire, while keeping the final representative trace real.",
-        "narr_query": "Now we send a real medical question through the RAG app and capture the trace_id that ties the whole demo together.",
-        "narr_register": "MedicalAgent forwards traces asynchronously, so we explicitly register the real trace in AIopsTelemetry to make the correlation deterministic for the demo.",
+        "narr_query": "Now we send a real sample question through the RAG app and capture the trace_id that ties the whole demo together.",
+        "narr_register": "SampleAgent forwards traces asynchronously, so we explicitly register the real trace in AIopsTelemetry to make the correlation deterministic for the demo.",
         "narr_issue": "AIopsTelemetry now acts as the operational brain: it sees the latency pattern and opens an issue.",
         "narr_trace": "This is the key handoff: the incident should point back to the trace that came from the actual user request.",
         "narr_rca_start": "The RCA service is multi-stage: normalization, correlation, root-cause analysis, and recommendations.",
@@ -94,8 +94,8 @@ TEXT: dict[str, dict[str, str]] = {
         "narr_rem_start": "The last stage is remediation: AIopsTelemetry can hand the issue to an automated fix pipeline.",
         "narr_rem_wait": "A successful remediation run means the platform moved beyond detection and diagnosis into action.",
         "health_abort": "One or more services are unreachable. Start them before running the demo.",
-        "auth_abort": "MedicalAgent is not reachable for login.",
-        "query_timeout": "MedicalAgent query timed out after 120 seconds.",
+        "auth_abort": "SampleAgent is not reachable for login.",
+        "query_timeout": "SampleAgent query timed out after 120 seconds.",
         "no_issue_abort": "No latency issue appeared within the timeout window.",
         "rca_timeout": "RCA did not complete within the timeout window.",
         "rem_timeout": "Remediation did not complete within the timeout window.",
@@ -120,13 +120,13 @@ TEXT: dict[str, dict[str, str]] = {
         "mode": "Mode",
         "presenter_hint": "Presenter mode: use 'slow' for narration, 'normal' for live walkthroughs, and 'fast' for rehearsal.",
         "mode_hint": "Modes: 'full' runs everything, 'rca-only' stops after diagnosis, 'remediation-only' emphasizes the fix pipeline.",
-        "trace_history_hint": "You can cross-check this trace in MedicalAgent dashboard or Langfuse while the script runs.",
+        "trace_history_hint": "You can cross-check this trace in SampleAgent dashboard or Langfuse while the script runs.",
     },
     "ja": {
         "title": "AIops ガイド付きデモ",
-        "subtitle": "MedicalAgent -> AIopsTelemetry -> Invastigate RCA -> Remediation",
+        "subtitle": "SampleAgent -> AIopsTelemetry -> Invastigate RCA -> Remediation",
         "intro": (
-            "このデモは、実際の Medical RAG リクエストがどのように運用インシデントになり、"
+            "このデモは、実際の Sample Agent リクエストがどのように運用インシデントになり、"
             "Langfuse と Prometheus の証拠を使って RCA が実行され、最後に remediation まで進むかを示します。"
         ),
         "services": "サービス",
@@ -145,7 +145,7 @@ TEXT: dict[str, dict[str, str]] = {
             "AIopsTelemetry が検知とライフサイクル管理を行い、Invastigate が多段 RCA を実行します。"
         ),
         "step_health": "各サービスのヘルスチェック",
-        "step_auth": "MedicalAgent に認証",
+        "step_auth": "SampleAgent に認証",
         "step_cleanup": "古い latency issue を解決済みにする",
         "step_seed": "synthetic slow trace を注入",
         "step_query": "実際の医療質問を送信",
@@ -163,7 +163,7 @@ TEXT: dict[str, dict[str, str]] = {
         "narr_cleanup": "過去の open issue があると説明しづらくなるので、このデモ用に新しい issue を作りやすくします。",
         "narr_seed": "latency ルールが確実に発火するよう synthetic trace を入れつつ、代表 trace は本物のユーザー要求にします。",
         "narr_query": "ここで実際の医療質問を投げ、その trace_id をデモ全体の共通キーとして使います。",
-        "narr_register": "MedicalAgent からの転送は非同期なので、デモでは相関を安定させるため実 trace を明示的に再登録します。",
+        "narr_register": "SampleAgent からの転送は非同期なので、デモでは相関を安定させるため実 trace を明示的に再登録します。",
         "narr_issue": "ここから AIopsTelemetry が運用レイヤーとして動き、latency パターンを見て issue を作成します。",
         "narr_trace": "重要な受け渡しポイントです。incident が実際のユーザーリクエスト由来の trace を指していることを確認します。",
         "narr_rca_start": "RCA は単発の要約ではなく、normalization、correlation、root cause、recommendation の多段処理です。",
@@ -172,8 +172,8 @@ TEXT: dict[str, dict[str, str]] = {
         "narr_rem_start": "最後は remediation です。AIopsTelemetry から自動修正パイプラインへ接続します。",
         "narr_rem_wait": "remediation が成功すれば、検知と診断だけでなく実際のアクションまで進めたことになります。",
         "health_abort": "1 つ以上のサービスに接続できません。起動してから再実行してください。",
-        "auth_abort": "MedicalAgent にログインできません。",
-        "query_timeout": "MedicalAgent のクエリが 120 秒でタイムアウトしました。",
+        "auth_abort": "SampleAgent にログインできません。",
+        "query_timeout": "SampleAgent のクエリが 120 秒でタイムアウトしました。",
         "no_issue_abort": "タイムアウト内に latency issue が発生しませんでした。",
         "rca_timeout": "タイムアウト内に RCA が完了しませんでした。",
         "rem_timeout": "タイムアウト内に remediation が完了しませんでした。",
@@ -198,7 +198,7 @@ TEXT: dict[str, dict[str, str]] = {
         "mode": "モード",
         "presenter_hint": "Presenter mode: narration 重視は 'slow'、通常デモは 'normal'、リハーサルは 'fast' を使ってください。",
         "mode_hint": "Modes: 'full' は全体実行、'rca-only' は診断まで、'remediation-only' は修正パイプラインを強調します。",
-        "trace_history_hint": "実行中に MedicalAgent ダッシュボードや Langfuse でこの trace を確認できます。",
+        "trace_history_hint": "実行中に SampleAgent ダッシュボードや Langfuse でこの trace を確認できます。",
     },
 }
 
@@ -256,10 +256,10 @@ def _pause(args: argparse.Namespace, seconds: float) -> None:
 
 def _parse() -> argparse.Namespace:
     p = argparse.ArgumentParser(
-        description="Guided end-to-end demo: MedicalAgent -> AIopsTelemetry -> Invastigate RCA -> Remediation",
+        description="Guided end-to-end demo: SampleAgent -> AIopsTelemetry -> Invastigate RCA -> Remediation",
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
-    p.add_argument("--medical-url", default="http://localhost:8002")
+    p.add_argument("--sample-url", default="http://localhost:8002")
     p.add_argument("--aiops-url", default="http://localhost:7000")
     p.add_argument("--rca-url", default="http://localhost:8000")
     p.add_argument("--username", default="admin")
@@ -295,7 +295,7 @@ def print_intro(args: argparse.Namespace) -> None:
     print(f"\n  {DIM}{tr(lang, 'intro')}{RESET}")
 
     _section(tr(lang, "services"))
-    print(f"  {BOLD}MedicalAgent   {RESET}: {args.medical_url}")
+    print(f"  {BOLD}SampleAgent   {RESET}: {args.sample_url}")
     print(f"  {BOLD}AIopsTelemetry {RESET}: {args.aiops_url}")
     print(f"  {BOLD}Invastigate RCA{RESET}: {args.rca_url}")
     print(f"  {BOLD}{tr(lang, 'language')}{RESET}: {args.lang}")
@@ -317,7 +317,7 @@ def step1_health(args: argparse.Namespace) -> None:
     _step(1, tr(lang, "step_health"), tr(lang, "narr_health"))
     _pause(args, 0.4)
     checks = [
-        ("MedicalAgent", f"{args.medical_url}/api/health"),
+        ("SampleAgent", f"{args.sample_url}/api/health"),
         ("AIopsTelemetry", f"{args.aiops_url}/health"),
         ("Invastigate RCA", f"{args.rca_url}/health"),
     ]
@@ -345,10 +345,10 @@ def step2_auth(args: argparse.Namespace) -> str:
     lang = args.lang
     _step(2, tr(lang, "step_auth"), tr(lang, "narr_auth"))
     _pause(args, 0.4)
-    _info(f"POST {args.medical_url}/auth/login (user={args.username})")
+    _info(f"POST {args.sample_url}/auth/login (user={args.username})")
     try:
         r = _post(
-            f"{args.medical_url}/auth/login",
+            f"{args.sample_url}/auth/login",
             data={"username": args.username, "password": args.password},
         )
     except requests.exceptions.ConnectionError:
@@ -374,7 +374,7 @@ def step2b_resolve_stale_issues(args: argparse.Namespace) -> None:
     try:
         r = _get(
             f"{args.aiops_url}/api/issues",
-            params={"app_name": "medical-rag", "status": "OPEN", "limit": 50},
+            params={"app_name": "sample-agent", "status": "OPEN", "limit": 50},
         )
         if r.status_code != 200:
             _warn(f"Could not fetch issues (HTTP {r.status_code})")
@@ -412,7 +412,7 @@ def step3_seed_traces(args: argparse.Namespace) -> list[str]:
         ended = started + timedelta(milliseconds=8500)
         payload = {
             "id": trace_id,
-            "app_name": "medical-rag",
+            "app_name": "sample-agent",
             "status": "ok",
             "started_at": started.isoformat(),
             "ended_at": ended.isoformat(),
@@ -457,7 +457,7 @@ def step4_query(args: argparse.Namespace, token: str) -> tuple[str, float, str |
     t0 = time.time()
     try:
         r = _post(
-            f"{args.medical_url}/api/query",
+            f"{args.sample_url}/api/query",
             json={"query": args.query, "max_articles": 10, "top_k": 3},
             headers=headers,
             timeout=120,
@@ -465,7 +465,7 @@ def step4_query(args: argparse.Namespace, token: str) -> tuple[str, float, str |
     except requests.exceptions.Timeout:
         _abort(tr(lang, "query_timeout"))
     except requests.exceptions.RequestException as exc:
-        _abort(f"MedicalAgent query failed: {exc}")
+        _abort(f"SampleAgent query failed: {exc}")
 
     elapsed = time.time() - t0
     if r.status_code != 200:
@@ -498,13 +498,13 @@ def step4b_ingest_real_trace(args: argparse.Namespace, real_trace_id: str, durat
     started = now - timedelta(milliseconds=duration_ms)
     payload = {
         "id": real_trace_id,
-        "app_name": "medical-rag",
+        "app_name": "sample-agent",
         "status": "ok",
         "started_at": started.isoformat(),
         "ended_at": now.isoformat(),
         "total_duration_ms": duration_ms,
-        "input_preview": "[guided-demo real medical query]",
-        "output_preview": "Real MedicalAgent response registered for deterministic RCA correlation.",
+        "input_preview": "[guided-demo real sample query]",
+        "output_preview": "Real SampleAgent response registered for deterministic RCA correlation.",
         "spans": [
             {
                 "id": uuid.uuid4().hex,
@@ -542,7 +542,7 @@ def step5_wait_for_issue(args: argparse.Namespace, real_trace_id: str) -> dict[s
         try:
             r = _get(
                 f"{args.aiops_url}/api/issues",
-                params={"app_name": "medical-rag", "status": "OPEN", "limit": 50},
+                params={"app_name": "sample-agent", "status": "OPEN", "limit": 50},
             )
             if r.status_code == 200:
                 issues = r.json().get("issues", [])
@@ -577,7 +577,7 @@ def step6_assert_trace_id(args: argparse.Namespace, issue: dict[str, Any], real_
     _pause(args, 0.3)
     issue_trace = issue.get("trace_id")
     if issue_trace == real_trace_id:
-        _ok(f"Representative trace matches the MedicalAgent request ({real_trace_id})")
+        _ok(f"Representative trace matches the SampleAgent request ({real_trace_id})")
     elif issue_trace:
         _warn(f"Issue trace differs from the real query trace ({issue_trace} != {real_trace_id})")
     else:

@@ -33,6 +33,9 @@ logger = logging.getLogger("aiops.remediation_proxy")
 router = APIRouter(prefix="/remediation", tags=["remediation"])
 
 _TIMEOUT = 30.0  # seconds for proxy calls
+_APP_GITHUB_REPOS = {
+    "sample-agent": "vinayakram/sample_agent",
+}
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
@@ -91,6 +94,11 @@ def _split_evidence(text: str, limit: int = 8) -> list[str]:
         if len(lines) >= limit:
             break
     return lines
+
+
+def _github_repo_for_app(app_name: str) -> str:
+    normalized = (app_name or "").strip().lower()
+    return _APP_GITHUB_REPOS.get(normalized, "")
 
 
 def _latest_rca_handoff(db: Session, issue_id: int) -> dict:
@@ -255,9 +263,11 @@ async def start_remediation(issue_id: int, body: dict = {}, db: Session = Depend
 
     payload = {
         "application_name": issue.app_name,
+        "project_name":     issue.app_name,
         "issue_id":         run_id,
         "title":            issue.title,
         "description":      description,
+        "github_repo":      _github_repo_for_app(issue.app_name),
         "source_system":    "aiops-telemetry",
         "source_issue_id":  str(issue_id),
         "remediation_type": remediation_type,
@@ -363,8 +373,9 @@ async def get_status(issue_id: int, db: Session = Depends(get_db)):
     issue  = _get_issue(db, issue_id)
     run_id = _get_run_id(issue)
     data   = await _proxy("GET", _aiops_url(f"/api/issues/{run_id}/status"))
-    if data.get("status"):
-        _write_meta(db, issue, {"remediation_status": data["status"]})
+    meta = _meta_from_remediation_status(data)
+    if meta:
+        _write_meta(db, issue, meta)
     return data
 
 
@@ -373,8 +384,9 @@ async def get_impl_summary(issue_id: int, db: Session = Depends(get_db)):
     issue  = _get_issue(db, issue_id)
     run_id = _get_run_id(issue)
     data   = await _proxy("GET", _aiops_url(f"/api/issues/{run_id}/implementation/summary"))
-    if data.get("status"):
-        _write_meta(db, issue, {"remediation_status": data["status"]})
+    meta = _meta_from_remediation_status(data)
+    if meta:
+        _write_meta(db, issue, meta)
     return data
 
 
@@ -391,6 +403,16 @@ def _rewrite_artifact_url(issue_id: int, url: str) -> str:
     if str(download) not in {"", "0"}:
         params["download"] = download
     return f"/api/remediation/issues/{issue_id}/artifact?{urlencode(params)}"
+
+
+def _meta_from_remediation_status(data: dict) -> dict:
+    meta = {}
+    if data.get("status"):
+        meta["remediation_status"] = data["status"]
+    for key in ("pr_url", "pr_number", "job_phase", "job_error", "current_screen"):
+        if key in data:
+            meta[f"remediation_{key}"] = data.get(key)
+    return meta
 
 
 @router.get("/issues/{issue_id}/artifacts")
@@ -450,7 +472,7 @@ async def create_pr(issue_id: int, db: Session = Depends(get_db)):
     issue  = _get_issue(db, issue_id)
     run_id = _get_run_id(issue)
     data   = await _proxy("POST", _aiops_url(f"/api/issues/{run_id}/pr"))
-    _write_meta(db, issue, {"remediation_status": "PR_CREATED"})
+    _write_meta(db, issue, {"remediation_status": "PR_CREATING"})
     return data
 
 

@@ -82,7 +82,7 @@ class LowRateLimitAzureClient:
                     {
                         "role": "system",
                         "content": (
-                            "You are a concise medical research assistant. "
+                            "You are a concise sample research assistant. "
                             "This call is part of an AIOps rate-limit validation scenario."
                         ),
                     },
@@ -123,7 +123,7 @@ class LowRateLimitAzureClient:
 
         details = [
             f"Azure OpenAI call failed for deployment {self.deployment}",
-            f"observed {current_hits} requests in the MedicalAgent 60s window",
+            f"observed {current_hits} requests in the SampleAgent 60s window",
             f"configured scenario limit is {self.limit} requests/minute",
         ]
         if status_code:

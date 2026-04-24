@@ -1,5 +1,5 @@
 """
-Thin client that forwards completed MedicalRAG traces to the AIops
+Thin client that forwards completed SampleAgent traces to the AIops
 Telemetry server (http://localhost:7000).
 
 Called from main.py after each /api/query finishes — non-blocking,
@@ -16,7 +16,7 @@ from ..config import settings
 
 logger = logging.getLogger("aiops.client")
 
-APP_NAME = "medical-rag"
+APP_NAME = "sample-agent"
 
 # Span colours are purely cosmetic — the span_type drives dashboard colouring
 STEP_TYPE_MAP = {

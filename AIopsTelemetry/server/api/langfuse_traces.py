@@ -6,10 +6,55 @@ import httpx
 from fastapi import APIRouter, HTTPException, Query
 
 from server.config import settings
+from server.database.engine import SessionLocal
+from server.database.models import Trace, Span
 
 router = APIRouter(prefix="/langfuse", tags=["langfuse"])
 
 _LF_BASE = "https://cloud.langfuse.com/api/public"
+
+
+def _local_recent_traces(limit: int) -> list[dict]:
+    """Recent local traces keep the dashboard useful when Langfuse is stale."""
+    db = SessionLocal()
+    try:
+        rows = (
+            db.query(Trace)
+            .order_by(Trace.started_at.desc())
+            .limit(limit)
+            .all()
+        )
+        trace_ids = [row.id for row in rows]
+        span_counts = {}
+        if trace_ids:
+            for trace_id, count in (
+                db.query(Span.trace_id, Span.id)
+                .filter(Span.trace_id.in_(trace_ids))
+                .all()
+            ):
+                span_counts[trace_id] = span_counts.get(trace_id, 0) + 1
+
+        normalized = []
+        for trace in rows:
+            normalized.append({
+                "id": trace.id,
+                "name": trace.app_name or "sample-agent",
+                "timestamp": trace.started_at.isoformat() if trace.started_at else None,
+                "latency_ms": round(trace.total_duration_ms or 0, 1),
+                "status": trace.status or "ok",
+                "user_id": trace.user_id,
+                "session_id": trace.session_id,
+                "tags": ["aiops-local"],
+                "total_cost": None,
+                "input": trace.input_preview,
+                "output": trace.output_preview,
+                "scores": [],
+                "html_path": None,
+                "observations_count": span_counts.get(trace.id, 0),
+            })
+        return normalized
+    finally:
+        db.close()
 
 
 def _auth_header() -> str:
@@ -43,6 +88,19 @@ async def get_langfuse_traces(
         )
 
     if resp.status_code != 200:
+        local = _local_recent_traces(limit)
+        if local:
+            return {
+                "traces": local,
+                "meta": {
+                    "page": page,
+                    "limit": limit,
+                    "total": len(local),
+                    "total_pages": 1,
+                    "source": "aiops-local-fallback",
+                    "langfuse_error": resp.text[:200],
+                },
+            }
         raise HTTPException(resp.status_code, f"Langfuse error: {resp.text[:200]}")
 
     data = resp.json()
@@ -72,13 +130,27 @@ async def get_langfuse_traces(
             "observations_count": len(t.get("observations", [])),
         })
 
+    # Merge recent local traces first. This keeps the dashboard current for
+    # synthetic pod-threshold traces while retaining Langfuse traces/links.
+    merged = []
+    seen = set()
+    for trace in _local_recent_traces(min(limit, 25)) + normalized:
+        trace_id = trace.get("id")
+        if trace_id in seen:
+            continue
+        seen.add(trace_id)
+        merged.append(trace)
+        if len(merged) >= limit:
+            break
+
     return {
-        "traces": normalized,
+        "traces": merged,
         "meta": {
             "page": meta.get("page", page),
             "limit": meta.get("limit", limit),
             "total": meta.get("totalItems", len(normalized)),
             "total_pages": meta.get("totalPages", 1),
+            "source": "langfuse+aiops-local",
         },
     }
 

@@ -58,6 +58,16 @@ def run_tests(issue: Issue) -> list[TestRunResult]:
                 stdout=exc.stdout or "",
                 stderr=(exc.stderr or "") + f"\nTest command timed out after {TEST_TIMEOUT_SECONDS} seconds.",
             )
+        except FileNotFoundError as exc:
+            result = TestRunResult(
+                command=cmd,
+                return_code=127,
+                stdout="",
+                stderr=(
+                    f"Validation command is not available in this environment: {exc.filename}. "
+                    "Install the tool or change the project's validation command."
+                ),
+            )
 
         results.append(result)
 

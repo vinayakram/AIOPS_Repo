@@ -9,7 +9,7 @@ Endpoint:  GET /api/v1/incidents?since_minutes=30&limit=100
 Response shape:
   {
     "incidents": [
-      {"trace_id": "...", "timestamp": "2026-...", "agent_name": "medical-rag"},
+      {"trace_id": "...", "timestamp": "2026-...", "agent_name": "sample-agent"},
       ...
     ]
   }

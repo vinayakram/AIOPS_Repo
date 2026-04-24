@@ -31,8 +31,8 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(
-    title="MedicalRAG",
-    description="Medical research RAG — PubMed + PageRank + FAISS + OpenAI",
+    title="SampleAgent",
+    description="Research RAG assistant powered by literature retrieval, PageRank, FAISS, and OpenAI",
     version="1.0.0",
     lifespan=lifespan,
 )

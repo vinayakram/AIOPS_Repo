@@ -6,12 +6,13 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 
-load_dotenv()
+APP_DIR = Path(__file__).resolve().parents[1]
+load_dotenv(APP_DIR / ".env")
 
 
 class Settings:
     def __init__(self) -> None:
-        self.base_dir = Path(__file__).resolve().parents[1]
+        self.base_dir = APP_DIR
         self.runs_dir = Path(os.getenv("RUNS_DIR", str(self.base_dir / "runs"))).expanduser().resolve()
         self.config_dir = self.base_dir / "config"
         self.static_dir = self.base_dir / "static"

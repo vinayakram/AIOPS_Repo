@@ -9,7 +9,7 @@ from typing import Iterator
 from starlette.responses import Response
 
 
-APP_NAME = "medical-rag"
+APP_NAME = "sample-agent"
 CONTENT_TYPE_LATEST = "text/plain; version=0.0.4; charset=utf-8"
 REQUEST_DURATION_BUCKETS = (0.1, 0.25, 0.5, 1, 2, 3, 5, 8, 13, 21, 34, 55, 89)
 QUERY_DURATION_BUCKETS = (0.5, 1, 2, 3, 5, 8, 13, 21, 34, 55, 89, 144)
@@ -132,18 +132,33 @@ def _render_metrics() -> str:
         max_concurrency = _max_query_concurrency
 
     lines: list[str] = []
-    _append_counter(lines, "medical_rag_http_requests_total", "Total HTTP requests served by MedicalAgent.", http_counts, ("app", "method", "path", "status"))
-    _append_histogram(lines, "medical_rag_http_request_duration_seconds", "HTTP request latency for MedicalAgent.", http_histograms, REQUEST_DURATION_BUCKETS, ("app", "method", "path", "status"))
-    _append_counter(lines, "medical_rag_query_requests_total", "Total MedicalAgent RAG query requests.", query_counts, ("app", "status"))
-    _append_histogram(lines, "medical_rag_query_duration_seconds", "RAG query latency for MedicalAgent /api/query calls.", query_histograms, QUERY_DURATION_BUCKETS, ("app", "status"))
-    _append_gauge(lines, "medical_rag_query_in_flight", "Current in-flight MedicalAgent RAG query requests.", {"app": APP_NAME}, current_concurrency)
-    _append_gauge(lines, "medical_rag_query_max_concurrency", "Maximum observed concurrent MedicalAgent RAG query requests since process start.", {"app": APP_NAME}, max_concurrency)
-    _append_histogram(lines, "medical_rag_query_articles_fetched", "Number of articles fetched per successful MedicalAgent RAG query.", articles_histograms, ARTICLES_FETCHED_BUCKETS, ("app",))
-    _append_counter(lines, "medical_rag_llm_requests_total", "Total MedicalAgent LLM requests by scenario and status.", llm_counts, ("app", "scenario", "deployment", "model", "status"))
+    _append_counter(lines, "sample_agent_http_requests_total", "Total HTTP requests served by SampleAgent.", http_counts, ("app", "method", "path", "status"))
+    _append_histogram(lines, "sample_agent_http_request_duration_seconds", "HTTP request latency for SampleAgent.", http_histograms, REQUEST_DURATION_BUCKETS, ("app", "method", "path", "status"))
+    _append_counter(lines, "sample_agent_query_requests_total", "Total SampleAgent RAG query requests.", query_counts, ("app", "status"))
+    _append_histogram(lines, "sample_agent_query_duration_seconds", "RAG query latency for SampleAgent /api/query calls.", query_histograms, QUERY_DURATION_BUCKETS, ("app", "status"))
+    _append_gauge(lines, "sample_agent_query_in_flight", "Current in-flight SampleAgent RAG query requests.", {"app": APP_NAME}, current_concurrency)
+    _append_gauge(lines, "sample_agent_query_max_concurrency", "Maximum observed concurrent SampleAgent RAG query requests since process start.", {"app": APP_NAME}, max_concurrency)
+    _append_histogram(lines, "sample_agent_query_articles_fetched", "Number of articles fetched per successful SampleAgent RAG query.", articles_histograms, ARTICLES_FETCHED_BUCKETS, ("app",))
+    _append_counter(lines, "sample_agent_llm_requests_total", "Total SampleAgent LLM requests by scenario and status.", llm_counts, ("app", "scenario", "deployment", "model", "status"))
     _append_llm_rate_state(lines, llm_rate_state)
     _append_pod_resource_state(lines, pod_resource_state)
-    _append_counter(lines, "medical_rag_pod_threshold_breaches_total", "Total MedicalAgent pod resource threshold breaches.", pod_threshold_breaches, ("reason",))
+    _append_counter(lines, "sample_agent_pod_threshold_breaches_total", "Total SampleAgent pod resource threshold breaches.", pod_threshold_breaches, ("reason",))
+    lines.extend(_legacy_medical_rag_aliases(lines))
     return "\n".join(lines) + "\n"
+
+
+def _legacy_medical_rag_aliases(lines: list[str]) -> list[str]:
+    """Expose old metric names for fixed external Prometheus/Grafana dashboards."""
+    aliases: list[str] = []
+    for line in lines:
+        if "sample_agent_" not in line:
+            continue
+        aliases.append(
+            line.replace("sample_agent_", "medical_rag_")
+            .replace('app="sample-agent"', 'app="medical-rag"')
+            .replace("SampleAgent", "SampleAgent legacy medical-rag alias")
+        )
+    return aliases
 
 
 def _append_counter(lines: list[str], name: str, help_text: str, values: dict[tuple[str, ...], int], label_names: tuple[str, ...]) -> None:
@@ -183,9 +198,9 @@ def _append_histogram(
 
 def _append_llm_rate_state(lines: list[str], values: dict[tuple[str, str, str], dict[str, float]]) -> None:
     specs = (
-        ("medical_rag_llm_rate_limit_current_window_hits", "Current LLM requests observed in the active rolling 60-second window.", "current_window_hits"),
-        ("medical_rag_llm_rate_limit_per_minute", "Configured LLM requests-per-minute limit for the scenario.", "limit_per_minute"),
-        ("medical_rag_llm_rate_limit_remaining", "Remaining LLM requests before rate limiting in the active rolling 60-second window.", "remaining"),
+        ("sample_agent_llm_rate_limit_current_window_hits", "Current LLM requests observed in the active rolling 60-second window.", "current_window_hits"),
+        ("sample_agent_llm_rate_limit_per_minute", "Configured LLM requests-per-minute limit for the scenario.", "limit_per_minute"),
+        ("sample_agent_llm_rate_limit_remaining", "Remaining LLM requests before rate limiting in the active rolling 60-second window.", "remaining"),
     )
     for metric_name, help_text, state_key in specs:
         lines.append(f"# HELP {metric_name} {help_text}")
@@ -200,10 +215,10 @@ def _append_llm_rate_state(lines: list[str], values: dict[tuple[str, str, str], 
 
 def _append_pod_resource_state(lines: list[str], state: dict[str, float]) -> None:
     specs = (
-        ("medical_rag_pod_cpu_utilisation_percent", "Latest MedicalAgent pod CPU utilisation percent.", "cpu_percent"),
-        ("medical_rag_pod_cpu_threshold_percent", "Configured MedicalAgent pod CPU threshold percent.", "cpu_threshold_percent"),
-        ("medical_rag_pod_memory_utilisation_percent", "Latest MedicalAgent pod memory utilisation percent.", "memory_percent"),
-        ("medical_rag_pod_memory_threshold_percent", "Configured MedicalAgent pod memory threshold percent.", "memory_threshold_percent"),
+        ("sample_agent_pod_cpu_utilisation_percent", "Latest SampleAgent pod CPU utilisation percent.", "cpu_percent"),
+        ("sample_agent_pod_cpu_threshold_percent", "Configured SampleAgent pod CPU threshold percent.", "cpu_threshold_percent"),
+        ("sample_agent_pod_memory_utilisation_percent", "Latest SampleAgent pod memory utilisation percent.", "memory_percent"),
+        ("sample_agent_pod_memory_threshold_percent", "Configured SampleAgent pod memory threshold percent.", "memory_threshold_percent"),
     )
     for metric_name, help_text, state_key in specs:
         lines.append(f"# HELP {metric_name} {help_text}")

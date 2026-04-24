@@ -1825,6 +1825,7 @@ async function autofixIssue(issueId, issueTitle, appName, event) {
 let _refreshPending  = false;
 let _lastInteraction = 0;
 const _IDLE_MS = 2 * 60 * 1000;   // 2 minutes
+const _autoRefreshEnabled = false;
 
 ['click','keydown','mousedown','touchstart'].forEach(evt =>
   document.addEventListener(evt, ()=>{ _lastInteraction = Date.now(); }, {passive:true})
@@ -1840,6 +1841,7 @@ function _anyPanelOpen(){
 
 function _doRefresh(){
   _refreshPending = false;
+  if(!_autoRefreshEnabled) return;
   const pg = document.querySelector('.page.active'); if(!pg) return;
   if(pg.id==='issues-page')loadIssues();
   if(pg.id==='metrics-page')loadMetrics();

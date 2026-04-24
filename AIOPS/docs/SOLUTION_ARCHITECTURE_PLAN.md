@@ -95,7 +95,7 @@ Reviewer feedback:
 
 Target response:
 
-- add a concurrent-load degradation scenario using `MedicalAgent`
+- add a concurrent-load degradation scenario using `SampleAgent`
 - detect the incident through latency, error-rate, saturation, and trace evidence
 - route the issue into remediation with RCA context already attached
 - classify the remediation type before implementation

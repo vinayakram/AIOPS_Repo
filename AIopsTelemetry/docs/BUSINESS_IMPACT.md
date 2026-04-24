@@ -9,7 +9,7 @@
 
 ## Executive Summary
 
-AI-powered applications — LangGraph pipelines, RAG systems, medical assistants, and autonomous agents — are being deployed into production at an accelerating pace. But the observability tooling that teams rely on for traditional software (APM dashboards, log aggregators, uptime monitors) was not built for the unique failure modes of LLM-backed systems.
+AI-powered applications — LangGraph pipelines, RAG systems, sample assistants, and autonomous agents — are being deployed into production at an accelerating pace. But the observability tooling that teams rely on for traditional software (APM dashboards, log aggregators, uptime monitors) was not built for the unique failure modes of LLM-backed systems.
 
 **AIops Telemetry** is a purpose-built observability and automated-remediation platform for AI agent applications. It reduces mean-time-to-detection (MTTD) from hours to seconds, cuts mean-time-to-resolution (MTTR) through autonomous code repair, and provides the explainability that engineering and operations teams need to run AI workloads confidently in production.
 
@@ -23,7 +23,7 @@ AI-powered applications — LangGraph pipelines, RAG systems, medical assistants
 |---|---|
 | **AI Engineering Teams** | Building and operating LangGraph, LangChain, AutoGen, or custom LLM pipelines |
 | **Platform / SRE Teams** | Responsible for reliability SLAs across multiple AI agents |
-| **Healthcare & Clinical AI Teams** | Operating RAG pipelines over medical literature (e.g., PubMed), where accuracy and uptime are patient-safety concerns |
+| **Healthcare & Clinical AI Teams** | Operating RAG pipelines over sample literature (e.g., PubMed), where accuracy and uptime are patient-safety concerns |
 | **Enterprise Product Teams** | Embedding AI agents into customer-facing workflows (search, support, recommendations) |
 
 ### Why Existing Tools Fall Short
@@ -134,7 +134,7 @@ When an issue persists, the escalation path is often someone's memory: "If the l
 **How AIops Telemetry solves it:**
 The **Escalation Rules Engine** lets teams define structured escalation policies without code:
 
-- *If any issue from `medical-agent` has been open > 30 minutes → fire webhook to PagerDuty*
+- *If any issue from `sample-agent` has been open > 30 minutes → fire webhook to PagerDuty*
 - *If a critical issue exists → auto-escalate status and increment escalation count*
 - *If the same error has repeated ≥ 5 times → POST to Slack #incidents*
 
@@ -233,7 +233,7 @@ AIops Telemetry runs on any infrastructure — on-premise, cloud VM, container �
 
 ## 5. Target Use Cases
 
-### Use Case A — Medical RAG Pipeline (PubMed + FAISS)
+### Use Case A — Sample Agent Pipeline (PubMed + FAISS)
 A clinical team runs a RAG pipeline that fetches PubMed articles, re-ranks via PageRank + FAISS, and generates evidence-based answers using Claude. When the Anthropic API rejects calls due to a billing issue, the pipeline catches the exception and returns `"⚠️ Error generating response"` as the answer. AIops Telemetry detects this via NFR-29, raises a high-severity issue, and triggers an analysis explaining the cause. The team is alerted in 30 seconds instead of discovering it via user complaints.
 
 ### Use Case B — Web Search Agent

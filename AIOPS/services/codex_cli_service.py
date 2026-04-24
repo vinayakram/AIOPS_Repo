@@ -202,7 +202,14 @@ class CodexCLI:
     @staticmethod
     def _is_runtime_sandbox_failure(output: str) -> bool:
         text = (output or "").lower()
-        return "bwrap: loopback: failed rtm_newaddr" in text or "blocked by runtime sandbox" in text
+        return (
+            "bwrap: loopback: failed rtm_newaddr" in text
+            or "bwrap: can't find source path" in text
+            or "blocked by runtime sandbox" in text
+            or "sandbox error" in text
+            or "workspace path itself is inaccessible" in text
+            or "cannot read the allowed repo path" in text
+        )
 
     def _repo_has_changes(self, cwd: Path) -> bool:
         completed = subprocess.run(

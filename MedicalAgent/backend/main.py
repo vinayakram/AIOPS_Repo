@@ -1,3 +1,4 @@
+import asyncio
 import json
 import time
 from contextlib import asynccontextmanager
@@ -34,8 +35,8 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(
-    title="MedicalRAG",
-    description="Medical research RAG — PubMed + PageRank + FAISS + OpenAI",
+    title="SampleAgent",
+    description="Sample research RAG — PubMed + PageRank + FAISS + OpenAI",
     version="1.0.0",
     lifespan=lifespan,
 )
@@ -96,6 +97,24 @@ class QueryRequest(BaseModel):
     scenario: str | None = None
 
 
+class BackgroundLoadRequest(BaseModel):
+    work_ms: int = 250
+
+
+def _background_cpu_burn(work_ms: int) -> dict:
+    deadline = time.perf_counter() + (max(10, min(work_ms, 5000)) / 1000.0)
+    iterations = 0
+    accumulator = 1
+    while time.perf_counter() < deadline:
+        accumulator = (accumulator * 13 + iterations) % 10000019
+        iterations += 1
+    return {
+        "work_ms": max(10, min(work_ms, 5000)),
+        "iterations": iterations,
+        "checksum": accumulator,
+    }
+
+
 # ── Pages ─────────────────────────────────────────────────────────────────────
 
 @app.get("/")
@@ -121,6 +140,15 @@ async def dashboard_page():
 @app.get("/demo-scenarios")
 async def demo_scenarios_page():
     return FileResponse("frontend/scenarios.html")
+
+
+@app.post("/api/demo/background-load")
+async def background_load(req: BackgroundLoadRequest):
+    """
+    Lightweight deterministic CPU work used only to keep Grafana from looking
+    idle between spike demos. It does not create traces or AIops tickets.
+    """
+    return await asyncio.to_thread(_background_cpu_burn, req.work_ms)
 
 
 # ── Query API ─────────────────────────────────────────────────────────────────

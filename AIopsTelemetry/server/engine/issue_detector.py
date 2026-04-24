@@ -188,7 +188,7 @@ def _detect_exception_count_spike(db: Session, window_mins: int) -> list[Issue]:
             Trace.started_at < current_start,
         )
 
-        if app == "medical-rag":
+        if app == "sample-agent":
             current_q = current_q.filter(
                 ~Trace.id.like("pod-threshold-%"),
                 ~func.coalesce(Trace.metadata_json, "").contains("pod_threshold_breach"),
@@ -437,7 +437,7 @@ def _detect_storage(db: Session) -> list[Issue]:
 # ── Section 3 — AI & System ───────────────────────────────────────────────────
 
 def _detect_pod_resource_threshold_breaches(db: Session, window_mins: int) -> list[Issue]:
-    """NFR-33: 3 MedicalAgent pod resource-guard breaches → SEV1."""
+    """NFR-33: repeated sample-agent availability guard failures → SEV1."""
     created = []
     cutoff = datetime.utcnow() - timedelta(minutes=max(window_mins, 5))
     rows = (
@@ -450,7 +450,7 @@ def _detect_pod_resource_threshold_breaches(db: Session, window_mins: int) -> li
         )
         .join(Span, Span.trace_id == Trace.id)
         .filter(
-            Trace.app_name == "medical-rag",
+            Trace.app_name == "sample-agent",
             Trace.started_at >= cutoff,
             Span.name == "pod_resource_guard",
             Span.status == "error",
@@ -477,28 +477,37 @@ def _detect_pod_resource_threshold_breaches(db: Session, window_mins: int) -> li
     evidence = (error_message or output_preview or "application is not reachable").replace("\n", " ")[:260]
     metric_bits = []
     if cpu is not None:
-        metric_bits.append(f"CPU {float(cpu):.1f}% / threshold {float(cpu_threshold or 0):.1f}%")
+        metric_bits.append("CPU guardrail crossed")
     if mem is not None:
-        metric_bits.append(f"memory {float(mem):.1f}% / threshold {float(mem_threshold or 0):.1f}%")
-    metrics_text = "; ".join(metric_bits) or "pod resource threshold exceeded"
+        metric_bits.append("memory guardrail crossed")
+    metrics_text = "; ".join(metric_bits) or "runtime resource guardrail crossed"
 
     issue = _ensure_issue(
         db,
-        app_name="medical-rag",
+        app_name="sample-agent",
         rule_id="NFR-33",
         issue_type="nfr_pod_resource_threshold_breach",
         severity="critical",
-        title="Medical RAG pod resource threshold breached 3 times",
+        title="Application not reachable for sample-agent",
         description=(
-            "Medical RAG returned 'application is not reachable' after the pod "
-            f"resource guard breached 3 times in the last 5 minutes. {metrics_text}. "
-            "RCA should review Langfuse and Prometheus data for the last 5 minutes "
-            "and recommend changing the pod threshold config "
-            "(POD_CPU_THRESHOLD_PERCENT / POD_MEMORY_THRESHOLD_PERCENT). "
-            f"Latest evidence: {evidence}"
+            "sample-agent returned 'application is not reachable' after repeated "
+            f"availability guard failures in the last 5 minutes. {metrics_text}. "
+            "RCA should review Langfuse and Prometheus data to identify whether "
+            "runtime threshold configuration is contributing to the symptom. "
+            f"Latest symptom: {evidence}"
         ),
         span_name="pod_resource_guard",
         trace_id=latest_trace_id,
+        metadata={
+            "display_app_name": "sample-agent",
+            "dedup_condition": "same app + NFR-33 + availability guard",
+            "breach_count_window": len(rows),
+            "latest_trace_id": latest_trace_id,
+            "cpu_percent": cpu,
+            "cpu_threshold_percent": cpu_threshold,
+            "memory_percent": mem,
+            "memory_threshold_percent": mem_threshold,
+        },
     )
     if issue:
         created.append(issue)
@@ -755,9 +764,9 @@ def _detect_output_errors(db: Session, window_mins: int) -> list[Issue]:
 
 
 def _detect_llm_disabled_query_burst(db: Session) -> list[Issue]:
-    """NFR-31: 3 Medical RAG queries hit disabled LLM fallback within 10 minutes.
+    """NFR-31: 3 Sample Agent queries hit disabled LLM fallback within 10 minutes.
 
-    MedicalAgent intentionally returns source articles when the demo LLM toggle is
+    SampleAgent intentionally returns source articles when the demo LLM toggle is
     disabled, so these traces are stored as status='ok'. This detector treats a
     burst of those fallback responses as an availability issue for the LLM path.
     """
@@ -767,7 +776,7 @@ def _detect_llm_disabled_query_burst(db: Session) -> list[Issue]:
         db.query(Trace.id, Trace.input_preview, Span.error_message, Span.started_at)
         .join(Span, Span.trace_id == Trace.id)
         .filter(
-            Trace.app_name == "medical-rag",
+            Trace.app_name == "sample-agent",
             Trace.started_at >= cutoff,
             Span.status == "error",
             Span.error_message != None,
@@ -783,13 +792,13 @@ def _detect_llm_disabled_query_burst(db: Session) -> list[Issue]:
         if _LLM_DISABLED_CALL_ERROR in msg_l or "3 user queries" in msg_l:
             issue = _ensure_trace_scoped_issue(
                 db,
-                app_name="medical-rag",
+                app_name="sample-agent",
                 rule_id="NFR-31",
                 issue_type="nfr_llm_disabled_burst",
                 severity="critical",
-                title="LLM disabled for 3 medical-rag queries",
+                title="LLM disabled for 3 sample-agent queries",
                 description=(
-                    "Medical RAG raised the disabled-LLM threshold error after "
+                    "Sample Agent raised the disabled-LLM threshold error after "
                     "3 user queries within 10 minutes. "
                     f"Query: {(query or '').replace(chr(10), ' ')[:160]}. "
                     f"Latest error: {(error_message or '').replace(chr(10), ' ')[:240]}"
@@ -804,7 +813,7 @@ def _detect_llm_disabled_query_burst(db: Session) -> list[Issue]:
     rows = (
         db.query(Trace.id, Trace.input_preview, Trace.started_at)
         .filter(
-            Trace.app_name == "medical-rag",
+            Trace.app_name == "sample-agent",
             Trace.started_at >= cutoff,
             Trace.output_preview != None,
             func.lower(Trace.output_preview).contains(_LLM_DISABLED_OUTPUT),
@@ -826,13 +835,13 @@ def _detect_llm_disabled_query_burst(db: Session) -> list[Issue]:
     evidence = "; ".join(query_examples) or "recent user queries"
     issue = _ensure_issue(
         db,
-        app_name="medical-rag",
+        app_name="sample-agent",
         rule_id="NFR-31",
         issue_type="nfr_llm_disabled_burst",
         severity="critical",
-        title="LLM disabled for 3 medical-rag queries",
+        title="LLM disabled for 3 sample-agent queries",
         description=(
-            "3 Medical RAG queries within the last 10 minutes returned the "
+            "3 Sample Agent queries within the last 10 minutes returned the "
             "disabled-LLM fallback response instead of an LLM-generated answer. "
             f"Latest trace: {latest_trace_id}. Queries: {evidence}"
         ),
@@ -846,10 +855,10 @@ def _detect_llm_disabled_query_burst(db: Session) -> list[Issue]:
 
 
 def _detect_special_character_query_failures(db: Session, window_mins: int) -> list[Issue]:
-    """NFR-30: Medical RAG input preprocessing exception.
+    """NFR-30: Sample Agent input preprocessing exception.
 
     This demo detector intentionally keys off the exception emitted by the
-    MedicalAgent. The agent itself only reports a generic preprocessing failure;
+    SampleAgent. The agent itself only reports a generic preprocessing failure;
     RCA then explains that unsupported special characters are the likely cause.
     """
     created = []
@@ -868,7 +877,7 @@ def _detect_special_character_query_failures(db: Session, window_mins: int) -> l
         )
         .join(Span, Span.trace_id == Trace.id)
         .filter(
-            Trace.app_name == "medical-rag",
+            Trace.app_name == "sample-agent",
             Span.status == "error",
             Span.started_at >= cutoff,
         )
@@ -898,7 +907,7 @@ def _detect_special_character_query_failures(db: Session, window_mins: int) -> l
             severity="high",
             title=f"Query preprocessing failed in {app}",
             description=(
-                "Medical RAG raised a generic preprocessing exception for user input. "
+                "Sample Agent raised a generic preprocessing exception for user input. "
                 "RCA should inspect the failing query path and recommend input "
                 "normalization or validation for unsupported special characters. "
                 f"Query: {(trace_input or '').replace(chr(10), ' ')[:160]}. "
@@ -915,7 +924,7 @@ def _detect_special_character_query_failures(db: Session, window_mins: int) -> l
 
 
 def _detect_llm_rate_limit_errors(db: Session, window_mins: int) -> list[Issue]:
-    """NFR-32: Medical RAG LLM deployment rate limit error.
+    """NFR-32: Sample Agent LLM deployment rate limit error.
 
     The app emits the actual rate-limit message from the failing LLM span, including
     observed requests in the rolling window and the configured limit. RCA should use
@@ -934,7 +943,7 @@ def _detect_llm_rate_limit_errors(db: Session, window_mins: int) -> list[Issue]:
         )
         .join(Span, Span.trace_id == Trace.id)
         .filter(
-            Trace.app_name == "medical-rag",
+            Trace.app_name == "sample-agent",
             Span.name == "openai_generation",
             Span.status == "error",
             Span.error_message != None,
@@ -965,9 +974,9 @@ def _detect_llm_rate_limit_errors(db: Session, window_mins: int) -> list[Issue]:
             severity="high",
             title=f"LLM rate limit exceeded in {app}",
             description=(
-                "Medical RAG hit the configured LLM deployment request limit. "
+                "Sample Agent hit the configured LLM deployment request limit. "
                 "RCA should inspect the failing openai_generation span and "
-                "Prometheus medical_rag_llm_* counters for observed request rate, "
+                "Prometheus sample_agent_llm_* counters for observed request rate, "
                 "remaining quota, deployment name, and model. "
                 f"Query: {(trace_input or '').replace(chr(10), ' ')[:160]}. "
                 f"Latest error: {snippet}"
@@ -1058,6 +1067,13 @@ def _detect_error_spikes(db: Session) -> list[Issue]:
 # ── shared helper ─────────────────────────────────────────────────────────────
 
 def _rule_is_disabled(rule_id: str | None) -> bool:
+    allowlist = {
+        item.strip().upper()
+        for item in (getattr(settings, "NFR_DETECTOR_ALLOWLIST", "") or "").split(",")
+        if item.strip()
+    }
+    if allowlist and (not rule_id or rule_id.upper() not in allowlist):
+        return True
     if not rule_id:
         return False
     return (
@@ -1130,6 +1146,7 @@ def _ensure_issue(
     rule_id: str = None,
     span_name: str = None,
     trace_id: str = None,
+    metadata: dict | None = None,
 ) -> Optional[Issue]:
     """Create issue if no open duplicate exists (deduplicated by base_fingerprint).
 
@@ -1161,7 +1178,18 @@ def _ensure_issue(
         # service always analyses a current trace, not a stale one.
         if trace_id and trace_id != open_existing.trace_id:
             open_existing.trace_id = trace_id
-            db.flush()
+        try:
+            existing_meta = json.loads(open_existing.metadata_json) if open_existing.metadata_json else {}
+        except (json.JSONDecodeError, TypeError):
+            existing_meta = {}
+        existing_meta.update(metadata or {})
+        existing_meta["deduplicated_occurrences"] = int(existing_meta.get("deduplicated_occurrences") or 0) + 1
+        existing_meta["dedup_last_seen_at"] = datetime.utcnow().isoformat()
+        if trace_id:
+            existing_meta["latest_trace_id"] = trace_id
+        open_existing.metadata_json = json.dumps(existing_meta)
+        open_existing.updated_at = datetime.utcnow()
+        db.flush()
         return None
 
     # Find the most recently resolved issue for this condition (if any)
@@ -1193,6 +1221,7 @@ def _ensure_issue(
         description=description,
         span_name=span_name,
         trace_id=trace_id,
+        metadata_json=json.dumps(metadata) if metadata else None,
     )
     db.add(issue)
     db.flush()

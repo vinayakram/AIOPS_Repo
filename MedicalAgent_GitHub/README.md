@@ -236,7 +236,7 @@ Authorization: Bearer <token>
 ```env
 # LLM (at least one required)
 ANTHROPIC_API_KEY=                  # primary — Claude Sonnet
-OPENAI_API_KEY=changeme               # fallback / required if Anthropic not set
+OPENAI_API_KEY=sk-...               # fallback / required if Anthropic not set
 
 # Auth
 JWT_SECRET_KEY=change-me-in-production

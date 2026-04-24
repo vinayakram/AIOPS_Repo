@@ -1,8 +1,8 @@
 flowchart LR
-  U["User / Browser"] --> MA["MedicalAgent FastAPI :8000"]
+  U["User / Browser"] --> MA["SampleAgent FastAPI :8000"]
   MA --> RAG["RAG Pipeline: PubMed -> Embed -> FAISS -> PageRank -> LLM"]
   RAG --> LF[("Langfuse Cloud")]
-  MA --> MAAIOPS["MedicalAgent aiops_client.py -> POST /api/ingest/trace"]
+  MA --> MAAIOPS["SampleAgent aiops_client.py -> POST /api/ingest/trace"]
   MAAIOPS --> AT
 
   subgraph AT ["AIopsTelemetry :7000"]

@@ -69,10 +69,10 @@ _NFR_SEED_RULES = [
     ("NFR-25a", "Timeout Rate ≥ 10%",                "Spans with timeout errors ≥ 10% in window → SEV1 critical",      "error_rate_gt",            10.0,  None),
     ("NFR-26",  "Token Spike",                       "Average token count ≥ 50% above baseline → SEV3 medium",         "error_rate_gt",            50.0,  "llm"),
     ("NFR-29",  "Output Error Detection",            "Trace output contains ⚠️ / error patterns → SEV2/3",             "error_rate_gt",            0.0,   None),
-    ("NFR-30",  "Query Preprocessing Error",         "Medical RAG query preprocessing failure → SEV2 high",            "repeated_error_count_gte", 1,     "query_validation"),
-    ("NFR-31",  "LLM Disabled Query Burst",          "3 Medical RAG queries with LLM disabled within 10 min → SEV1 critical", "repeated_error_count_gte", 3, "openai_generation"),
-    ("NFR-32",  "LLM Rate Limit Exceeded",           "Medical RAG LLM deployment rate limit exceeded → SEV2 high",     "repeated_error_count_gte", 1,     "openai_generation"),
-    ("NFR-33",  "Pod Resource Threshold Breach",     "3 Medical RAG pod CPU/memory threshold breaches within 5 min → SEV1 critical", "repeated_error_count_gte", 3, "pod_resource_guard"),
+    ("NFR-30",  "Query Preprocessing Error",         "sample-agent query preprocessing failure → SEV2 high",           "repeated_error_count_gte", 1,     "query_validation"),
+    ("NFR-31",  "LLM Disabled Query Burst",          "3 sample-agent queries with LLM disabled within 10 min → SEV1 critical", "repeated_error_count_gte", 3, "openai_generation"),
+    ("NFR-32",  "LLM Rate Limit Exceeded",           "sample-agent LLM deployment rate limit exceeded → SEV2 high",    "repeated_error_count_gte", 1,     "openai_generation"),
+    ("NFR-33",  "Application Reachability Failure",  "3 sample-agent availability guard failures within 5 min → SEV1 critical", "repeated_error_count_gte", 3, "pod_resource_guard"),
 ]
 
 
@@ -81,13 +81,18 @@ def _seed_nfr_escalation_rules():
     from server.database.models import EscalationRule
     db = SessionLocal()
     try:
-        existing_nfr_ids = {
-            r[0] for r in db.query(EscalationRule.nfr_id)
-            .filter(EscalationRule.nfr_id.isnot(None))
-            .all()
-        }
         for (nfr_id, name, description, cond_type, cond_val, span_name) in _NFR_SEED_RULES:
-            if nfr_id in existing_nfr_ids:
+            existing = (
+                db.query(EscalationRule)
+                .filter(EscalationRule.nfr_id == nfr_id)
+                .first()
+            )
+            if existing:
+                existing.name = name
+                existing.description = description
+                existing.condition_type = cond_type
+                existing.condition_value = cond_val
+                existing.condition_span_name = span_name
                 continue
             db.add(EscalationRule(
                 nfr_id=nfr_id,

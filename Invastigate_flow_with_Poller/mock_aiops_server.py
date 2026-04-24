@@ -32,7 +32,7 @@ SEED_INCIDENTS = [
     {
         "trace_id": "trace-med-rag-001",
         "timestamp": "2026-04-10T04:19:55.204Z",
-        "agent_name": "medical-rag",
+        "agent_name": "sample-agent",
     },
     {
         "trace_id": "trace-retrieval-dns-002",

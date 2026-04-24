@@ -17,7 +17,7 @@ incident flow:
 
 Application:
 
-- `MedicalAgent`, the medical RAG application.
+- `SampleAgent`, the sample RAG application.
 
 Incident:
 
@@ -37,7 +37,7 @@ Severity:
 
 ## Detection Flow
 
-1. `MedicalAgent` emits traces and spans through `aiops_sdk`.
+1. `SampleAgent` emits traces and spans through `aiops_sdk`.
 2. `AIopsTelemetry` collects:
    - request latency
    - error rate
@@ -162,7 +162,7 @@ Output:
 
 ## Demo Script
 
-1. Start `MedicalAgent`, `AIopsTelemetry`, and the remediation service.
+1. Start `SampleAgent`, `AIopsTelemetry`, and the remediation service.
 2. Generate load against the chat/query endpoint with a load tool such as `k6`,
    `hey`, `ab`, or a small Python concurrent request script.
 3. Show the dashboard detecting elevated latency/error rate.
@@ -197,7 +197,7 @@ Output:
 
 ## Recommended Implementation Increments
 
-1. Add a load-generation script and demo issue seed. Status: initial script added at `MedicalAgent/scripts/load_concurrent_users.py`.
+1. Add a load-generation script and demo issue seed. Status: initial script added at `SampleAgent/scripts/load_concurrent_users.py`.
 2. Add NFR detection rules for p95 latency and 5xx rate. Status: p95 latency rules added as `NFR-7p95` and `NFR-7p95a`; existing 5xx rules remain `NFR-8` and `NFR-8a`.
 3. Add RCA prompt/context assembly for traces plus system metrics. Status: RCA prompt now asks for remediation type and infra handoff guidance.
 4. Add remediation-type classification in the plan output. Status: RCA output supports remediation classification and handoff plan fields.

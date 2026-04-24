@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate concurrent user load against the MedicalAgent chat endpoint.
+"""Generate concurrent user load against the SampleAgent chat endpoint.
 
 The script is intentionally dependency-light so it can run in a demo VM without
 installing a separate load-testing tool. It prints p50/p95/max latency and
@@ -98,10 +98,10 @@ def _build_payload(prompt: str, index: int, max_articles: int, top_k: int) -> di
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Concurrent load generator for MedicalAgent.")
-    parser.add_argument("--base-url", default="http://127.0.0.1:8000", help="MedicalAgent base URL")
-    parser.add_argument("--username", default="admin", help="MedicalAgent username")
-    parser.add_argument("--password", default="admin", help="MedicalAgent password")
+    parser = argparse.ArgumentParser(description="Concurrent load generator for SampleAgent.")
+    parser.add_argument("--base-url", default="http://127.0.0.1:8000", help="SampleAgent base URL")
+    parser.add_argument("--username", default="admin", help="SampleAgent username")
+    parser.add_argument("--password", default="admin", help="SampleAgent password")
     parser.add_argument("--users", type=int, default=75, help="Concurrent users")
     parser.add_argument("--requests", type=int, default=200, help="Total requests")
     parser.add_argument("--timeout", type=float, default=30.0, help="Per-request timeout in seconds")
@@ -131,7 +131,7 @@ def main() -> int:
     failures = [r for r in results if r.status < 200 or r.status >= 300]
     errors = [r for r in results if r.error]
 
-    print("MedicalAgent concurrent load summary")
+    print("SampleAgent concurrent load summary")
     print(f"Endpoint: {query_url}")
     print(f"Concurrent users: {args.users}")
     print(f"Requests: {len(results)}")

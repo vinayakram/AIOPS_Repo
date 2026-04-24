@@ -19,7 +19,7 @@ class TestTraceProfile:
         now = datetime.utcnow()
         trace = Trace(
             id="trace-profile-001",
-            app_name="medical-agent",
+            app_name="sample-agent",
             status="ok",
             started_at=now - timedelta(seconds=10),
             ended_at=now,

@@ -11,7 +11,7 @@ flowchart TB
 
   %% Domain A: AI Application Plane
   subgraph APP ["A) AI Application Plane"]
-    MA_API["MedicalAgent API (:8000)\nFastAPI + JWT"]
+    MA_API["SampleAgent API (:8000)\nFastAPI + JWT"]
     MA_PIPE["RAG Engine\nPubMed -> Embeddings -> FAISS -> Re-rank -> LLM"]
     MA_TR["Telemetry Forwarder\nbackend/tracing/aiops_client.py"]
   end
@@ -53,7 +53,7 @@ flowchart TB
   USER --> MA_API
   USER --> AT_DASH
 
-  %% MedicalAgent internals
+  %% SampleAgent internals
   MA_API --> MA_PIPE
   MA_PIPE -. trace/span export .-> LANGFUSE
   MA_API --> MA_TR

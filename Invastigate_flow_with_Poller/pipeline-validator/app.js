@@ -19,7 +19,7 @@ const SCENARIOS = [
     desc: 'LLM access disabled in demo mode',
     data: {
       traceId: '8e3d196e9bda4fd09a4833740db8d360',
-      agentName: 'medical-rag',
+      agentName: 'sample-agent',
       timestamp: '2026-04-10T04:19:55.204Z',
       expectedError: 'AI_AGENT',
     }
@@ -30,7 +30,7 @@ const SCENARIOS = [
     desc: 'No error — stops at normalization',
     data: {
       traceId: 'e7fa7bf5e6b047d1829eb0cfd09c8ca6',
-      agentName: 'medical-rag',
+      agentName: 'sample-agent',
       timestamp: '2026-04-10 09:49:55',
       expectedError: 'NO_ERROR',
     }

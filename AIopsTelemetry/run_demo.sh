@@ -18,7 +18,7 @@ Presets:
 Examples:
   ./run_demo.sh english-full
   ./run_demo.sh japanese-full --query "糖尿病の最新治療法は？"
-  ./run_demo.sh executive-short --medical-url http://localhost:8002
+  ./run_demo.sh executive-short --sample-url http://localhost:8002
 EOF
 }
 
