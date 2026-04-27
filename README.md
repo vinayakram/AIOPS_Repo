@@ -1,131 +1,129 @@
-# AIOPS POC Demo Workspace
+# AIOPS_Repo
 
-This repository contains the AIOPS_Repo workspace for the AIOps remediation demo.
-It groups the remediation service, telemetry service, investigation flow, and
-sample medical RAG application used in the end-to-end demonstration.
+AIOPS_Repo is a local proof-of-concept workspace for an agentic AIOps flow:
+detect an operational issue, run root-cause analysis, recommend a remediation,
+gate sensitive action behind human approval, and track the result.
 
-## Projects
+For the product narrative, see [PRODUCT.md](PRODUCT.md).
 
-- `AIOPS/` - remediation POC service and UI.
-- `AIopsTelemetry/` - telemetry SDK, issue detection service, and dashboard.
-- `Invastigate_flow_with_Poller/` - investigation and polling flow service.
-- `MedicalAgent/` - sample medical RAG application used for remediation demos.
-- `SampleAgent_GitHub/` - GitHub-oriented copy of the sample RAG app used by remediation.
-- `architecture/` - architecture diagrams and supporting documentation assets.
+## Repository Map
 
-## Demo Runbook
+- `AIopsTelemetry/` - telemetry ingestion, issue detection, escalation rules, dashboards, and incident APIs.
+- `Invastigate_flow_with_Poller/` - RCA and correlation service that polls incidents and runs the investigation agent flow.
+- `AIOPS/` - remediation service that turns approved plans into code changes and pull requests.
+- `MedicalAgent/` - sample RAG application used as the monitored workload.
+- `SampleAgent_GitHub/` - GitHub-facing copy of the sample app used by remediation workflows.
+- `demo/` - local demo launcher, preview page, presenter scripts, and shared demo helpers.
 
-Use the scripts in `demo/` for the AIOps demo. They start and stop the full
-demo stack in a predictable order.
+## Quick Start
 
-### 1. Start the demo services
-
-From the workspace root:
+From the repository root:
 
 ```bash
-cd <repo-root>
 ./demo/start.sh
 ```
 
-What `demo/start.sh` starts by default:
+This starts the local demo stack:
 
-- `MedicalAgent` Docker stack on port `8002`
-- `AIopsTelemetry` on port `7000`
-- `Invastigate_flow_with_Poller` RCA service on port `8000`
-- `AIOPS` remediation service on port `8005`
-- `Invastigate_flow_with_Poller/monitor-ui` Vite UI on port `5173`
-- `demo/aiops_preview.html` static page on port `8088`
-- `demo/aiops_preview_launcher.py` on port `8765`
+- Sample Agent on `http://localhost:8002`
+- AIopsTelemetry on `http://localhost:7000`
+- RCA service on `http://localhost:8000`
+- Remediation service on `http://localhost:8005`
+- Monitor UI on `http://localhost:5173`
+- Demo preview page on `http://localhost:8088/aiops_preview.html`
+- Preview launcher health on `http://localhost:8765/health`
 
-The script first runs `./demo/stop.sh --quiet` to clean up an older demo run,
-then starts the services and waits for the health URLs to respond.
-
-### 2. Demo URLs
-
-Default local URLs after startup:
-
-- Sample Agent: `http://localhost:8002`
-- Sample Agent health: `http://localhost:8002/api/health`
-- AIopsTelemetry: `http://localhost:7000`
-- AIopsTelemetry health: `http://localhost:7000/health`
-- Invastigate RCA: `http://localhost:8000`
-- Invastigate RCA health: `http://localhost:8000/health`
-- AIOPS remediation: `http://localhost:8005`
-- Monitor UI: `http://localhost:5173`
-- Preview page local: `http://localhost:8088/aiops_preview.html`
-- Preview launcher health: `http://localhost:8765/health`
-
-Default public preview URL used by the script:
-
-- Preview page public: `http://localhost:8088/aiops_preview.html`
-
-### 3. Useful startup options
-
-Skip Docker rebuild if you want a faster restart:
+To stop everything:
 
 ```bash
-cd <repo-root>
+./demo/stop.sh
+```
+
+## Useful Commands
+
+Start faster without rebuilding the sample Docker image:
+
+```bash
 REBUILD_MEDICAL=0 ./demo/start.sh
 ```
 
-Enable steady background load during the demo:
+Start with steady background load:
 
 ```bash
-cd <repo-root>
 STEADY_LOAD_ENABLED=1 ./demo/start.sh
+```
+
+Run the pod-pressure scenario directly:
+
+```bash
+./demo/sample_agent_pod_pressure.sh
+```
+
+Check the main services:
+
+```bash
+curl -fsS http://localhost:7000/health
+curl -fsS http://localhost:8000/health
+curl -fsS http://localhost:8005/
+curl -fsS http://localhost:8002/api/health
 ```
 
 Logs are written under:
 
 ```bash
-<repo-root>/.runtime/logs
+.runtime/logs
 ```
 
-### 4. Stop the demo services
+## Configuration
 
-From the workspace root:
+Copy each module's example environment file before local development:
 
 ```bash
-cd <repo-root>
-./demo/stop.sh
+cp AIopsTelemetry/.env.example AIopsTelemetry/.env
+cp MedicalAgent/.env.example MedicalAgent/.env
+cp SampleAgent_GitHub/.env.example SampleAgent_GitHub/.env
+cp Invastigate_flow_with_Poller/.env.example Invastigate_flow_with_Poller/.env
 ```
 
-What `demo/stop.sh` stops:
+Important settings:
 
-- `invastigate-monitor-ui`
-- `sample-agent-steady-load`
-- `aiops-preview-launcher`
-- `aiops-preview`
-- `aiops-remediation`
-- `invastigate-rca`
-- `aiops-telemetry`
-- `MedicalAgent` Docker stack via `docker compose down --remove-orphans`
+- `OPENAI_API_KEY` / `OPENAI_MODEL` for sample-agent LLM calls.
+- `AIOPS_OPENAI_API_KEY` for telemetry analysis/remediation support.
+- `WEB_SEARCH_AGENT_DIR` and `SAMPLE_AGENT_DIR` when agent code is outside this repo.
+- `CORS_ORIGINS` for service CORS policy; `*` is intended only for local development.
 
-The script uses PID files first, then falls back to matching leftover processes
-started from this repo path.
+## Development Checks
 
-### 5. Recommended stop verification
-
-After stopping, verify the main demo endpoints are down:
+Useful lightweight checks before committing:
 
 ```bash
-curl -I http://localhost:7000/health
-curl -I http://localhost:8000/health
-curl -I http://localhost:8005/
-curl -I http://localhost:8088/aiops_preview.html
-curl -I http://localhost:8765/health
+python3 -m py_compile \
+  AIopsTelemetry/server/main.py \
+  AIopsTelemetry/server/engine/autofix_agent.py \
+  MedicalAgent/backend/main.py \
+  SampleAgent_GitHub/backend/main.py \
+  Invastigate_flow_with_Poller/app/main.py
+
+bash -n demo/start.sh demo/stop.sh demo/scripts/demo_lib.sh
 ```
 
-If the stop was successful, these should fail to connect.
+Run module tests where environments are available:
 
-## Security Notes
+```bash
+python3 -m pytest AIopsTelemetry/tests
+python3 -m pytest Invastigate_flow_with_Poller/tests
+python3 -m pytest AIOPS/tests
+```
 
-Runtime secrets and machine-specific files are intentionally excluded from Git:
+## Git Hygiene
 
-- `.env` and `.env.*`
-- local Git metadata and credentials
+The repo intentionally ignores runtime and machine-local artifacts:
+
+- `.env` files and credentials
 - virtual environments
 - sqlite databases
-- logs, caches, backup files, run artifacts, and zip exports
+- logs and runtime output
+- generated diagram renders
+- managed remediation worktrees
 
-Use each project's `.env.example` as the template for local configuration.
+Keep product docs in `PRODUCT.md` and operational setup in this README.
