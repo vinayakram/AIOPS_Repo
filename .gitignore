@@ -63,3 +63,26 @@ build/
 # OS files
 .DS_Store
 Thumbs.db
+
+# Internal tooling files
+code_fix.init
+.claude/
+
+# Generated diagram renders
+architecture/out/
+**/architecture/out/
+
+# Scratch HTML files
+diagram*.html
+architecture_diagram.html
+
+# Runtime artefacts
+*.db
+*.sqlite
+.runtime/
+runs/
+managed_repos/
+
+# PowerPoint binaries
+*.pptx
+*.ppt

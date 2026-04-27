@@ -1,5 +1,6 @@
 import asyncio
 import json
+import os
 import time
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, Depends, HTTPException
@@ -43,7 +44,7 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=os.environ.get("CORS_ORIGINS", "*").split(","),
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

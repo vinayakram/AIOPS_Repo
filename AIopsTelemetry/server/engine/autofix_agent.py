@@ -4,6 +4,7 @@ in the affected agent's source code, then restarts the agent.
 """
 import asyncio
 import logging
+import os
 import uuid
 from datetime import datetime
 from pathlib import Path
@@ -19,13 +20,12 @@ logger = logging.getLogger(__name__)
 # ── App-name → source-code folder mapping ────────────────────────────────────
 # __file__ = …/AIopsTelemetry/server/engine/autofix_agent.py
 #   parents[2] = AIopsTelemetry root
-#   parents[3] = Documents folder
+#   parents[3] = repo root
 _DOCS = Path(__file__).resolve().parents[3]
 
 APP_FOLDERS: dict[str, str] = {
-    "web-search-agent": str(_DOCS / "WebSearchAgent"),
-    "sample-agent":      str(_DOCS / "SampleAgent"),
-    "sample-agent":    str(_DOCS / "SampleAgent"),
+    "web-search-agent": os.environ.get("WEB_SEARCH_AGENT_DIR", str(_DOCS / "WebSearchAgent")),
+    "sample-agent": os.environ.get("SAMPLE_AGENT_DIR", str(_DOCS / "SampleAgent")),
 }
 
 # ── In-memory job store ───────────────────────────────────────────────────────

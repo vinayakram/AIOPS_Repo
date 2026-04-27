@@ -1,6 +1,6 @@
 # AIOPS POC Demo Workspace
 
-This repository contains the POCDEMO1 workspace for the AIOps remediation demo.
+This repository contains the AIOPS_Repo workspace for the AIOps remediation demo.
 It groups the remediation service, telemetry service, investigation flow, and
 sample medical RAG application used in the end-to-end demonstration.
 
@@ -23,7 +23,7 @@ demo stack in a predictable order.
 From the workspace root:
 
 ```bash
-cd /home/support/Documents/POCDEMO1
+cd <repo-root>
 ./demo/start.sh
 ```
 
@@ -57,28 +57,28 @@ Default local URLs after startup:
 
 Default public preview URL used by the script:
 
-- Preview page public: `http://10.169.91.16:8088/aiops_preview.html`
+- Preview page public: `http://localhost:8088/aiops_preview.html`
 
 ### 3. Useful startup options
 
 Skip Docker rebuild if you want a faster restart:
 
 ```bash
-cd /home/support/Documents/POCDEMO1
+cd <repo-root>
 REBUILD_MEDICAL=0 ./demo/start.sh
 ```
 
 Enable steady background load during the demo:
 
 ```bash
-cd /home/support/Documents/POCDEMO1
+cd <repo-root>
 STEADY_LOAD_ENABLED=1 ./demo/start.sh
 ```
 
 Logs are written under:
 
 ```bash
-/home/support/Documents/POCDEMO1/.runtime/logs
+<repo-root>/.runtime/logs
 ```
 
 ### 4. Stop the demo services
@@ -86,7 +86,7 @@ Logs are written under:
 From the workspace root:
 
 ```bash
-cd /home/support/Documents/POCDEMO1
+cd <repo-root>
 ./demo/stop.sh
 ```
 

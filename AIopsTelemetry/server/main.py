@@ -9,9 +9,6 @@ from fastapi.responses import FileResponse
 
 from server.database.engine import init_db
 from server.engine import escalation_engine, process_manager
-# metrics_collector disabled on feature/rca-external-service — host-OS psutil data
-# is not a valid data source for this branch (only sample-agent trace data is used)
-# from server.engine import metrics_collector
 from server.api import ingest, traces, issues, escalations, metrics, health, agent, langfuse_traces
 from server.api import autofix as autofix_api
 from server.api import analysis as analysis_api
@@ -19,24 +16,23 @@ from server.api import incidents as incidents_api
 from server.api import remediation as remediation_api
 
 _escalation_task = None
-_metrics_task = None
 
 # ── Register known agent processes ───────────────────────────────────────────
-_DOCS = Path(__file__).resolve().parents[2]  # Documents folder
+_DOCS = Path(__file__).resolve().parents[2]  # repo root
 
 def _register_agents():
     python = sys.executable
 
-    ws_folder = str(_DOCS / "WebSearchAgent")
-    ws_server = str(_DOCS / "WebSearchAgent" / "server.py")
+    ws_folder = os.environ.get("WEB_SEARCH_AGENT_DIR", str(_DOCS / "WebSearchAgent"))
+    ws_server = os.path.join(ws_folder, "server.py")
     process_manager.register(
         "web-search-agent",
         cmd=[python, ws_server],
         cwd=ws_folder,
     )
 
-    med_folder = str(_DOCS / "SampleAgent")
-    med_server = str(_DOCS / "SampleAgent" / "run.py")
+    med_folder = os.environ.get("SAMPLE_AGENT_DIR", str(_DOCS / "SampleAgent"))
+    med_server = os.path.join(med_folder, "run.py")
     process_manager.register(
         "sample-agent",
         cmd=[python, med_server],
@@ -49,15 +45,13 @@ async def lifespan(app: FastAPI):
     # Startup
     init_db()
     _register_agents()
-    global _escalation_task, _metrics_task
+    global _escalation_task
+    # metrics_collector is out of scope for this release; host-OS metrics not collected
     _escalation_task = asyncio.create_task(escalation_engine.start())
-    # metrics_collector disabled — only sample-agent trace data is the intended source
-    # _metrics_task = asyncio.create_task(metrics_collector.start())
     yield
     # Shutdown
     escalation_engine.stop()
-    # metrics_collector.stop()
-    for task in (_escalation_task, _metrics_task):
+    for task in (_escalation_task,):
         if task:
             task.cancel()
             try:

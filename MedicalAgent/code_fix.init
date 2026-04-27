@@ -1,5 +1,0 @@
-[project]
-name         = sample-agent
-description  = Evidence-based sample RAG agent — PubMed retrieval, FAISS + PageRank, Claude/GPT-4o answer generation
-git_remote   = origin
-default_branch = main
