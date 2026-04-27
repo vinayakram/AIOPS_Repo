@@ -58,6 +58,44 @@ header{background:var(--surface);border-bottom:1px solid var(--border);padding:0
 .container{max-width:1440px;margin:0 auto;padding:20px 24px}
 .page{display:none}.page.active{display:block}
 
+/* AIOps Assistant */
+.aiops-assistant{background:var(--surface);border:1px solid var(--border);border-radius:8px;margin-bottom:18px;overflow:hidden;box-shadow:0 1px 2px rgba(31,35,40,.04)}
+.aa-main{display:grid;grid-template-columns:minmax(300px,1fr) minmax(360px,1.25fr);border-bottom:1px solid var(--border)}
+.aa-intro{padding:18px 20px;background:linear-gradient(180deg,#fff,#f6f8fa)}
+.aa-kicker{font-size:11px;font-weight:700;color:var(--accent);letter-spacing:.08em;text-transform:uppercase;margin-bottom:6px}
+.aa-intro h2{font-size:20px;line-height:1.25;font-weight:700;color:var(--text);letter-spacing:0;margin-bottom:8px}
+.aa-intro p{font-size:13px;color:var(--text-2);max-width:620px;margin-bottom:14px}
+.aa-actions{display:flex;gap:8px;flex-wrap:wrap}
+.aa-chat{padding:16px 18px;border-left:1px solid var(--border);background:#fff}
+.aa-msg{border:1px solid var(--border);border-radius:8px;padding:10px 12px;margin-bottom:8px;font-size:13px;line-height:1.5}
+.aa-msg.user{background:var(--surface-2);color:var(--text);max-width:430px}
+.aa-msg.assistant{background:var(--accent-dim);border-color:rgba(9,105,218,.24);color:var(--text)}
+.aa-context{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px}
+.aa-tile{background:var(--surface-2);border:1px solid var(--border);border-radius:7px;padding:8px 10px;min-height:66px}
+.aa-tile .label{font-size:10px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px}
+.aa-tile .value{font-size:12px;color:var(--text-2);line-height:1.35}
+.aa-flow{display:grid;grid-template-columns:repeat(6,1fr);background:var(--surface-2);border-bottom:1px solid var(--border)}
+.aa-step{position:relative;min-height:64px;padding:12px 10px 12px 28px;border-right:1px solid var(--border)}
+.aa-step:last-child{border-right:none}
+.aa-step::before{content:'';position:absolute;left:12px;top:17px;width:8px;height:8px;border-radius:50%;background:var(--border-2)}
+.aa-step.done::before{background:var(--green)}
+.aa-step.active::before{background:var(--accent);box-shadow:0 0 0 3px var(--accent-dim)}
+.aa-step .label{font-size:11px;font-weight:700;color:var(--text);line-height:1.25}
+.aa-step .hint{font-size:10px;color:var(--muted);line-height:1.35;margin-top:3px}
+.aa-bottom{display:grid;grid-template-columns:1.45fr 1fr;gap:0}
+.aa-progress{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;padding:12px 14px;border-right:1px solid var(--border)}
+.aa-stage{border:1px solid var(--border);border-radius:7px;padding:8px 9px;background:#fff;min-height:74px}
+.aa-stage .stage-title{font-size:11px;font-weight:700;color:var(--text);margin-bottom:4px}
+.aa-stage .stage-copy{font-size:11px;color:var(--text-2);line-height:1.35}
+.aa-stage.done{border-color:rgba(26,127,55,.28);background:var(--green-dim)}
+.aa-stage.active{border-color:rgba(9,105,218,.35);background:var(--accent-dim)}
+.aa-metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:12px 14px;background:#fff}
+.aa-metric{background:var(--surface-2);border:1px solid var(--border);border-radius:7px;padding:8px 10px}
+.aa-metric .metric-value{font-size:18px;font-weight:700;color:var(--text);line-height:1}
+.aa-metric .metric-label{font-size:10px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.05em;margin-top:5px;line-height:1.25}
+@media(max-width:1120px){.aa-main,.aa-bottom{grid-template-columns:1fr}.aa-chat,.aa-progress{border-left:none;border-right:none;border-top:1px solid var(--border)}.aa-flow{grid-template-columns:repeat(3,1fr)}.aa-step:nth-child(3){border-right:none}.aa-progress{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:720px){.aa-context,.aa-flow,.aa-progress,.aa-metrics{grid-template-columns:1fr}.aa-step{border-right:none;border-bottom:1px solid var(--border)}.aa-step:last-child{border-bottom:none}}
+
 /* Stat cards */
 .stat-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:12px;margin-bottom:18px}
 @media(max-width:1200px){.stat-grid{grid-template-columns:repeat(3,1fr)}}
@@ -439,6 +477,51 @@ tr:hover .copy-btn{opacity:.7}
 
 <!-- ═══ ISSUES ═══ -->
 <div id="issues-page" class="page active">
+
+  <section class="aiops-assistant" aria-label="AIOps 運用アシスタント">
+    <div class="aa-main">
+      <div class="aa-intro">
+        <div class="aa-kicker">AIOps 運用アシスタント</div>
+        <h2>いま対応すべき事象を確認し、解決までの流れをその場で追えます。</h2>
+        <p>検知、RCA、対応案、承認、修復、振り返りを一つの画面にまとめ、運用担当者が次に取るべき判断をすぐ確認できるようにします。</p>
+        <div class="aa-actions">
+          <button class="btn btn-accent" onclick="aiopsAskIssues()">AIOps、いま対応が必要な問題はありますか？</button>
+          <button class="btn" onclick="loadIssues()">最新状況を確認</button>
+        </div>
+      </div>
+      <div class="aa-chat">
+        <div class="aa-msg user">AIOps、いま対応が必要な問題はありますか？</div>
+        <div class="aa-msg assistant" id="aa-response">ライブ事象とエージェント状況を確認しています...</div>
+        <div class="aa-context">
+          <div class="aa-tile"><div class="label">起動中のエージェント</div><div class="value" id="aa-agent">検知エージェントが待機中</div></div>
+          <div class="aa-tile"><div class="label">判断理由</div><div class="value" id="aa-reason">最新の異常シグナルを待っています。</div></div>
+          <div class="aa-tile"><div class="label">ナレッジ再利用</div><div class="value" id="aa-reuse">類似事象があれば、過去に有効だった対応を提示します。</div></div>
+        </div>
+      </div>
+    </div>
+    <div class="aa-flow" id="aa-flow">
+      <div class="aa-step" data-step="detected"><div class="label">事象検知</div><div class="hint">監視ルールが検知</div></div>
+      <div class="aa-step" data-step="agent"><div class="label">エージェント起動</div><div class="hint">RCAを選択</div></div>
+      <div class="aa-step" data-step="root"><div class="label">原因特定</div><div class="hint">根拠を添付</div></div>
+      <div class="aa-step" data-step="action"><div class="label">対応案提示</div><div class="hint">実行案を作成</div></div>
+      <div class="aa-step" data-step="approval"><div class="label">承認待ち</div><div class="hint">重要操作を確認</div></div>
+      <div class="aa-step" data-step="resolution"><div class="label">解決確認</div><div class="hint">結果を記録</div></div>
+    </div>
+    <div class="aa-bottom">
+      <div class="aa-progress">
+        <div class="aa-stage active" id="aa-stage-detecting"><div class="stage-title">検知中</div><div class="stage-copy">トレース、ルール、サービス状態を監視しています。</div></div>
+        <div class="aa-stage" id="aa-stage-analysing"><div class="stage-title">分析中</div><div class="stage-copy">RCAが症状と原因候補を確認します。</div></div>
+        <div class="aa-stage" id="aa-stage-recommending"><div class="stage-title">対応案作成</div><div class="stage-copy">リスクの低い対応案を準備します。</div></div>
+        <div class="aa-stage" id="aa-stage-approval"><div class="stage-title">承認待ち</div><div class="stage-copy">重要な変更は担当者が承認します。</div></div>
+        <div class="aa-stage" id="aa-stage-executing"><div class="stage-title">実行・記録</div><div class="stage-copy">修復と監査履歴を追跡します。</div></div>
+      </div>
+      <div class="aa-metrics">
+        <div class="aa-metric"><div class="metric-value" id="aa-noise">—</div><div class="metric-label">確認が必要な事象</div></div>
+        <div class="aa-metric"><div class="metric-value" id="aa-rca">—</div><div class="metric-label">RCA準備状況</div></div>
+        <div class="aa-metric"><div class="metric-value" id="aa-auto">—</div><div class="metric-label">修復準備状況</div></div>
+      </div>
+    </div>
+  </section>
 
   <!-- ── Analytics summary row ── -->
   <div id="issue-analytics" style="display:grid;grid-template-columns:repeat(6,1fr);gap:12px;margin-bottom:18px">
@@ -1247,6 +1330,7 @@ async function loadIssues(){
     const data=await api(url);
     const issues=data.issues;
     _renderIssueAnalytics(issues);
+    renderAIOpsAssistant(issues);
     if(!issues.length){document.getElementById('issues-tbody').innerHTML='<tr><td colspan="8" class="empty">問題はありません。</td></tr>';return;}
     document.getElementById('issues-tbody').innerHTML=issues.map(issueRow).join('');
     // Populate app filter dropdown from live data (first load only)
@@ -1256,6 +1340,91 @@ async function loadIssues(){
       apps.forEach(a=>{const o=document.createElement('option');o.value=a;o.textContent=a;appSel.appendChild(o);});
     }
   }catch(e){document.getElementById('issues-tbody').innerHTML=`<tr><td colspan="8" class="empty">エラー: ${esc(e.message)}</td></tr>`;}
+}
+
+async function aiopsAskIssues(){
+  const g=id=>document.getElementById(id);
+  if(g('aa-response'))g('aa-response').textContent='対応中の事象、RCA状況、修復準備状況を確認しています...';
+  try{
+    const data=await api('/api/issues?limit=200');
+    renderAIOpsAssistant(data.issues||[]);
+  }catch(e){
+    if(g('aa-response'))g('aa-response').textContent=`問題サービスに接続できませんでした: ${e.message}`;
+    if(g('aa-agent'))g('aa-agent').textContent='問題サービス確認に失敗';
+    if(g('aa-reason'))g('aa-reason').textContent='回答するにはテレメトリーAPIへの接続が必要です。';
+  }
+}
+
+function renderAIOpsAssistant(issues){
+  const g=id=>document.getElementById(id);
+  if(!g('aa-response'))return;
+  const all=issues||[];
+  const active=all.filter(i=>i.status!=='RESOLVED');
+  const rank={critical:4,high:3,medium:2,low:1};
+  active.sort((a,b)=>(rank[b.severity]||0)-(rank[a.severity]||0)||new Date(b.created_at||0)-new Date(a.created_at||0));
+  const rcaReady=active.filter(i=>i.trace_id||i.rule_id||i.analysis_status).length;
+  const remediationReady=active.filter(i=>{
+    const m=(i.metadata_json&&typeof i.metadata_json==='object')?i.metadata_json:{};
+    return m.remediation_run_id||m.remediation_status;
+  }).length;
+  g('aa-noise').textContent=String(active.length);
+  g('aa-rca').textContent=active.length?Math.round(rcaReady/active.length*100)+'%':'100%';
+  g('aa-auto').textContent=active.length?Math.round(remediationReady/active.length*100)+'%':'—';
+  _setAAFlow([]);
+  _setAAStages(['detecting']);
+  if(!active.length){
+    g('aa-response').textContent='現在、対応が必要な問題はありません。監視は継続しており、異常を検知した時点でRCAを起動します。';
+    g('aa-agent').textContent='検知エージェント';
+    g('aa-reason').textContent='オープン、確認済み、エスカレート中の問題はありません。';
+    g('aa-reuse').textContent='解決済み事象の結果は、今後の類似事象で参照されます。';
+    return;
+  }
+  const issue=active[0];
+  const meta=(issue.metadata_json&&typeof issue.metadata_json==='object')?issue.metadata_json:{};
+  const app=meta.display_app_name||issue.app_name||'監視対象サービス';
+  const sev=_JA_SEV[issue.severity]||(issue.sev_label||issue.severity||'重大度不明');
+  const title=issue.title||'運用上の異常';
+  const rmStatus=meta.remediation_status||'';
+  const hasAnalysis=issue.analysis_status==='COMPLETED'||issue.has_analysis||rmStatus||meta.remediation_run_id;
+  const waitingApproval=rmStatus==='WAITING_APPROVAL'||rmStatus==='PLAN_READY'||rmStatus==='REVIEW_READY';
+  const resolved=issue.status==='RESOLVED'||rmStatus==='PR_CREATED'||rmStatus==='COMPLETED';
+  const flow=['detected','agent'];
+  if(hasAnalysis)flow.push('root','action');
+  if(waitingApproval||rmStatus)flow.push('approval');
+  if(resolved)flow.push('resolution');
+  _setAAFlow(flow);
+  const stages=['detecting','analysing'];
+  if(hasAnalysis)stages.push('recommending');
+  if(waitingApproval||rmStatus)stages.push('approval');
+  if(resolved||rmStatus==='PR_CREATED')stages.push('executing');
+  _setAAStages(stages);
+  g('aa-response').textContent=`はい。${app} で「${sev}」の事象を検知しています: ${title}。RCAエージェントで原因候補を確認し、承認できる対応案を準備します。`;
+  g('aa-agent').textContent=hasAnalysis?'RCA・修復エージェント':'RCAエージェント';
+  g('aa-reason').textContent=`問題 #${issue.id} は ${_JA_STATUS[issue.status]||issue.status} です。トレース、ルール、ステータスの根拠を確認できます。`;
+  g('aa-reuse').textContent=issue.recurrence_count>0?`このパターンは過去に ${issue.recurrence_count} 回発生しています。根拠が一致すれば、前回有効だった対応を再利用できます。`:'まだ一致する解決済みパターンはありません。この対応結果を今後の再利用に残します。';
+}
+
+function _setAAFlow(doneSteps){
+  const done=new Set(doneSteps||[]);
+  const order=['detected','agent','root','action','approval','resolution'];
+  const next=order.find(s=>!done.has(s));
+  document.querySelectorAll('#aa-flow .aa-step').forEach(el=>{
+    const key=el.getAttribute('data-step');
+    el.classList.toggle('done',done.has(key));
+    el.classList.toggle('active',key===next||(!next&&key==='resolution'));
+  });
+}
+
+function _setAAStages(reachedStages){
+  const reached=reachedStages||[];
+  const done=new Set(reached.slice(0,-1));
+  const current=reached[reached.length-1]||'detecting';
+  ['detecting','analysing','recommending','approval','executing'].forEach(key=>{
+    const el=document.getElementById(`aa-stage-${key}`);
+    if(!el)return;
+    el.classList.toggle('done',done.has(key));
+    el.classList.toggle('active',key===current);
+  });
 }
 
 function _renderIssueAnalytics(issues){

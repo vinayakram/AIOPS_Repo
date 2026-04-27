@@ -60,6 +60,44 @@ header{background:var(--surface);border-bottom:1px solid var(--border);padding:0
 .container{max-width:1440px;margin:0 auto;padding:20px 24px}
 .page{display:none}.page.active{display:block}
 
+/* AIOps Assistant */
+.aiops-assistant{background:var(--surface);border:1px solid var(--border);border-radius:8px;margin-bottom:18px;overflow:hidden;box-shadow:0 1px 2px rgba(31,35,40,.04)}
+.aa-main{display:grid;grid-template-columns:minmax(300px,1fr) minmax(360px,1.25fr);border-bottom:1px solid var(--border)}
+.aa-intro{padding:18px 20px;background:linear-gradient(180deg,#fff,#f6f8fa)}
+.aa-kicker{font-size:11px;font-weight:700;color:var(--accent);letter-spacing:.08em;text-transform:uppercase;margin-bottom:6px}
+.aa-intro h2{font-size:20px;line-height:1.25;font-weight:700;color:var(--text);letter-spacing:0;margin-bottom:8px}
+.aa-intro p{font-size:13px;color:var(--text-2);max-width:620px;margin-bottom:14px}
+.aa-actions{display:flex;gap:8px;flex-wrap:wrap}
+.aa-chat{padding:16px 18px;border-left:1px solid var(--border);background:#fff}
+.aa-msg{border:1px solid var(--border);border-radius:8px;padding:10px 12px;margin-bottom:8px;font-size:13px;line-height:1.5}
+.aa-msg.user{background:var(--surface-2);color:var(--text);max-width:430px}
+.aa-msg.assistant{background:var(--accent-dim);border-color:rgba(9,105,218,.24);color:var(--text)}
+.aa-context{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px}
+.aa-tile{background:var(--surface-2);border:1px solid var(--border);border-radius:7px;padding:8px 10px;min-height:66px}
+.aa-tile .label{font-size:10px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px}
+.aa-tile .value{font-size:12px;color:var(--text-2);line-height:1.35}
+.aa-flow{display:grid;grid-template-columns:repeat(6,1fr);background:var(--surface-2);border-bottom:1px solid var(--border)}
+.aa-step{position:relative;min-height:64px;padding:12px 10px 12px 28px;border-right:1px solid var(--border)}
+.aa-step:last-child{border-right:none}
+.aa-step::before{content:'';position:absolute;left:12px;top:17px;width:8px;height:8px;border-radius:50%;background:var(--border-2)}
+.aa-step.done::before{background:var(--green)}
+.aa-step.active::before{background:var(--accent);box-shadow:0 0 0 3px var(--accent-dim)}
+.aa-step .label{font-size:11px;font-weight:700;color:var(--text);line-height:1.25}
+.aa-step .hint{font-size:10px;color:var(--muted);line-height:1.35;margin-top:3px}
+.aa-bottom{display:grid;grid-template-columns:1.45fr 1fr;gap:0}
+.aa-progress{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;padding:12px 14px;border-right:1px solid var(--border)}
+.aa-stage{border:1px solid var(--border);border-radius:7px;padding:8px 9px;background:#fff;min-height:74px}
+.aa-stage .stage-title{font-size:11px;font-weight:700;color:var(--text);margin-bottom:4px}
+.aa-stage .stage-copy{font-size:11px;color:var(--text-2);line-height:1.35}
+.aa-stage.done{border-color:rgba(26,127,55,.28);background:var(--green-dim)}
+.aa-stage.active{border-color:rgba(9,105,218,.35);background:var(--accent-dim)}
+.aa-metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:12px 14px;background:#fff}
+.aa-metric{background:var(--surface-2);border:1px solid var(--border);border-radius:7px;padding:8px 10px}
+.aa-metric .metric-value{font-size:18px;font-weight:700;color:var(--text);line-height:1}
+.aa-metric .metric-label{font-size:10px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.05em;margin-top:5px;line-height:1.25}
+@media(max-width:1120px){.aa-main,.aa-bottom{grid-template-columns:1fr}.aa-chat,.aa-progress{border-left:none;border-right:none;border-top:1px solid var(--border)}.aa-flow{grid-template-columns:repeat(3,1fr)}.aa-step:nth-child(3){border-right:none}.aa-progress{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:720px){.aa-context,.aa-flow,.aa-progress,.aa-metrics{grid-template-columns:1fr}.aa-step{border-right:none;border-bottom:1px solid var(--border)}.aa-step:last-child{border-bottom:none}}
+
 /* Stat cards */
 .stat-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:12px;margin-bottom:18px}
 @media(max-width:1200px){.stat-grid{grid-template-columns:repeat(3,1fr)}}
@@ -493,6 +531,51 @@ tr:hover .copy-btn{opacity:.7}
 
 <!-- ═══ ISSUES ═══ -->
 <div id="issues-page" class="page active">
+
+  <section class="aiops-assistant" aria-label="AIOps operations assistant">
+    <div class="aa-main">
+      <div class="aa-intro">
+        <div class="aa-kicker">AIOps Assistant</div>
+        <h2>Ask what needs attention and follow the agent path to resolution.</h2>
+        <p>Start with one operational question, then see detection, RCA, recommendation, approval, remediation, and learning in a single traceable flow.</p>
+        <div class="aa-actions">
+          <button class="btn btn-accent" onclick="aiopsAskIssues()">AIOps, do we have any issues?</button>
+          <button class="btn" onclick="loadIssues()">Refresh status</button>
+        </div>
+      </div>
+      <div class="aa-chat">
+        <div class="aa-msg user">AIOps, do we have any issues?</div>
+        <div class="aa-msg assistant" id="aa-response">Checking live incidents and agent status...</div>
+        <div class="aa-context">
+          <div class="aa-tile"><div class="label">Agent</div><div class="value" id="aa-agent">Detection agent standing by</div></div>
+          <div class="aa-tile"><div class="label">Reason</div><div class="value" id="aa-reason">Waiting for current issue signals.</div></div>
+          <div class="aa-tile"><div class="label">Reuse</div><div class="value" id="aa-reuse">Similar successful actions will be shown when available.</div></div>
+        </div>
+      </div>
+    </div>
+    <div class="aa-flow" id="aa-flow">
+      <div class="aa-step" data-step="detected"><div class="label">Issue detected</div><div class="hint">Telemetry rule fires</div></div>
+      <div class="aa-step" data-step="agent"><div class="label">Agent triggered</div><div class="hint">RCA is selected</div></div>
+      <div class="aa-step" data-step="root"><div class="label">Root cause</div><div class="hint">Evidence attached</div></div>
+      <div class="aa-step" data-step="action"><div class="label">Action recommended</div><div class="hint">Plan prepared</div></div>
+      <div class="aa-step" data-step="approval"><div class="label">Human approval</div><div class="hint">Sensitive step gated</div></div>
+      <div class="aa-step" data-step="resolution"><div class="label">Resolution</div><div class="hint">Outcome tracked</div></div>
+    </div>
+    <div class="aa-bottom">
+      <div class="aa-progress">
+        <div class="aa-stage active" id="aa-stage-detecting"><div class="stage-title">Detecting</div><div class="stage-copy">Watching traces, rules, and service health.</div></div>
+        <div class="aa-stage" id="aa-stage-analysing"><div class="stage-title">Analysing</div><div class="stage-copy">RCA checks symptoms and likely causes.</div></div>
+        <div class="aa-stage" id="aa-stage-recommending"><div class="stage-title">Recommending</div><div class="stage-copy">A low-risk action is prepared.</div></div>
+        <div class="aa-stage" id="aa-stage-approval"><div class="stage-title">Waiting approval</div><div class="stage-copy">Operator approves sensitive changes.</div></div>
+        <div class="aa-stage" id="aa-stage-executing"><div class="stage-title">Executing</div><div class="stage-copy">Remediation and audit are tracked.</div></div>
+      </div>
+      <div class="aa-metrics">
+        <div class="aa-metric"><div class="metric-value" id="aa-noise">—</div><div class="metric-label">Active issues to review</div></div>
+        <div class="aa-metric"><div class="metric-value" id="aa-rca">—</div><div class="metric-label">RCA readiness</div></div>
+        <div class="aa-metric"><div class="metric-value" id="aa-auto">—</div><div class="metric-label">Remediation readiness</div></div>
+      </div>
+    </div>
+  </section>
 
   <!-- ── Analytics summary row ── -->
   <div id="issue-analytics" style="display:grid;grid-template-columns:repeat(6,1fr);gap:12px;margin-bottom:18px">
@@ -1460,6 +1543,7 @@ async function loadIssues(){
     const data=await api(url);
     const issues=data.issues;
     _renderIssueAnalytics(issues);
+    renderAIOpsAssistant(issues);
     if(!issues.length){document.getElementById('issues-tbody').innerHTML='<tr><td colspan="8" class="empty">No issues.</td></tr>';return;}
     document.getElementById('issues-tbody').innerHTML=issues.map(issueRow).join('');
     // Populate app filter dropdown from live data (first load only)
@@ -1469,6 +1553,91 @@ async function loadIssues(){
       apps.forEach(a=>{const o=document.createElement('option');o.value=a;o.textContent=a;appSel.appendChild(o);});
     }
   }catch(e){document.getElementById('issues-tbody').innerHTML=`<tr><td colspan="8" class="empty">Error: ${esc(e.message)}</td></tr>`;}
+}
+
+async function aiopsAskIssues(){
+  const g=id=>document.getElementById(id);
+  if(g('aa-response'))g('aa-response').textContent='Checking active issues, RCA state, and remediation readiness...';
+  try{
+    const data=await api('/api/issues?limit=200');
+    renderAIOpsAssistant(data.issues||[]);
+  }catch(e){
+    if(g('aa-response'))g('aa-response').textContent=`I cannot reach the issue service right now: ${e.message}`;
+    if(g('aa-agent'))g('aa-agent').textContent='Issue service check failed';
+    if(g('aa-reason'))g('aa-reason').textContent='AIOps needs the telemetry API before it can answer.';
+  }
+}
+
+function renderAIOpsAssistant(issues){
+  const g=id=>document.getElementById(id);
+  if(!g('aa-response'))return;
+  const all=issues||[];
+  const active=all.filter(i=>i.status!=='RESOLVED');
+  const rank={critical:4,high:3,medium:2,low:1};
+  active.sort((a,b)=>(rank[b.severity]||0)-(rank[a.severity]||0)||new Date(b.created_at||0)-new Date(a.created_at||0));
+  const rcaReady=active.filter(i=>i.trace_id||i.rule_id||i.analysis_status).length;
+  const remediationReady=active.filter(i=>{
+    const m=(i.metadata_json&&typeof i.metadata_json==='object')?i.metadata_json:{};
+    return m.remediation_run_id||m.remediation_status;
+  }).length;
+  g('aa-noise').textContent=String(active.length);
+  g('aa-rca').textContent=active.length?Math.round(rcaReady/active.length*100)+'%':'100%';
+  g('aa-auto').textContent=active.length?Math.round(remediationReady/active.length*100)+'%':'—';
+  _setAAFlow([]);
+  _setAAStages(['detecting']);
+  if(!active.length){
+    g('aa-response').textContent='No active issues right now. I am monitoring telemetry and will trigger RCA when a rule fires.';
+    g('aa-agent').textContent='Detection agent';
+    g('aa-reason').textContent='There are no open, acknowledged, or escalated issues.';
+    g('aa-reuse').textContent='Resolved outcomes remain available for future similar incidents.';
+    return;
+  }
+  const issue=active[0];
+  const meta=(issue.metadata_json&&typeof issue.metadata_json==='object')?issue.metadata_json:{};
+  const app=meta.display_app_name||issue.app_name||'the monitored service';
+  const sev=(issue.sev_label||issue.severity||'unknown severity').toString().toUpperCase();
+  const title=issue.title||'an operational anomaly';
+  const rmStatus=meta.remediation_status||'';
+  const hasAnalysis=issue.analysis_status==='COMPLETED'||issue.has_analysis||rmStatus||meta.remediation_run_id;
+  const waitingApproval=rmStatus==='WAITING_APPROVAL'||rmStatus==='PLAN_READY'||rmStatus==='REVIEW_READY';
+  const resolved=issue.status==='RESOLVED'||rmStatus==='PR_CREATED'||rmStatus==='COMPLETED';
+  const flow=['detected','agent'];
+  if(hasAnalysis)flow.push('root','action');
+  if(waitingApproval||rmStatus)flow.push('approval');
+  if(resolved)flow.push('resolution');
+  _setAAFlow(flow);
+  const stages=['detecting','analysing'];
+  if(hasAnalysis)stages.push('recommending');
+  if(waitingApproval||rmStatus)stages.push('approval');
+  if(resolved||rmStatus==='PR_CREATED')stages.push('executing');
+  _setAAStages(stages);
+  g('aa-response').textContent=`Yes. ${app} has a ${sev} issue: ${title}. I am invoking the RCA agent and preparing the next recommended action for approval.`;
+  g('aa-agent').textContent=hasAnalysis?'RCA and remediation agents':'RCA agent';
+  g('aa-reason').textContent=`Issue #${issue.id} is ${issue.status}; trace, rule, and status evidence are available for review.`;
+  g('aa-reuse').textContent=issue.recurrence_count>0?`This pattern appeared ${issue.recurrence_count} time(s) before. Reuse the prior accepted action if the evidence matches.`:'No matching resolved pattern yet. The outcome will be saved for reuse.';
+}
+
+function _setAAFlow(doneSteps){
+  const done=new Set(doneSteps||[]);
+  const order=['detected','agent','root','action','approval','resolution'];
+  const next=order.find(s=>!done.has(s));
+  document.querySelectorAll('#aa-flow .aa-step').forEach(el=>{
+    const key=el.getAttribute('data-step');
+    el.classList.toggle('done',done.has(key));
+    el.classList.toggle('active',key===next||(!next&&key==='resolution'));
+  });
+}
+
+function _setAAStages(reachedStages){
+  const reached=reachedStages||[];
+  const done=new Set(reached.slice(0,-1));
+  const current=reached[reached.length-1]||'detecting';
+  ['detecting','analysing','recommending','approval','executing'].forEach(key=>{
+    const el=document.getElementById(`aa-stage-${key}`);
+    if(!el)return;
+    el.classList.toggle('done',done.has(key));
+    el.classList.toggle('active',key===current);
+  });
 }
 
 function _renderIssueAnalytics(issues){
