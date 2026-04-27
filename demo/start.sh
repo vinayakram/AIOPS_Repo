@@ -1,9 +1,10 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+DEMO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ROOT_DIR="$(cd "${DEMO_DIR}/.." && pwd)"
 LOG_PREFIX="demo-start"
-source "${ROOT_DIR}/scripts/demo_lib.sh"
+source "${DEMO_DIR}/scripts/demo_lib.sh"
 init_demo_runtime
 
 HOST="${HOST:-0.0.0.0}"
@@ -29,9 +30,9 @@ STEADY_LOAD_USERS="${STEADY_LOAD_USERS:-1}"
 STEADY_LOAD_WORK_MS="${STEADY_LOAD_WORK_MS:-300}"
 STEADY_LOAD_PAUSE_MS="${STEADY_LOAD_PAUSE_MS:-800}"
 
-if [ -x "${ROOT_DIR}/demo_stop.sh" ]; then
+if [ -x "${DEMO_DIR}/stop.sh" ]; then
   info "Stopping any previously started demo services first"
-  DEMO_RUNTIME_DIR="${RUNTIME_DIR}" "${ROOT_DIR}/demo_stop.sh" --quiet || true
+  DEMO_RUNTIME_DIR="${RUNTIME_DIR}" "${DEMO_DIR}/stop.sh" --quiet || true
 fi
 
 info "Starting sample-agent Docker stack"
@@ -97,7 +98,7 @@ if url_reachable "${PREVIEW_HEALTH_URL}"; then
 else
   start_background \
     "aiops-preview" \
-    "${ROOT_DIR}" \
+    "${DEMO_DIR}" \
     python3 -m http.server "${PREVIEW_PORT}" --bind "${HOST}"
 fi
 
@@ -106,7 +107,7 @@ if url_reachable "${PREVIEW_LAUNCHER_URL}"; then
 else
   start_background \
     "aiops-preview-launcher" \
-    "${ROOT_DIR}" \
+    "${DEMO_DIR}" \
     python3 aiops_preview_launcher.py
 fi
 
@@ -144,5 +145,5 @@ Demo applications started.
   Steady load         users=${STEADY_LOAD_USERS} work_ms=${STEADY_LOAD_WORK_MS} pause_ms=${STEADY_LOAD_PAUSE_MS}
 
 Logs: ${LOG_DIR}
-Stop: ${ROOT_DIR}/demo_stop.sh
+Stop: ${DEMO_DIR}/stop.sh
 EOF

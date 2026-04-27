@@ -15,8 +15,8 @@ sample medical RAG application used in the end-to-end demonstration.
 
 ## Demo Runbook
 
-Use the repo root scripts below for the Monday demo. They start and stop the
-full demo stack in a predictable order.
+Use the scripts in `demo/` for the AIOps demo. They start and stop the full
+demo stack in a predictable order.
 
 ### 1. Start the demo services
 
@@ -24,20 +24,20 @@ From the workspace root:
 
 ```bash
 cd /home/support/Documents/POCDEMO1
-./demo_start.sh
+./demo/start.sh
 ```
 
-What `demo_start.sh` starts by default:
+What `demo/start.sh` starts by default:
 
 - `MedicalAgent` Docker stack on port `8002`
 - `AIopsTelemetry` on port `7000`
 - `Invastigate_flow_with_Poller` RCA service on port `8000`
 - `AIOPS` remediation service on port `8005`
 - `Invastigate_flow_with_Poller/monitor-ui` Vite UI on port `5173`
-- `aiops_preview.html` static page on port `8088`
-- `aiops_preview_launcher.py` on port `8765`
+- `demo/aiops_preview.html` static page on port `8088`
+- `demo/aiops_preview_launcher.py` on port `8765`
 
-The script first runs `./demo_stop.sh --quiet` to clean up an older demo run,
+The script first runs `./demo/stop.sh --quiet` to clean up an older demo run,
 then starts the services and waits for the health URLs to respond.
 
 ### 2. Demo URLs
@@ -65,14 +65,14 @@ Skip Docker rebuild if you want a faster restart:
 
 ```bash
 cd /home/support/Documents/POCDEMO1
-REBUILD_MEDICAL=0 ./demo_start.sh
+REBUILD_MEDICAL=0 ./demo/start.sh
 ```
 
 Enable steady background load during the demo:
 
 ```bash
 cd /home/support/Documents/POCDEMO1
-STEADY_LOAD_ENABLED=1 ./demo_start.sh
+STEADY_LOAD_ENABLED=1 ./demo/start.sh
 ```
 
 Logs are written under:
@@ -87,10 +87,10 @@ From the workspace root:
 
 ```bash
 cd /home/support/Documents/POCDEMO1
-./demo_stop.sh
+./demo/stop.sh
 ```
 
-What `demo_stop.sh` stops:
+What `demo/stop.sh` stops:
 
 - `invastigate-monitor-ui`
 - `sample-agent-steady-load`

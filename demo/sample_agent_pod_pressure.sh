@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+DEMO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ROOT_DIR="$(cd "${DEMO_DIR}/.." && pwd)"
 
 APP_URL="${APP_URL:-http://localhost:8002}"
 AIOPS_URL="${AIOPS_URL:-http://localhost:7000}"
@@ -49,8 +50,8 @@ Guided SampleAgent pod-pressure demo:
   -> AIopsTelemetry ticket -> Invastigate RCA correlation.
 
 Options:
-  --no-start        Do not call ./demo_start.sh first
-  --start          Call ./demo_start.sh first (default)
+  --no-start        Do not call demo/start.sh first
+  --start          Call demo/start.sh first (default)
   --fast           Reduce pauses between narrated steps
   --lang en        English only
   --lang ja        Japanese only
@@ -463,7 +464,7 @@ main() {
   step 1 "Show SampleAgent hosted in VM and Docker" "VM 上で SampleAgent が Docker container として動いていることを示します。"
   if [ "${START_STACK}" = "1" ]; then
     say "Starting or refreshing the demo stack first." "最初にデモスタックを起動・更新します。"
-    REBUILD_MEDICAL="${REBUILD_MEDICAL}" "${ROOT_DIR}/demo_start.sh"
+    REBUILD_MEDICAL="${REBUILD_MEDICAL}" "${DEMO_DIR}/start.sh"
   else
     say "Skipping stack startup because --no-start was provided." "--no-start のためスタック起動はスキップします。"
   fi

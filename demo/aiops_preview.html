@@ -415,7 +415,7 @@
         } catch (error) {
             element.classList.remove("running", "completed");
             element.classList.add("failed");
-            status.textContent = `Could not start simulation: ${error.message}. Start the local launcher with: python3 aiops_preview_launcher.py`;
+            status.textContent = `Could not start simulation: ${error.message}. Start the local launcher with: cd demo && python3 aiops_preview_launcher.py`;
         }
     }
 

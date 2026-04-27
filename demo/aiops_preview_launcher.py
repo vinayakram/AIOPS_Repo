@@ -15,7 +15,8 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
 
-ROOT = Path(__file__).resolve().parent
+DEMO_DIR = Path(__file__).resolve().parent
+ROOT = DEMO_DIR.parent
 SCRIPT = ROOT / "MedicalAgent" / "scripts" / "test_pod_cpu_threshold.sh"
 DEFAULT_RUNTIME_DIR = ROOT / ".runtime"
 if os.environ.get("DEMO_RUNTIME_DIR"):

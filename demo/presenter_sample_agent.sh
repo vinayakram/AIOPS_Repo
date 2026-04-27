@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+DEMO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ROOT_DIR="$(cd "${DEMO_DIR}/.." && pwd)"
 
 APP_URL="${APP_URL:-http://localhost:8002}"
 AIOPS_URL="${AIOPS_URL:-http://localhost:7000}"
