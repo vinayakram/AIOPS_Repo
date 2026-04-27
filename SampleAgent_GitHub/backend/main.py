@@ -250,4 +250,9 @@ async def health():
         "status": "ok",
         "pipeline_ready": rag_pipeline is not None,
         "langfuse_enabled": tracer.enabled,
+        "runtime_guardrails": {
+            "cpu_threshold_pct": settings.RUNTIME_CPU_THRESHOLD_PCT,
+            "memory_threshold_pct": settings.RUNTIME_MEMORY_THRESHOLD_PCT,
+            "window_seconds": settings.RUNTIME_GUARD_WINDOW_SECONDS,
+        },
     }

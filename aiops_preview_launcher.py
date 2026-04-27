@@ -10,12 +10,21 @@ from __future__ import annotations
 import json
 import os
 import subprocess
+import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parent
 SCRIPT = ROOT / "MedicalAgent" / "scripts" / "test_pod_cpu_threshold.sh"
+DEFAULT_RUNTIME_DIR = ROOT / ".runtime"
+if os.environ.get("DEMO_RUNTIME_DIR"):
+    RUNTIME_DIR = Path(os.environ["DEMO_RUNTIME_DIR"])
+elif DEFAULT_RUNTIME_DIR.exists() and not os.access(DEFAULT_RUNTIME_DIR, os.W_OK):
+    RUNTIME_DIR = ROOT / f".runtime-{os.environ.get('USER', 'user')}"
+else:
+    RUNTIME_DIR = DEFAULT_RUNTIME_DIR
+LOG_DIR = RUNTIME_DIR / "logs"
 HOST = "0.0.0.0"
 PORT = 8765
 DEFAULT_LOAD_SECONDS = 60
@@ -75,19 +84,27 @@ class Handler(BaseHTTPRequestHandler):
 
         env = os.environ.copy()
         env["LOAD_SECONDS"] = str(load_seconds)
+        LOG_DIR.mkdir(parents=True, exist_ok=True)
+        log_file = LOG_DIR / f"preview-spike-{int(time.time())}-{load_seconds}s.log"
 
         try:
+            log_handle = log_file.open("ab")
             process = subprocess.Popen(
                 [str(SCRIPT)],
                 cwd=str(SCRIPT.parent.parent),
                 env=env,
-                stdout=subprocess.DEVNULL,
-                stderr=subprocess.DEVNULL,
+                stdout=log_handle,
+                stderr=subprocess.STDOUT,
                 start_new_session=True,
             )
         except Exception as exc:
             self._send_json(500, {"ok": False, "error": str(exc)})
             return
+        finally:
+            try:
+                log_handle.close()
+            except UnboundLocalError:
+                pass
 
         self._send_json(
             202,
@@ -95,6 +112,7 @@ class Handler(BaseHTTPRequestHandler):
                 "ok": True,
                 "pid": process.pid,
                 "command": f"LOAD_SECONDS={load_seconds} {SCRIPT}",
+                "log_file": str(log_file),
                 "message": "CPU spike simulation started.",
             },
         )
@@ -108,6 +126,7 @@ def main() -> None:
     print(f"AIOps preview launcher listening on http://{HOST}:{PORT}")
     print(f"Endpoint: POST http://localhost:{PORT}/run-simulation")
     print(f"Script:   LOAD_SECONDS in {sorted(ALLOWED_LOAD_SECONDS)} {SCRIPT}")
+    print(f"Logs:     {LOG_DIR}")
     server.serve_forever()
 
 

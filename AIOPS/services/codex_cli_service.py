@@ -209,6 +209,9 @@ class CodexCLI:
             or "sandbox error" in text
             or "workspace path itself is inaccessible" in text
             or "cannot read the allowed repo path" in text
+            or "every command fails before execution" in text
+            or "permission denied for /home/" in text
+            or "permission denied for the repo path" in text
         )
 
     def _repo_has_changes(self, cwd: Path) -> bool:

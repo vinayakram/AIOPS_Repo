@@ -42,6 +42,9 @@ AIOPS/managed_repos/
 AIOPS/.test_state/
 AIopsTelemetry/logs/
 AIopsTelemetry/server/dashboard/static/
+.runtime/
+.runtime-*/
+.runtime-support/
 
 # JavaScript dependencies and build output
 node_modules/
