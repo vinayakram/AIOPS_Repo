@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AIOps Conversational Workbench</title>
+<style>
+:root{
+  --bg:#f6f8fa;--surface:#fff;--surface-2:#f1f4f8;--surface-3:#e7edf4;
+  --border:#d0d7de;--text:#1f2328;--text-2:#5d6673;--muted:#7d8793;
+  --accent:#0969da;--accent-soft:#eaf3ff;--green:#1a7f37;--green-soft:#eaf7ee;
+  --red:#d1242f;--red-soft:#fff1f2;--amber:#9a6700;--amber-soft:#fff8e6;
+  --purple:#8250df;--purple-soft:#f5f0ff;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans JP',system-ui,sans-serif;font-size:14px;line-height:1.55}
+header{height:56px;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 24px;position:sticky;top:0;z-index:10}
+.brand{display:flex;align-items:center;gap:10px}.brand h1{font-size:16px}.tag{font-size:11px;font-weight:700;color:var(--accent);background:var(--accent-soft);border:1px solid #bfdcff;border-radius:999px;padding:2px 8px}
+.top-actions{display:flex;gap:8px;align-items:center}.top-actions a,.btn{border:1px solid var(--border);background:var(--surface-2);color:var(--text-2);text-decoration:none;border-radius:6px;padding:7px 11px;font-size:12px;font-weight:600;cursor:pointer}.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}.btn:disabled{opacity:.45;cursor:not-allowed}
+.wrap{max-width:1440px;margin:0 auto;padding:20px 24px;display:grid;grid-template-columns:360px minmax(0,1fr);gap:16px}
+.panel{background:var(--surface);border:1px solid var(--border);border-radius:8px;overflow:hidden}
+.panel-h{padding:13px 15px;border-bottom:1px solid var(--border);background:var(--surface-2);display:flex;align-items:center;justify-content:space-between;gap:12px}
+.panel-h h2{font-size:13px}.panel-b{padding:14px}
+.intro{margin-bottom:14px}.intro h2{font-size:22px;line-height:1.25;margin-bottom:7px}.intro p{color:var(--text-2);max-width:780px}
+.flow{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;margin:14px 0}
+.flow-step{background:var(--surface);border:1px solid var(--border);border-radius:7px;padding:9px 10px;min-height:62px}.flow-step.done{background:var(--green-soft);border-color:#b7dfc2}.flow-step.active{background:var(--accent-soft);border-color:#9cc8ff}.flow-step .n{font-size:10px;font-weight:800;color:var(--muted)}.flow-step .t{font-size:12px;font-weight:700;margin-top:2px}.flow-step .s{font-size:10px;color:var(--muted);margin-top:2px}
+.ticket-list{display:flex;flex-direction:column;gap:8px;max-height:calc(100vh - 210px);overflow:auto}
+.ticket{border:1px solid var(--border);background:var(--surface);border-radius:7px;padding:10px;cursor:pointer;text-align:left}.ticket:hover{border-color:#9cc8ff;background:#fbfdff}.ticket.selected{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent-soft)}
+.ticket-top{display:flex;justify-content:space-between;gap:8px;align-items:center}.ticket-title{font-size:13px;font-weight:700;margin-top:6px}.ticket-meta{font-size:11px;color:var(--muted);margin-top:5px}
+.badge{display:inline-flex;align-items:center;border:1px solid var(--border);border-radius:999px;padding:2px 7px;font-size:11px;font-weight:700}.sev-critical{color:var(--red);background:var(--red-soft);border-color:#ffd0d5}.sev-high{color:var(--amber);background:var(--amber-soft);border-color:#f4d58c}.sev-medium{color:var(--accent);background:var(--accent-soft);border-color:#bfdcff}.sev-low{color:var(--text-2);background:var(--surface-2)}
+.chat{display:flex;flex-direction:column;gap:10px}.msg{max-width:86%;border:1px solid var(--border);border-radius:10px;padding:11px 13px}.msg.user{align-self:flex-end;background:var(--surface-2)}.msg.agent{align-self:flex-start;background:var(--accent-soft);border-color:#bfdcff}.msg.system{align-self:stretch;max-width:100%;background:#fff;border-style:dashed;color:var(--text-2)}.msg h3{font-size:13px;margin-bottom:4px}.msg ul{padding-left:18px;margin-top:6px}.msg li{margin:3px 0}
+.work{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:14px;margin-top:14px}.card{border:1px solid var(--border);border-radius:8px;background:#fff;overflow:hidden}.card-h{padding:10px 12px;background:var(--surface-2);border-bottom:1px solid var(--border);font-weight:700;font-size:13px}.card-b{padding:12px}.kv{display:grid;grid-template-columns:120px 1fr;gap:7px;font-size:12px;margin:5px 0}.kv span:first-child{color:var(--muted);font-weight:700}
+textarea,input,select{width:100%;border:1px solid var(--border);border-radius:6px;padding:8px 9px;font:inherit;background:#fff}textarea{min-height:86px;resize:vertical}.field{margin-bottom:10px}.field label{display:block;font-size:12px;font-weight:700;margin-bottom:4px;color:var(--text-2)}
+.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}.artifact{display:flex;justify-content:space-between;gap:8px;border:1px solid var(--border);border-radius:6px;padding:8px;margin-top:7px;font-size:12px}.artifact a{color:var(--accent);font-weight:700;text-decoration:none}
+.empty{color:var(--muted);font-size:12px;padding:16px;text-align:center}.small{font-size:12px;color:var(--muted)}.error{color:var(--red)}.ok{color:var(--green)}
+@media(max-width:1120px){.wrap{grid-template-columns:1fr}.work{grid-template-columns:1fr}.flow{grid-template-columns:repeat(3,1fr)}.ticket-list{max-height:none}}
+@media(max-width:720px){header{height:auto;align-items:flex-start;gap:10px;flex-direction:column;padding:12px 16px}.wrap{padding:14px}.flow{grid-template-columns:1fr}.msg{max-width:100%}}
+</style>
+</head>
+<body>
+<header>
+  <div class="brand">
+    <h1>AIOps Conversational Workbench</h1>
+    <span class="tag">日本向け運用フロー</span>
+  </div>
+  <div class="top-actions">
+    <a href="/light_j">既存ダッシュボード</a>
+    <a href="/light">English</a>
+  </div>
+</header>
+
+<main class="wrap">
+  <aside class="panel">
+    <div class="panel-h">
+      <h2>対応候補チケット</h2>
+      <button class="btn primary" onclick="loadTickets()">更新</button>
+    </div>
+    <div class="panel-b">
+      <p class="small" style="margin-bottom:10px">未解決チケットを重大度と新しさで並べます。担当するチケットを選ぶとRCAへ進みます。</p>
+      <div id="ticket-list" class="ticket-list"><div class="empty">読み込み中...</div></div>
+    </div>
+  </aside>
+
+  <section>
+    <div class="intro">
+      <h2>サポート担当者が会話で解決まで進める運用画面</h2>
+      <p>「最新の未解決チケットを見せて」から始め、優先度順の確認、RCA、過去対応の再利用、Codexによる修復、成果物とPR確認までを一つの会話として扱います。</p>
+    </div>
+    <div class="flow" id="flow">
+      <div class="flow-step active" data-step="tickets"><div class="n">01</div><div class="t">チケット確認</div><div class="s">優先度順に表示</div></div>
+      <div class="flow-step" data-step="select"><div class="n">02</div><div class="t">担当選択</div><div class="s">対象を決定</div></div>
+      <div class="flow-step" data-step="rca"><div class="n">03</div><div class="t">RCA確認</div><div class="s">原因と根拠</div></div>
+      <div class="flow-step" data-step="reuse"><div class="n">04</div><div class="t">過去対応</div><div class="s">再利用判断</div></div>
+      <div class="flow-step" data-step="remediate"><div class="n">05</div><div class="t">修復実行</div><div class="s">Codex連携</div></div>
+      <div class="flow-step" data-step="artifacts"><div class="n">06</div><div class="t">成果物確認</div><div class="s">PRとDL</div></div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-h">
+        <h2>AIOpsとの会話</h2>
+        <span class="small" id="session-state">待機中</span>
+      </div>
+      <div class="panel-b">
+        <div id="chat" class="chat"></div>
+        <div class="work">
+          <div class="card">
+            <div class="card-h">選択中チケットとRCA</div>
+            <div class="card-b" id="issue-detail"><div class="empty">左の一覧からチケットを選択してください。</div></div>
+          </div>
+          <div class="card">
+            <div class="card-h">修復入力</div>
+            <div class="card-b">
+              <div class="field"><label>担当者</label><input id="requested-by" value="support-engineer-jp"></div>
+              <div class="field"><label>修復種別</label><select id="remediation-type"><option value="code_change">コード変更</option><option value="config_change">設定変更</option><option value="infra_change">インフラ変更</option></select></div>
+              <div class="field"><label>承認条件・補足</label><textarea id="acceptance">既存の正常系を壊さないこと
+ヘルスチェックが成功すること
+変更内容と理由がPRに残ること</textarea></div>
+              <div class="actions">
+                <button class="btn primary" id="start-remediation" onclick="startRemediation()" disabled>修復を開始</button>
+                <button class="btn" id="refresh-remediation" onclick="refreshRemediation()" disabled>進捗確認</button>
+              </div>
+              <div id="remediation-box" style="margin-top:12px"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<script>
+const severityRank={critical:4,high:3,medium:2,low:1};
+const sevLabel={critical:'重大',high:'高',medium:'中',low:'低'};
+const statusLabel={OPEN:'未対応',ACKNOWLEDGED:'確認中',ESCALATED:'エスカレーション',RESOLVED:'解決済み'};
+let currentIssue=null;
+let currentAnalysis=null;
+
+function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+async function api(url,opt={}){const r=await fetch(url,{headers:{'Content-Type':'application/json'},...opt});if(!r.ok){let m=await r.text();try{m=JSON.parse(m).detail||m}catch{}throw new Error(m)}return r.json();}
+function addMsg(kind,html){const el=document.createElement('div');el.className=`msg ${kind}`;el.innerHTML=html;document.getElementById('chat').appendChild(el);el.scrollIntoView({block:'nearest'});}
+function setState(text){document.getElementById('session-state').textContent=text;}
+function setFlow(done,current){document.querySelectorAll('.flow-step').forEach(el=>{const key=el.dataset.step;el.classList.toggle('done',(done||[]).includes(key));el.classList.toggle('active',key===current);});}
+function prioritySort(a,b){return (severityRank[b.severity]||0)-(severityRank[a.severity]||0)||new Date(b.created_at||0)-new Date(a.created_at||0);}
+
+async function loadTickets(){
+  setState('チケット確認中');
+  setFlow([], 'tickets');
+  document.getElementById('ticket-list').innerHTML='<div class="empty">最新チケットを取得しています...</div>';
+  try{
+    const data=await api('/api/issues?limit=200');
+    const tickets=(data.issues||[]).filter(i=>i.status!=='RESOLVED').sort(prioritySort);
+    addMsg('user','最新の未解決チケットを優先度順に見せてください。');
+    if(!tickets.length){
+      document.getElementById('ticket-list').innerHTML='<div class="empty">現在、対応が必要なチケットはありません。</div>';
+      addMsg('agent','現在、対応が必要な未解決チケットはありません。監視は継続しています。');
+      setState('未解決なし');
+      return;
+    }
+    document.getElementById('ticket-list').innerHTML=tickets.map(ticketCard).join('');
+    addMsg('agent',`未解決チケットを${tickets.length}件見つけました。重大度と発生時刻で優先度順に並べています。担当するチケットを選択してください。`);
+    setState(`${tickets.length}件の候補`);
+  }catch(e){
+    document.getElementById('ticket-list').innerHTML=`<div class="empty error">取得できません: ${esc(e.message)}</div>`;
+    addMsg('agent',`チケット取得に失敗しました: ${esc(e.message)}`);
+    setState('取得失敗');
+  }
+}
+
+function ticketCard(i){
+  const cls=i.severity==='critical'?'sev-critical':i.severity==='high'?'sev-high':i.severity==='medium'?'sev-medium':'sev-low';
+  return `<button class="ticket" id="ticket-${i.id}" onclick="selectIssue(${i.id})">
+    <div class="ticket-top"><span class="badge ${cls}">${sevLabel[i.severity]||i.severity}</span><span class="small">#${i.id}</span></div>
+    <div class="ticket-title">${esc(i.title)}</div>
+    <div class="ticket-meta">${esc(i.app_name)} / ${statusLabel[i.status]||i.status} / ${esc(i.rule_id||'ルールなし')}</div>
+  </button>`;
+}
+
+async function selectIssue(id){
+  setState(`チケット #${id} を確認中`);
+  setFlow(['tickets'],'select');
+  document.querySelectorAll('.ticket').forEach(el=>el.classList.remove('selected'));
+  const card=document.getElementById(`ticket-${id}`); if(card)card.classList.add('selected');
+  try{
+    currentIssue=await api(`/api/issues/${id}`);
+    currentAnalysis=null;
+    renderIssue();
+    addMsg('user',`チケット #${id} を担当します。RCAを確認してください。`);
+    await loadRCA(id);
+  }catch(e){
+    addMsg('agent',`チケット確認に失敗しました: ${esc(e.message)}`);
+  }
+}
+
+function renderIssue(extra=''){
+  const i=currentIssue;if(!i)return;
+  const recurrence=i.recurrence_count>0?`<div class="kv"><span>再発</span><div>${i.recurrence_count}回目 / 前回 #${i.previous_issue_id}</div></div>`:'';
+  document.getElementById('issue-detail').innerHTML=`<div class="kv"><span>チケット</span><div>#${i.id} ${esc(i.title)}</div></div>
+    <div class="kv"><span>サービス</span><div>${esc(i.app_name)}</div></div>
+    <div class="kv"><span>重大度</span><div>${sevLabel[i.severity]||i.severity}</div></div>
+    <div class="kv"><span>状態</span><div>${statusLabel[i.status]||i.status}</div></div>
+    <div class="kv"><span>説明</span><div>${esc(i.description||'説明なし')}</div></div>
+    ${recurrence}
+    <div class="kv"><span>Trace</span><div>${esc(i.trace_id||'なし')}</div></div>
+    ${extra}`;
+}
+
+async function loadRCA(id){
+  setFlow(['tickets','select'],'rca');
+  addMsg('agent','RCAを確認します。既存の分析がなければ、RCAエージェントを起動します。');
+  try{
+    currentAnalysis=await api(`/api/analysis/issues/${id}`);
+  }catch{
+    await api(`/api/analysis/issues/${id}?force=true`,{method:'POST'});
+    currentAnalysis=await pollRCA(id);
+  }
+  const a=currentAnalysis||{};
+  const evidence=(a.evidence||'').split('\n').filter(Boolean).slice(0,5).map(x=>`<li>${esc(x.replace(/^[-•]\s*/,''))}</li>`).join('');
+  renderIssue(`<hr style="border:0;border-top:1px solid var(--border);margin:10px 0">
+    <h3 style="font-size:13px;margin-bottom:5px">RCA</h3>
+    <div class="kv"><span>原因候補</span><div>${esc(a.likely_cause||'分析中または未取得')}</div></div>
+    <div class="kv"><span>推奨対応</span><div>${esc(a.recommended_action||'RCA完了後に表示')}</div></div>`);
+  addMsg('agent',`RCA結果です。<ul><li>原因候補: ${esc(a.likely_cause||'未取得')}</li><li>推奨対応: ${esc(a.recommended_action||'未取得')}</li>${evidence}</ul>`);
+  await checkReuse();
+}
+
+async function pollRCA(id){
+  for(let i=0;i<24;i++){
+    await new Promise(r=>setTimeout(r,2500));
+    try{const a=await api(`/api/analysis/issues/${id}`); if(a.status!=='pending')return a;}catch{}
+  }
+  throw new Error('RCAが時間内に完了しませんでした。');
+}
+
+async function checkReuse(){
+  const i=currentIssue;if(!i)return;
+  setFlow(['tickets','select','rca'],'reuse');
+  if(!i.previous_issue_id||!i.recurrence_count){
+    addMsg('agent','この事象に一致する解決済みチケットはまだ見つかっていません。修復入力を確認してCodex連携へ進めます。');
+    document.getElementById('start-remediation').disabled=false;
+    setState('修復入力待ち');
+    return;
+  }
+  try{
+    const prev=await api(`/api/issues/${i.previous_issue_id}`);
+    let resolution='';
+    try{
+      const res=await api(`/api/remediation/issues/${i.previous_issue_id}/resolution`);
+      resolution=`<li>前回の解決情報: ${esc(JSON.stringify(res).slice(0,240))}</li>`;
+    }catch{}
+    addMsg('agent',`類似する過去事象があります。<ul><li>前回チケット: #${prev.id} ${esc(prev.title)}</li><li>状態: ${statusLabel[prev.status]||prev.status}</li>${resolution}</ul>根拠が一致する場合は、前回の対応を参考にできます。`);
+  }catch{
+    addMsg('agent','再発情報はありますが、前回チケット詳細を取得できませんでした。今回のRCA結果をもとに進めます。');
+  }
+  document.getElementById('start-remediation').disabled=false;
+  setState('修復入力待ち');
+}
+
+function acceptanceList(){
+  return document.getElementById('acceptance').value.split('\n').map(x=>x.trim()).filter(Boolean);
+}
+
+async function startRemediation(){
+  if(!currentIssue)return;
+  setFlow(['tickets','select','rca','reuse'],'remediate');
+  setState('修復開始');
+  document.getElementById('start-remediation').disabled=true;
+  try{
+    const body={requested_by:document.getElementById('requested-by').value,remediation_type:document.getElementById('remediation-type').value,acceptance_criteria:acceptanceList()};
+    const data=await api(`/api/remediation/issues/${currentIssue.id}/start`,{method:'POST',body:JSON.stringify(body)});
+    addMsg('agent',`修復ワークフローを開始しました。Codexが利用できるように、RCA・承認条件・対象リポジトリ情報を引き継ぎます。現在の状態: ${esc(data.status||'開始済み')}`);
+    document.getElementById('refresh-remediation').disabled=false;
+    renderRemediation(data);
+  }catch(e){
+    addMsg('agent',`修復開始に失敗しました: ${esc(e.message)}`);
+    document.getElementById('start-remediation').disabled=false;
+  }
+}
+
+async function refreshRemediation(){
+  if(!currentIssue)return;
+  try{
+    const data=await api(`/api/remediation/issues/${currentIssue.id}/status`);
+    renderRemediation(data);
+    if((data.status||'').includes('PR')||data.pr_url){
+      setFlow(['tickets','select','rca','reuse','remediate'],'artifacts');
+    }
+  }catch(e){renderRemediation({error:e.message});}
+}
+
+function renderRemediation(data){
+  const box=document.getElementById('remediation-box');
+  if(data.error){box.innerHTML=`<div class="error small">${esc(data.error)}</div>`;return;}
+  const status=data.status||data.message||'確認中';
+  const pr=data.pr_url?`<div class="artifact"><span>Pull Request</span><a href="${esc(data.pr_url)}" target="_blank">開く</a></div>`:'';
+  box.innerHTML=`<div class="kv"><span>状態</span><div>${esc(status)}</div></div>
+    <div class="kv"><span>Run ID</span><div>${esc(data.issue_id||data.run_id||'AIOPS-'+currentIssue.id)}</div></div>
+    ${pr}
+    <div class="actions">
+      <button class="btn" onclick="approveProject()">対象確認OK</button>
+      <button class="btn" onclick="startPlan()">対応案作成</button>
+      <button class="btn" onclick="getPlan()">対応案を見る</button>
+      <button class="btn" onclick="approvePlan()">Codex実装へ進む</button>
+      <button class="btn" onclick="approveReview()">レビュー承認</button>
+      <button class="btn" onclick="createPR()">PR作成</button>
+      <button class="btn" onclick="loadArtifacts()">成果物</button>
+    </div>
+    <div id="artifact-box"></div>`;
+}
+
+async function approveProject(){await remediationAction('project/approve','対象プロジェクトを承認しました。');}
+async function startPlan(){await remediationAction('plan/start','対応案の作成を開始しました。');}
+async function approvePlan(){await remediationAction('plan/approve','対応案を承認しました。Codex実装に進みます。');}
+async function approveReview(){await remediationAction('review/approve','実装レビューを承認しました。');}
+async function createPR(){await remediationAction('pr','PR作成を開始しました。');}
+async function remediationAction(path,msg){
+  try{const d=await api(`/api/remediation/issues/${currentIssue.id}/${path}`,{method:'POST',body:'{}'});addMsg('agent',msg);renderRemediation(d);}
+  catch(e){addMsg('agent',`操作に失敗しました: ${esc(e.message)}`);}
+}
+async function getPlan(){
+  try{const d=await api(`/api/remediation/issues/${currentIssue.id}/plan`);addMsg('agent',`対応案を取得しました。<pre style="white-space:pre-wrap;font-size:12px;margin-top:6px">${esc((d.plan||d.content||d.markdown||JSON.stringify(d,null,2)).slice(0,1200))}</pre>`);renderRemediation(d);}
+  catch(e){addMsg('agent',`対応案を取得できません: ${esc(e.message)}`);}
+}
+async function loadArtifacts(){
+  try{
+    const d=await api(`/api/remediation/issues/${currentIssue.id}/artifacts`);
+    const items=(d.artifacts||[]).map(a=>`<div class="artifact"><span>${esc(a.name||a.path||'artifact')}</span><span><a href="${esc(a.view_url||'#')}" target="_blank">表示</a> ${a.download_url?`<a href="${esc(a.download_url)}">DL</a>`:''}</span></div>`).join('')||'<div class="small">成果物はまだありません。</div>';
+    document.getElementById('artifact-box').innerHTML=items;
+    addMsg('agent','成果物とPR情報を確認できます。必要なファイルはダウンロードしてください。');
+    setFlow(['tickets','select','rca','reuse','remediate'],'artifacts');
+  }catch(e){addMsg('agent',`成果物を取得できません: ${esc(e.message)}`);}
+}
+
+loadTickets();
+</script>
+</body>
+</html>

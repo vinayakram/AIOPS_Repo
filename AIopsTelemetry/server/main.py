@@ -118,3 +118,12 @@ async def serve_light_j_dashboard():
     if os.path.isfile(light_j):
         return FileResponse(light_j)
     return {"message": "Japanese light theme not found"}
+
+
+@app.get("/conversation_j")
+@app.get("/assistant_j")
+async def serve_japanese_conversation():
+    page = os.path.join(_DASHBOARD_DIR, "conversation_j.html")
+    if os.path.isfile(page):
+        return FileResponse(page)
+    return {"message": "Japanese conversational workbench not found"}

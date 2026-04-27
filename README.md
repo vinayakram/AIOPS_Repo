@@ -27,6 +27,7 @@ This starts the local demo stack:
 
 - Sample Agent on `http://localhost:8002`
 - AIopsTelemetry on `http://localhost:7000`
+- Japanese conversational workbench on `http://localhost:7000/conversation_j`
 - RCA service on `http://localhost:8000`
 - Remediation service on `http://localhost:8005`
 - Monitor UI on `http://localhost:5173`
@@ -66,6 +67,18 @@ curl -fsS http://localhost:7000/health
 curl -fsS http://localhost:8000/health
 curl -fsS http://localhost:8005/
 curl -fsS http://localhost:8002/api/health
+```
+
+Open the conversational AIOps flow:
+
+```bash
+http://localhost:7000/conversation_j
+```
+
+If the telemetry service has not been restarted after a code change, the static fallback is:
+
+```bash
+http://localhost:7000/static/conversation_j.html
 ```
 
 Logs are written under:
