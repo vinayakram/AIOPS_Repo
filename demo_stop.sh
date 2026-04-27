@@ -2,87 +2,13 @@
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-DEFAULT_RUNTIME_DIR="${ROOT_DIR}/.runtime"
-if [ -n "${DEMO_RUNTIME_DIR:-}" ]; then
-  RUNTIME_DIR="${DEMO_RUNTIME_DIR}"
-elif [ -e "${DEFAULT_RUNTIME_DIR}" ] && [ ! -w "${DEFAULT_RUNTIME_DIR}" ]; then
-  RUNTIME_DIR="${ROOT_DIR}/.runtime-${USER:-$(id -un 2>/dev/null || echo user)}"
-else
-  RUNTIME_DIR="${DEFAULT_RUNTIME_DIR}"
-fi
 QUIET=0
 if [ "${1:-}" = "--quiet" ]; then
   QUIET=1
 fi
-
-info() {
-  if [ "${QUIET}" != "1" ]; then
-    printf '[demo-stop] %s\n' "$*"
-  fi
-}
-warn() {
-  printf '[demo-stop] WARN: %s\n' "$*" >&2
-}
-
-stop_pid_file() {
-  local name="$1"
-  local pid_file="${RUNTIME_DIR}/${name}.pid"
-
-  if [ ! -f "${pid_file}" ]; then
-    info "${name}: no PID file"
-    return
-  fi
-
-  local pid
-  pid="$(cat "${pid_file}" 2>/dev/null || true)"
-  if [ -z "${pid}" ] || ! kill -0 "${pid}" 2>/dev/null; then
-    info "${name}: not running"
-    rm -f "${pid_file}"
-    return
-  fi
-
-  info "Stopping ${name} (PID ${pid})"
-  kill -TERM "-${pid}" 2>/dev/null || kill -TERM "${pid}" 2>/dev/null || true
-
-  local i
-  for ((i = 1; i <= 20; i++)); do
-    if ! kill -0 "${pid}" 2>/dev/null; then
-      rm -f "${pid_file}"
-      info "${name}: stopped"
-      return
-    fi
-    sleep 1
-  done
-
-  warn "${name}: still running after graceful stop; forcing"
-  kill -KILL "-${pid}" 2>/dev/null || kill -KILL "${pid}" 2>/dev/null || true
-  rm -f "${pid_file}"
-}
-
-stop_matching_processes() {
-  local label="$1"
-  local pattern="$2"
-
-  if ! command -v pgrep >/dev/null 2>&1; then
-    return
-  fi
-
-  local pids
-  pids="$(pgrep -f "${pattern}" 2>/dev/null || true)"
-  if [ -z "${pids}" ]; then
-    return
-  fi
-
-  info "Stopping leftover ${label} processes"
-  # shellcheck disable=SC2086
-  kill -TERM ${pids} 2>/dev/null || true
-  sleep 2
-  pids="$(pgrep -f "${pattern}" 2>/dev/null || true)"
-  if [ -n "${pids}" ]; then
-    # shellcheck disable=SC2086
-    kill -KILL ${pids} 2>/dev/null || true
-  fi
-}
+LOG_PREFIX="demo-stop"
+source "${ROOT_DIR}/scripts/demo_lib.sh"
+init_demo_runtime
 
 stop_pid_file "invastigate-monitor-ui"
 stop_pid_file "sample-agent-steady-load"

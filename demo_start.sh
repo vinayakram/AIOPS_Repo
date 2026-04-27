@@ -2,16 +2,9 @@
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-DEFAULT_RUNTIME_DIR="${ROOT_DIR}/.runtime"
-if [ -n "${DEMO_RUNTIME_DIR:-}" ]; then
-  RUNTIME_DIR="${DEMO_RUNTIME_DIR}"
-elif [ -e "${DEFAULT_RUNTIME_DIR}" ] && [ ! -w "${DEFAULT_RUNTIME_DIR}" ]; then
-  RUNTIME_DIR="${ROOT_DIR}/.runtime-${USER:-$(id -un 2>/dev/null || echo user)}"
-else
-  RUNTIME_DIR="${DEFAULT_RUNTIME_DIR}"
-fi
-LOG_DIR="${RUNTIME_DIR}/logs"
-mkdir -p "${LOG_DIR}"
+LOG_PREFIX="demo-start"
+source "${ROOT_DIR}/scripts/demo_lib.sh"
+init_demo_runtime
 
 HOST="${HOST:-0.0.0.0}"
 AI_OPS_PORT="${AI_OPS_PORT:-7000}"
@@ -35,76 +28,6 @@ STEADY_LOAD_ENABLED="${STEADY_LOAD_ENABLED:-0}"
 STEADY_LOAD_USERS="${STEADY_LOAD_USERS:-1}"
 STEADY_LOAD_WORK_MS="${STEADY_LOAD_WORK_MS:-300}"
 STEADY_LOAD_PAUSE_MS="${STEADY_LOAD_PAUSE_MS:-800}"
-
-info() { printf '[demo-start] %s\n' "$*"; }
-warn() { printf '[demo-start] WARN: %s\n' "$*" >&2; }
-die() { printf '[demo-start] ERROR: %s\n' "$*" >&2; exit 1; }
-
-need_file() {
-  [ -e "$1" ] || die "Required path not found: $1"
-}
-
-is_running() {
-  local pid_file="$1"
-  [ -f "${pid_file}" ] || return 1
-  local pid
-  pid="$(cat "${pid_file}" 2>/dev/null || true)"
-  [ -n "${pid}" ] && kill -0 "${pid}" 2>/dev/null
-}
-
-start_background() {
-  local name="$1"
-  local workdir="$2"
-  local pid_file="${RUNTIME_DIR}/${name}.pid"
-  local log_file="${LOG_DIR}/${name}.log"
-  shift 2
-
-  need_file "${workdir}"
-  if is_running "${pid_file}"; then
-    info "${name} already running with PID $(cat "${pid_file}")"
-    return
-  fi
-  rm -f "${pid_file}"
-
-  info "Starting ${name}; log: ${log_file}"
-  (
-    cd "${workdir}"
-    nohup setsid "$@" > "${log_file}" 2>&1 &
-    echo $! > "${pid_file}"
-  )
-  sleep 1
-  if ! is_running "${pid_file}"; then
-    warn "${name} did not stay running. Last log lines:"
-    tail -n 20 "${log_file}" 2>/dev/null || true
-    return 1
-  fi
-}
-
-wait_for_url() {
-  local name="$1"
-  local url="$2"
-  local attempts="${3:-30}"
-
-  if ! command -v curl >/dev/null 2>&1; then
-    warn "curl not found; skipping ${name} health check (${url})"
-    return
-  fi
-
-  local i
-  for ((i = 1; i <= attempts; i++)); do
-    if curl -fsS "${url}" >/dev/null 2>&1; then
-      info "${name} is reachable at ${url}"
-      return
-    fi
-    sleep 2
-  done
-  warn "${name} did not respond at ${url} after $((attempts * 2))s"
-}
-
-url_reachable() {
-  local url="$1"
-  command -v curl >/dev/null 2>&1 && curl -fsS "${url}" >/dev/null 2>&1
-}
 
 if [ -x "${ROOT_DIR}/demo_stop.sh" ]; then
   info "Stopping any previously started demo services first"
