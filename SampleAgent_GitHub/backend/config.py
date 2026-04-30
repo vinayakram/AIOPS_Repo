@@ -1,4 +1,3 @@
-from pydantic import Field
 from pydantic_settings import BaseSettings
 from typing import Optional
 
@@ -24,10 +23,12 @@ class Settings(BaseSettings):
     # AIops Telemetry server (optional)
     AIOPS_SERVER_URL: str = "http://localhost:7000"
     AIOPS_ENABLED: bool = True
-    # Runtime guardrails for bounded breach detection (5m default window)
-    RUNTIME_CPU_THRESHOLD_PCT: float = Field(default=90.0, ge=10.0, le=100.0)
-    RUNTIME_MEMORY_THRESHOLD_PCT: float = Field(default=90.0, ge=10.0, le=100.0)
-    RUNTIME_GUARD_WINDOW_SECONDS: int = Field(default=300, ge=30, le=3600)
+    # Operational scaling guardrails (align with platform autoscaling policy)
+    AUTOSCALE_TARGET_CPU_UTILIZATION: int = 70
+    AUTOSCALE_MIN_REPLICAS: int = 2
+    AUTOSCALE_MAX_REPLICAS: int = 10
+    AUTOSCALE_SCALE_UP_COOLDOWN_SECONDS: int = 30
+    AUTOSCALE_SCALE_DOWN_COOLDOWN_SECONDS: int = 300
 
     class Config:
         env_file = ".env"

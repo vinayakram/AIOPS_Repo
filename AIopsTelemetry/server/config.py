@@ -32,6 +32,12 @@ class Settings(BaseSettings):
     # External remediation service (AIOPS)
     AIOPS_REMEDIATION_URL: str = "http://localhost:8005"
 
+    # Observability MCP server used by the chat RCA assistant.
+    MCP_OBSERVABILITY_ENABLED: bool = True
+    MCP_OBSERVABILITY_SERVER_PATH: str = "MCPObservability/server.py"
+    MCP_OBSERVABILITY_TIMEOUT_SECONDS: float = 20.0
+    MCP_PROMETHEUS_URL: str = "http://localhost:9092"
+
     # Langfuse — issue reporting
     LANGFUSE_SECRET_KEY: Optional[str] = None
     LANGFUSE_PUBLIC_KEY: Optional[str] = None
@@ -41,6 +47,10 @@ class Settings(BaseSettings):
     NFR_RESPONSE_TIME_TARGET_MS: float = 5000.0   # baseline for rules 7/7a/19/23
     NFR_CHECK_WINDOW_MINUTES: int = 10             # rolling window for rate checks
     NFR_DETECTOR_ALLOWLIST: str = ""               # comma-separated rule IDs to raise, e.g. NFR-33
+
+    # RCA knowledge base
+    RCA_KB_ENABLED: bool = True
+    RCA_KB_VECTOR_DIMENSION: int = 1536
 
     class Config:
         env_file = str(APP_DIR / ".env")

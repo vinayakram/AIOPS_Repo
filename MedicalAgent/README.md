@@ -116,6 +116,46 @@ Langfuse/Prometheus evidence and recommend changing the pod threshold config
 
 The demo CPU threshold is configured at `POD_CPU_THRESHOLD_PERCENT=90`.
 
+### Cross-Service Cascade Demo
+
+`docker-compose.yml` also starts a small dependent workload named
+`triage-agent` on `http://localhost:8010`. It calls `sample-agent` as an
+upstream dependency and emits its own Prometheus metrics, Langfuse traces, and
+AIops traces.
+
+When `sample-agent` crosses the pod resource threshold, normal app routes return
+HTTP `503`. `triage-agent` then records an upstream failure against
+`sample-agent`, so RCA can correlate:
+
+- sample-agent threshold breach and HTTP 503 metrics
+- triage-agent upstream error and cascade failure metrics
+- Langfuse traces from both services in the same time window
+- AIops issues for the affected downstream service
+
+Run the scenario:
+
+```bash
+docker compose up -d --build
+./scripts/run_cascade_threshold_scenario.sh
+```
+
+Useful endpoints:
+
+```bash
+curl -fsS http://localhost:8002/api/health
+curl -fsS http://localhost:8010/api/health
+curl -fsS -X POST "http://localhost:8010/api/run-cascade?fail_on_upstream_error=false"
+```
+
+Prometheus queries to verify the evidence:
+
+```promql
+increase(sample_agent_pod_threshold_breaches_total[10m])
+increase(sample_agent_http_requests_total{app="sample-agent",status="503"}[10m])
+increase(dependent_agent_cascade_failures_total{upstream="sample-agent"}[10m])
+increase(dependent_agent_upstream_requests_total{upstream="sample-agent",result=~"upstream_error|upstream_timeout|upstream_unreachable"}[10m])
+```
+
 Prometheus can use the same target/label assignment shown in the Prometheus UI:
 
 ```yaml

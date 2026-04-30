@@ -1,5 +1,4 @@
 import json
-import os
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, Depends, HTTPException
 from fastapi.staticfiles import StaticFiles
@@ -40,7 +39,7 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=os.environ.get("CORS_ORIGINS", "*").split(","),
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -251,9 +250,11 @@ async def health():
         "status": "ok",
         "pipeline_ready": rag_pipeline is not None,
         "langfuse_enabled": tracer.enabled,
-        "runtime_guardrails": {
-            "cpu_threshold_pct": settings.RUNTIME_CPU_THRESHOLD_PCT,
-            "memory_threshold_pct": settings.RUNTIME_MEMORY_THRESHOLD_PCT,
-            "window_seconds": settings.RUNTIME_GUARD_WINDOW_SECONDS,
+        "autoscale_guardrails": {
+            "target_cpu_utilization_pct": settings.AUTOSCALE_TARGET_CPU_UTILIZATION,
+            "min_replicas": settings.AUTOSCALE_MIN_REPLICAS,
+            "max_replicas": settings.AUTOSCALE_MAX_REPLICAS,
+            "scale_up_cooldown_seconds": settings.AUTOSCALE_SCALE_UP_COOLDOWN_SECONDS,
+            "scale_down_cooldown_seconds": settings.AUTOSCALE_SCALE_DOWN_COOLDOWN_SECONDS,
         },
     }

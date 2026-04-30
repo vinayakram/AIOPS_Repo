@@ -1239,7 +1239,7 @@ async function loadIssues(){
   const app=document.getElementById('issue-app-filter').value;
   const status=document.getElementById('issue-status-filter').value;
   const sev=document.getElementById('issue-sev-filter').value;
-  let url='/api/issues?limit=200';
+  let url='/api/issues?limit=200&lang=ja';
   if(app)url+=`&app_name=${encodeURIComponent(app)}`;
   if(status)url+=`&status=${status}`;
   if(sev)url+=`&severity=${sev}`;
@@ -1253,7 +1253,7 @@ async function loadIssues(){
     const appSel=document.getElementById('issue-app-filter');
     const apps=[...new Set(issues.map(i=>i.app_name).filter(Boolean))].sort();
     if(appSel.options.length<=1){
-      apps.forEach(a=>{const o=document.createElement('option');o.value=a;o.textContent=a;appSel.appendChild(o);});
+      apps.forEach(a=>{const o=document.createElement('option');o.value=a;o.textContent=appNameJa(a);appSel.appendChild(o);});
     }
   }catch(e){document.getElementById('issues-tbody').innerHTML=`<tr><td colspan="8" class="empty">エラー: ${esc(e.message)}</td></tr>`;}
 }
@@ -1261,7 +1261,7 @@ async function loadIssues(){
 function _renderIssueAnalytics(issues){
   // Always fetch the full unfiltered set for the summary cards so filters
   // on the table don't distort the top-level numbers.
-  api('/api/issues?limit=500').then(data=>{
+  api('/api/issues?limit=500&lang=ja').then(data=>{
     const all=data.issues||[];
     const count=(fn)=>all.filter(fn).length;
     const open   = count(i=>i.status==='OPEN');
@@ -1284,6 +1284,20 @@ function _renderIssueAnalytics(issues){
 // ── Japanese label maps ──────────────────────────────────────────────────────
 const _JA_STATUS = {OPEN:'オープン',ACKNOWLEDGED:'確認済み',ESCALATED:'エスカレート済み',RESOLVED:'解決済み'};
 const _JA_SEV    = {critical:'重大',high:'高',medium:'中',low:'低'};
+const _JA_APP_NAMES = {
+  'sample-agent':'サンプル医療検索エージェント',
+  'medical-agent':'医療検索エージェント',
+  'medical-search-api':'医療検索API',
+  'triage-agent':'トリアージエージェント',
+  'observability-gateway':'監視ゲートウェイ',
+  'prometheus-bridge':'Prometheusブリッジ',
+  'joshu-chat':'Joshuチャット',
+  'rca-worker':'RCAワーカー',
+  'trace-store':'トレースストア',
+  'gateway-api':'ゲートウェイAPI',
+  'rca-assistant':'RCAアシスタント'
+};
+function appNameJa(name){return _JA_APP_NAMES[name]||name||'対象サービス'}
 
 function issueRow(i){
   const sevMap={low:'bsev4',medium:'bsev3',high:'bsev2',critical:'bsev1'};
@@ -1296,17 +1310,18 @@ function issueRow(i){
   const ack=i.status==='OPEN'?`<button class="action-btn ack" onclick="issueAction(${i.id},'acknowledge',event)">確認</button>`:'';
   const esc2=(i.status==='OPEN'||i.status==='ACKNOWLEDGED')?`<button class="action-btn esc" onclick="issueAction(${i.id},'escalate',event)">エスカレート</button>`:'';
   const res=i.status!=='RESOLVED'?`<button class="action-btn res" onclick="issueAction(${i.id},'resolve',event)">解決</button>`:'';
+  const appDisplay=appNameJa(i.app_name||i.app_display_name);
   const titleEsc=i.title.replace(/'/g,"\\'");
-  const appEsc=i.app_name.replace(/'/g,"\\'");
+  const appEsc=appDisplay.replace(/'/g,"\\'");
   const autofix=i.status!=='RESOLVED'?`<button class="action-btn autofix" title="この問題をAI修正パイプラインに送信" onclick="autofixIssue(${i.id},'${titleEsc}','${appEsc}',event)">⚡ AI修正</button>`:'';
   const humanEsc=i.status!=='RESOLVED'?`<button class="action-btn human" style="white-space:nowrap" title="人間のエージェントにエスカレート" onclick="escalateToHuman(event)">👤 手動修正</button>`:'';
   return`<tr class="expandable" onclick="toggleAnalysis(${i.id},null)" style="cursor:pointer">
     <td style="color:var(--muted)">${i.id}</td>
-    <td style="font-weight:500">${i.app_name}</td>
+    <td style="font-weight:500">${esc(appDisplay)}<div style="font-size:10px;color:var(--muted);font-family:monospace">${esc(i.app_name)}</div></td>
     <td><span class="badge ${sb}">${sevLabel}</span></td>
     <td>${ruleId}</td>
     <td><span class="badge ${stb}">${statusLabel}</span></td>
-    <td title="${i.description||''}">${i.title}</td>
+    <td title="${esc(i.description||'')}">${esc(i.title)}<div style="font-size:11px;color:var(--muted);margin-top:2px">${esc(i.description||'')}</div></td>
     <td style="color:var(--muted)">${timeAgo(i.created_at)}</td>
     <td onclick="event.stopPropagation()"><div style="display:flex;gap:4px;flex-wrap:wrap;min-height:22px;align-items:center">${ack}${esc2}${res}${autofix}${humanEsc}</div></td>
   </tr>
@@ -1674,6 +1689,7 @@ function _handleInstEvent(ev,files){
 // ── Issue Analysis ────────────────────────────────────────────────────────────
 const _analysisOpen = new Set();
 const _analysisPoll = {};
+const _analysisLang = {};
 
 async function toggleAnalysis(issueId, event){
   if(event) event.stopPropagation();
@@ -1691,15 +1707,24 @@ async function toggleAnalysis(issueId, event){
 
   _analysisOpen.add(issueId);
   row.style.display='table-row';
-  panel.innerHTML=`<div class="analysis-pending"><div class="analysis-spinner"></div>分析をリクエスト中…</div>`;
+  _analysisLang[issueId] = _analysisLang[issueId] || 'ja';
+  panel.innerHTML=`<div class="analysis-pending"><div class="analysis-spinner"></div>保存済みRCAを確認中…</div>`;
 
-  // Force-trigger analysis so each row click kicks a fresh external RCA run.
   try{
-    await api(`/api/analysis/issues/${issueId}?force=true`,{method:'POST'});
+    const cached = await api(`/api/analysis/issues/${issueId}?lang=${_analysisLang[issueId]}`);
+    if(cached.status==='done'){
+      _renderAnalysis(issueId, cached);
+      return;
+    }
   }catch(e){
-    panel.innerHTML=`<div style="color:var(--red);font-size:12px;padding:8px">RCA起動に失敗しました: ${esc(e.message)}</div>`;
-    return;
+    try{
+      await api(`/api/analysis/issues/${issueId}`,{method:'POST'});
+    }catch(err){
+      panel.innerHTML=`<div style="color:var(--red);font-size:12px;padding:8px">RCA起動に失敗しました: ${esc(err.message)}</div>`;
+      return;
+    }
   }
+  panel.innerHTML=`<div class="analysis-pending"><div class="analysis-spinner"></div>RCAを実行中…</div>`;
   _pollAnalysis(issueId);
 }
 
@@ -1707,7 +1732,7 @@ function _pollAnalysis(issueId){
   clearInterval(_analysisPoll[issueId]);
   _analysisPoll[issueId] = setInterval(async ()=>{
     try{
-      const a = await api(`/api/analysis/issues/${issueId}`);
+      const a = await api(`/api/analysis/issues/${issueId}?lang=${_analysisLang[issueId]||'ja'}`);
       if(a.status==='done'){
         clearInterval(_analysisPoll[issueId]);
         _renderAnalysis(issueId, a);
@@ -1724,27 +1749,40 @@ function _pollAnalysis(issueId){
 function _renderAnalysis(issueId, a){
   const panel = document.getElementById(`analysis-panel-${issueId}`);
   if(!panel) return;
+  const isJa = (a.lang||_analysisLang[issueId]||'ja') === 'ja';
   const ev = a.evidence || '';
   const evHtml = ev.split('\n').filter(Boolean).map(l=>`<li>${esc(l.replace(/^[-•*]\s*/,''))}</li>`).join('') || `<li>${esc(ev)}</li>`;
   panel.innerHTML=`
     <div class="analysis-hdr">
-      <h4>🤖 AI 根本原因分析</h4>
-      <span class="analysis-model">${esc(a.model_used||'')} · ${a.generated_at?new Date(a.generated_at).toLocaleTimeString():''}</span>
+      <h4>${isJa?'AI 根本原因分析':'AI Root-Cause Analysis'}</h4>
+      <span class="analysis-model">${esc(a.model_used||'')} · ${a.generated_at?new Date(a.generated_at).toLocaleTimeString():''} · <button class="action-btn" onclick="toggleAnalysisLanguage(${issueId}, event)">${isJa?'English':'日本語'}</button></span>
     </div>
     <div class="analysis-grid">
       <div class="analysis-card">
-        <div class="analysis-card-lbl cause">最も可能性の高い原因</div>
+        <div class="analysis-card-lbl cause">${isJa?'最も可能性の高い原因':'Most likely cause'}</div>
         <div class="analysis-card-body">${esc(a.likely_cause||'—')}</div>
       </div>
       <div class="analysis-card">
-        <div class="analysis-card-lbl evidence">裏付け証拠</div>
+        <div class="analysis-card-lbl evidence">${isJa?'裏付け証拠':'Evidence'}</div>
         <div class="analysis-card-body"><ul style="padding-left:14px;margin:0">${evHtml}</ul></div>
       </div>
       <div class="analysis-card">
-        <div class="analysis-card-lbl action">推奨アクション</div>
+        <div class="analysis-card-lbl action">${isJa?'推奨アクション':'Recommended action'}</div>
         <div class="analysis-card-body">${esc(a.recommended_action||'—')}</div>
       </div>
     </div>`;
+}
+
+async function toggleAnalysisLanguage(issueId, event){
+  if(event) event.stopPropagation();
+  _analysisLang[issueId] = (_analysisLang[issueId]||'ja') === 'ja' ? 'en' : 'ja';
+  try{
+    const a = await api(`/api/analysis/issues/${issueId}?lang=${_analysisLang[issueId]}`);
+    _renderAnalysis(issueId, a);
+  }catch(e){
+    const panel=document.getElementById(`analysis-panel-${issueId}`);
+    if(panel) panel.innerHTML=`<div style="color:var(--red);font-size:12px;padding:8px">言語切替に失敗しました: ${esc(e.message)}</div>`;
+  }
 }
 
 // ── AutoFix ───────────────────────────────────────────────────────────────────

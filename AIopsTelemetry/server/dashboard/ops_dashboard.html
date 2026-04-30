@@ -1,0 +1,773 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AIOPS Dashboard</title>
+  <style>
+    :root {
+      --bg:#f4f6f9; --panel:#fff; --panel2:#fbfcfe; --ink:#0f1728; --muted:#52627a;
+      --line:#cfd8e6; --line2:#e8edf4; --black:#0b0b0d; --blue:#155eef;
+      --blue-soft:#eef4ff; --blue-line:#b8ccff; --red:#d92d20; --amber:#b54708;
+      --green:#067647; --purple:#6941c6; --purple-soft:#f4f3ff;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;background:var(--bg);color:var(--ink);font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;font-size:15px;line-height:1.55}
+    header{height:64px;background:rgba(255,255,255,.96);border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;padding:0 28px;position:sticky;top:0;z-index:5;backdrop-filter:saturate(160%) blur(8px);box-shadow:0 1px 0 rgba(16,24,40,.02)}
+    .brand{display:flex;align-items:center;gap:12px;font-weight:850;font-size:18px}
+    .mark{width:36px;height:36px;border-radius:50%;background:var(--black);color:#fff;display:grid;place-items:center;font-weight:900}
+    .sub{color:var(--muted);font-size:13px;font-weight:600}
+    .top-actions{display:flex;gap:10px;align-items:center}
+    button,select,input{font:inherit}
+    .btn{border:1px solid var(--line);background:var(--panel);color:var(--ink);border-radius:9px;padding:9px 14px;cursor:pointer;font-weight:700;min-height:38px}
+    .btn:hover{border-color:#98a7bb;background:#fbfcfe}
+    .btn:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid #d6e4ff;outline-offset:2px}
+    .btn.primary{background:var(--blue);border-color:var(--blue);color:#fff;box-shadow:0 1px 2px rgba(21,94,239,.18)}
+    .btn.primary:hover{background:#004eeb;border-color:#004eeb}
+    .btn.blue{background:var(--blue);border-color:var(--blue);color:#fff}
+    .wrap{max-width:1500px;margin:0 auto;padding:24px;display:grid;gap:20px}
+    .hero{display:grid;grid-template-columns:1.25fr .75fr;gap:20px}
+    .panel{background:var(--panel);border:1px solid var(--line);border-radius:12px;overflow:hidden;box-shadow:0 1px 2px rgba(16,24,40,.04)}
+    .pad{padding:24px}
+    h1,h2,h3,p{margin:0}
+    h1{font-size:25px;letter-spacing:0;line-height:1.25;font-weight:850}
+    h2{font-size:18px;line-height:1.35;font-weight:850}
+    h3{font-size:13px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;line-height:1.35}
+    .pad > p{font-size:17px;line-height:1.75;color:#52627a;margin-top:12px}
+    .muted{color:var(--muted)}
+    .health-line{display:flex;gap:12px;flex-wrap:wrap;margin-top:20px}
+    .metric{border:1px solid var(--line);border-radius:10px;background:linear-gradient(180deg,#fff,var(--panel2));padding:14px;min-width:132px;flex:1}
+    .metric b{display:block;font-size:26px;line-height:1.1;margin-top:4px}
+    .metric span{color:var(--muted);font-size:13px}
+    .status-dot{width:9px;height:9px;border-radius:50%;display:inline-block;background:var(--green);margin-right:7px}
+    .layout{display:grid;grid-template-columns:440px 1fr;gap:20px;align-items:start}
+    .toolbar{display:flex;gap:10px;padding:16px;border-bottom:1px solid var(--line);flex-wrap:wrap;background:#fbfcfe}
+    .toolbar input,.toolbar select{border:1px solid var(--line);border-radius:9px;background:#fff;padding:10px 12px;min-width:0;min-height:40px}
+    .toolbar input{flex:1;min-width:180px}
+    .issue-list{max-height:690px;overflow:auto}
+    .issue{display:grid;grid-template-columns:1fr auto;gap:12px;padding:16px 18px;border-bottom:1px solid var(--line2);cursor:pointer}
+    .issue:hover{background:#f8fafc}
+    .issue.active{background:var(--blue-soft);border-left:4px solid var(--blue);padding-left:14px}
+    .issue-title{font-weight:850;line-height:1.35;font-size:15px}
+    .issue-desc{color:var(--muted);font-size:13px;margin-top:6px;line-height:1.55}
+    .chips{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+    .chip{border:1px solid var(--line);border-radius:999px;padding:4px 10px;font-size:13px;background:#fff;color:var(--muted);font-weight:750;line-height:1.25}
+    .sev-critical,.sev-high{color:var(--red);border-color:#f4b8b2;background:#fff5f4}
+    .sev-medium{color:var(--amber);border-color:#f7d5a8;background:#fffbf4}
+    .open{color:var(--blue);border-color:var(--blue-line);background:var(--blue-soft)}
+    .resolved{color:var(--green);border-color:#abefc6;background:#f6fef9}
+    .escalated{color:var(--red);border-color:#f4b8b2;background:#fff5f4}
+    .detail-head{display:flex;justify-content:space-between;gap:18px;align-items:start;padding:24px;border-bottom:1px solid var(--line)}
+    .detail-title{font-size:24px;font-weight:900;line-height:1.25;margin-top:5px}
+    .detail-actions{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+    .summary-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;padding:18px;border-bottom:1px solid var(--line)}
+    .summary-card{background:linear-gradient(180deg,#fff,var(--panel2));border:1px solid var(--line2);border-radius:10px;padding:16px;min-height:110px}
+    .summary-card strong{display:block;margin-top:9px;line-height:1.55;font-size:15px}
+    .journey-panel{padding:18px;border-bottom:1px solid var(--line)}
+    .journey{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:12px}
+    .journey-node{border:1px solid var(--line);border-radius:10px;background:#fff;padding:14px;position:relative;min-height:108px}
+    .journey-node:not(:last-child)::after{content:"";position:absolute;right:-10px;top:50%;width:10px;border-top:2px solid #98a2b3}
+    .journey-icon{width:30px;height:30px;border-radius:8px;background:var(--blue);color:#fff;display:grid;place-items:center;font-weight:900;margin-bottom:8px}
+    .journey-node h3{margin-bottom:5px}
+    .journey-node b{display:block;line-height:1.35}
+    .journey-node p{font-size:13px;color:var(--muted);line-height:1.55;margin-top:6px}
+    .journey-node.where{border-top:3px solid var(--red)}
+    .journey-node.why{border-top:3px solid var(--amber)}
+    .journey-node.impact{border-top:3px solid var(--blue)}
+    .journey-node.fix{border-top:3px solid var(--green)}
+    .diagram-board{position:relative;background:linear-gradient(180deg,#fff,#fbfcff);border:1px solid var(--line);border-radius:12px;padding:22px;overflow:hidden;min-height:430px;container-type:inline-size}
+    .correlation-banner{margin:8px 0 14px;border:1px solid #b2ddff;background:#eff8ff;color:#175cd3;border-radius:10px;padding:9px 12px;font-size:13px;font-weight:850}
+    .diagram-title{text-align:center;font-weight:850;margin-bottom:18px;color:#344054;font-size:17px}
+    .diagram-grid{display:grid;grid-template-columns:minmax(190px,1.05fr) minmax(220px,1.1fr) minmax(190px,1.05fr);gap:24px;align-items:center;position:relative;z-index:1}
+    .diagram-grid.issue-facts{grid-template-columns:repeat(2,minmax(220px,1fr));gap:12px;align-items:stretch}
+    .diagram-col{display:grid;gap:14px}
+    .diagram-card{border:1px solid var(--line);border-radius:10px;background:#fff;padding:15px 16px;text-align:center;box-shadow:0 8px 24px rgba(17,24,39,.06)}
+    .diagram-card h3{font-size:16px;text-transform:none;letter-spacing:0;margin-bottom:6px;color:#1f2937}
+    .diagram-card p{font-size:14px;color:var(--muted);line-height:1.5;margin:0}
+    .diagram-card .body{display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+    .diagram-step{display:inline-grid;place-items:center;width:22px;height:22px;border-radius:50%;background:#111827;color:#fff;font-size:12px;font-weight:900;margin-right:6px;vertical-align:1px}
+    .impact-strip{display:grid;grid-template-columns:1.2fr .7fr .9fr;gap:10px;margin:0 0 16px}
+    .impact-chip{border:1px solid var(--line);background:#fff;border-radius:10px;padding:10px 12px;min-width:0}
+    .impact-chip span{display:block;font-size:11px;text-transform:uppercase;letter-spacing:.04em;font-weight:850;color:var(--muted);margin-bottom:5px}
+    .impact-chip b{display:block;font-size:15px;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .impact-chip.strong{border-color:#f04438;background:#fff5f4}
+    .impact-chip.strong b{color:#b42318}
+    .impact-panel{padding:18px;border-bottom:1px solid var(--line)}
+    .impact-panel h2{margin-bottom:12px}
+    .diagram-card.layer{background:#eef6ff;border-color:#6aa9e9;color:#084c87}
+    .diagram-card.trigger{background:#fff7e8;border-color:#d99a45;color:#8a4b00}
+    .diagram-card.affected{background:#fff1ee;border-color:#e28b7f;color:#9f1f14}
+    .diagram-card.cause{background:#f1efff;border-color:#8b79df;color:#3d2a91}
+    .diagram-card.action{background:#eefaf4;border-color:#6fc797;color:#05603a}
+    .diagram-card.repo{background:#faf8f2;border-color:#aaa39a}
+    .diagram-bottom{display:grid;grid-template-columns:1fr 1.4fr;gap:24px;margin-top:24px;position:relative;z-index:1}
+    .topology-wrap{display:grid;grid-template-columns:minmax(0,1fr) 270px;gap:16px;align-items:start}
+    .topology-main{position:relative;border:1px dashed #98a2b3;border-radius:18px;padding:18px;background:#fff;min-height:360px}
+    .topology-heading{font-weight:850;color:#344054;margin-bottom:10px}
+    .runtime-box{border:1px dashed #d0d5dd;border-radius:16px;padding:16px;margin-top:16px;background:#fcfcfd;position:relative}
+    .topology-grid{display:grid;grid-template-columns:repeat(2,minmax(170px,1fr));gap:12px;margin-top:10px}
+    .topology-node{border:1px solid #d0d5dd;border-radius:12px;background:#fff;padding:14px;min-height:92px;cursor:pointer;text-align:left;transition:.14s border-color,.14s box-shadow,.14s transform}
+    .topology-node:hover{transform:translateY(-1px);box-shadow:0 8px 20px rgba(16,24,40,.08)}
+    .topology-node.selected{box-shadow:0 0 0 3px #d6e4ff}
+    .topology-node.error{border-color:#f04438;background:#fff5f4}
+    .topology-node.warn{border-color:#dc6803;background:#fffaeb}
+    .topology-node.ok{border-color:#d0d5dd;background:#fcfcfd}
+    .topology-node b{display:block;font-size:17px;line-height:1.25;color:#1f2937}
+    .topology-node p{font-size:13px;color:var(--muted);line-height:1.45;margin-top:6px}
+    .node-badge{float:right;border-radius:999px;padding:3px 8px;font-size:11px;font-weight:900;line-height:1.2;background:#eef2f6;color:#475467}
+    .node-badge.error{background:#f04438;color:#fff}.node-badge.warn{background:#b54708;color:#fff}.node-badge.ok{background:#f6fef9;color:#067647;border:1px solid #abefc6}
+    .topology-arrow{display:flex;align-items:center;gap:8px;margin:10px 0 0 118px;color:#d92d20;font-weight:850;font-size:13px}.topology-arrow:before{content:"";height:38px;border-left:2px dashed #f04438}.topology-arrow:after{content:"↓";font-size:18px;color:#f04438}
+    .telemetry-side{border:1px solid var(--line);border-radius:14px;background:#f8f7f1;padding:16px;display:grid;gap:14px}
+    .metric-bar{display:grid;gap:5px}.metric-bar .row{display:flex;justify-content:space-between;gap:8px;font-weight:750}.bar-track{height:10px;border-radius:999px;background:#e4e0d6;overflow:hidden}.bar-fill{height:100%;border-radius:999px}.bar-fill.error{background:#e5484d}.bar-fill.warn{background:#c47b10}.bar-fill.ok{background:#2e9d74}
+    .trace-mini{border:1px solid var(--line2);border-radius:10px;background:#fff;padding:8px;display:grid;gap:6px}.trace-row{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center;font-size:13px}.trace-line{height:7px;border-radius:999px;background:#d0d5dd}.trace-line.fail{background:#e76f6f}.trace-line.slow{background:#c99a55}.trace-line.ok{background:#45b08c}
+    .alert-list{display:grid;gap:7px}.alert-item{border:1px solid #f4b8b2;background:#fff5f4;color:#b42318;border-radius:9px;padding:8px 10px;font-size:13px;font-weight:750}.alert-item.warn{border-color:#f7d5a8;background:#fffbf4;color:#92400e}
+    .topology-detail{margin-top:14px;border:1px solid var(--line);border-radius:12px;background:#fff;padding:14px;display:grid;gap:10px}.topology-detail h3{font-size:12px}.detail-kv{display:grid;grid-template-columns:130px minmax(0,1fr);gap:8px;font-size:13px}.detail-kv span{color:var(--muted);font-weight:750}.detail-kv b,.detail-kv div{word-break:break-word}.log-list{border-top:1px solid var(--line2);padding-top:10px;display:grid;gap:8px}.log-row{display:grid;grid-template-columns:160px 54px minmax(0,1fr);gap:8px;font-size:12px;align-items:start}.log-row span{font-weight:900}.log-row span.error{color:var(--red)}.log-row span.warn{color:var(--amber)}.log-row span.ok{color:var(--green)}
+    @container (max-width: 880px){.diagram-grid,.diagram-grid.issue-facts,.diagram-bottom,.topology-wrap,.topology-grid{grid-template-columns:1fr}.diagram-board{min-height:0}.topology-arrow{margin-left:32px}}
+    .analysis-board{padding:20px;border-bottom:1px solid var(--line)}
+    .analysis-head{display:flex;justify-content:space-between;align-items:flex-start;gap:14px;margin-bottom:14px}
+    .analysis-head p{color:var(--muted);font-size:15px;margin-top:6px;line-height:1.65}
+    .story-card{border:1px solid var(--line);border-radius:11px;background:#fff;padding:20px;box-shadow:0 1px 2px rgba(16,24,40,.04)}
+    .story-card.waiting{background:#fcfcfd}
+    .story-kicker{font-size:13px;color:var(--muted);font-weight:800;text-transform:uppercase;letter-spacing:.04em;margin-bottom:8px}
+    .story-title{font-size:21px;font-weight:850;line-height:1.3;margin-bottom:12px}
+    .story-card p{font-size:15px;line-height:1.75;margin:0 0 12px;color:#1f2937}
+    .story-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:16px}
+    .story-box{border:1px solid var(--line2);border-radius:10px;background:var(--panel2);padding:15px}
+    .story-box h3{margin-bottom:8px}
+    .story-box ul{margin:8px 0 0 18px;color:var(--muted);line-height:1.65;font-size:14px}
+    .story-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px}
+    .why-ladder{display:grid;gap:10px;margin-top:14px}
+    .why-step{display:grid;grid-template-columns:40px minmax(0,1fr);gap:12px;align-items:start;border:1px solid var(--line2);border-radius:10px;background:#fff;padding:14px}
+    .why-num{width:30px;height:30px;border-radius:50%;background:var(--blue);color:#fff;display:grid;place-items:center;font-weight:850;font-size:13px}
+    .why-step b{display:block;line-height:1.35}
+    .why-step p{margin:5px 0 0;color:var(--muted);font-size:14px;line-height:1.6}
+    .root-note{border-left:4px solid var(--green);background:#f6fef9;border-radius:8px;padding:12px 14px;margin-top:12px}
+    .root-note b{display:block;margin-bottom:4px}
+    .answer-card{margin-top:14px;border:1px solid var(--line);border-radius:10px;background:#fcfcfd;padding:16px}
+    .answer-card h2{font-size:17px;margin-bottom:8px}
+    .recommend-grid{display:grid;grid-template-columns:1.2fr .8fr;gap:12px;margin-top:12px}
+    .recommend-box{border:1px solid var(--line2);border-radius:9px;background:#fff;padding:13px}
+    .recommend-box ul{margin:8px 0 0 18px;color:var(--muted);line-height:1.55}
+    .evidence-list{display:grid;gap:8px;margin-top:14px}
+    .evidence-item{display:flex;justify-content:space-between;gap:10px;border:1px solid var(--line2);background:var(--panel2);border-radius:8px;padding:10px 12px}
+    .evidence-item b{font-size:13px}
+    .error{color:var(--red)} .warning{color:var(--amber)} .info{color:var(--muted)}
+    .chat-strip{display:flex;gap:12px;align-items:center;padding:18px 18px 10px;background:#eef4ff;color:var(--ink);border-top:1px solid var(--blue-line)}
+    .chat-strip input{flex:1;border:1px solid var(--blue-line);background:#fff;color:var(--ink);border-radius:9px;padding:12px 14px;min-height:44px;font-size:15px}
+    .prompt-row{display:flex;gap:8px;flex-wrap:wrap;padding:0 18px 18px;background:#eef4ff}
+    .prompt-chip{border:1px solid var(--blue-line);background:#fff;color:#1849a9;border-radius:999px;padding:8px 12px;font-size:13px;font-weight:800;cursor:pointer}
+    .prompt-chip:hover{background:#eff6ff;border-color:#84adff}
+    .empty{padding:36px;text-align:center;color:var(--muted)}
+    .small{font-size:13px}
+    .spinner{width:14px;height:14px;border:2px solid #c7d7fe;border-top-color:var(--blue);border-radius:50%;display:inline-block;animation:spin .8s linear infinite}
+    @keyframes spin{to{transform:rotate(360deg)}}
+    .remediation-panel{padding:18px 20px;background:#f9fafb;border-bottom:1px solid var(--line)}
+    .remediation-panel .status{display:inline-flex;border:1px solid var(--line);border-radius:999px;background:#fff;padding:5px 11px;font-size:13px;font-weight:750;color:var(--muted)}
+    @media(max-width:1050px){.hero,.layout{grid-template-columns:1fr}.summary-grid,.recommend-grid,.journey{grid-template-columns:1fr 1fr}.journey-node::after{display:none}.diagram-grid,.diagram-bottom,.impact-strip{grid-template-columns:1fr}}
+    @media(max-width:680px){header{padding:0 14px}.wrap{padding:14px}.summary-grid,.recommend-grid,.story-grid,.journey{grid-template-columns:1fr}.detail-head{display:block}.detail-actions{justify-content:flex-start;margin-top:12px}.chat-strip{display:grid}.prompt-chip{flex:1}}
+  </style>
+</head>
+<body>
+  <header>
+    <div class="brand"><div class="mark" id="brandMark">A</div><div><div id="brandName">AIOPS</div><div class="sub" id="subtitle">AIOps telemetry and RCA</div></div></div>
+    <div class="top-actions">
+      <span class="sub"><span class="status-dot"></span><span id="liveText">Live</span></span>
+      <button class="btn" id="langBtn">日本語</button>
+      <button class="btn primary" id="refreshBtn">Refresh</button>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <section class="hero">
+      <div class="panel pad">
+        <h1 id="heroTitle">Operations overview</h1>
+        <p class="muted" id="heroCopy" style="margin-top:8px">Pick an issue, check business impact, then ask AIOPS for live MCP RCA.</p>
+        <div class="health-line" id="metrics"></div>
+      </div>
+      <div class="panel pad">
+        <h2 id="mcpTitle">MCP test issue</h2>
+        <p class="muted" id="mcpCopy" style="margin-top:8px">Select a topology incident, then use visual journey to inspect source, impact, metrics, alerts, and logs.</p>
+        <div class="chips" style="margin-top:14px">
+          <span class="chip sev-high">Topology RCA</span>
+          <span class="chip open">clickable nodes</span>
+          <span class="chip">logs + metrics</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="layout">
+      <aside class="panel">
+        <div class="toolbar">
+          <input id="search" placeholder="Search issues">
+          <select id="statusFilter"><option value="">All status</option><option>OPEN</option><option>ESCALATED</option><option>RESOLVED</option></select>
+          <select id="severityFilter"><option value="">All severity</option><option value="critical">Critical</option><option value="high">High</option><option value="medium">Medium</option></select>
+        </div>
+        <div class="issue-list" id="issueList"><div class="empty"><span class="spinner"></span></div></div>
+      </aside>
+
+      <section class="panel" id="detail">
+        <div class="empty">Select an issue to see RCA.</div>
+      </section>
+    </section>
+  </main>
+
+  <script>
+    const state = { issues: [], selected: null, lang: new URLSearchParams(location.search).get('lang') || (location.pathname.endsWith('_j') ? 'ja' : 'en'), rca: null, storedRca: null, remediation: null, diagram: null, diagramLoading: false, topologySelected: null };
+    const t = {
+      en: {
+        subtitle:'AIOps telemetry and RCA', live:'Live', refresh:'Refresh', lang:'日本語',
+        hero:'Operations overview', copy:'Pick an issue, check business impact, then ask AIOPS for live MCP RCA.',
+        mcpTitle:'Topology RCA issue', mcpCopy:'Select a topology incident, then use visual journey to inspect source, impact, metrics, alerts, and logs.',
+        search:'Search issues', allStatus:'All status', allSeverity:'All severity',
+        open:'Open', escalated:'Escalated', resolved:'Resolved', critical:'Critical', high:'High', medium:'Medium',
+        active:'Active issues', sev:'High/Critical', fix:'Resolved', rate:'Resolution rate',
+        summary:'Summary', impact:'Impact', owner:'Service', age:'Age',
+        run:'Why did it happen?', chat:'Open Chat', selected:'Selected issue', remediate:'Send to remediation',
+        analysisTitle:'Ask AIOPS', analysisCopy:'Type a question below. AIOPS will explain the issue plainly. Ask for live logs when you need raw evidence.',
+        normalize:'Normalize', correlate:'Correlate', errorAgent:'Analyze Error', rootAgent:'Root Cause', recommend:'Recommend',
+        problem:'Problem', evidence:'Live evidence', cause:'Likely cause', action:'Recommended action',
+        ask:'Ask AIOPS about this issue...', send:'Ask', noEvidence:'Ask why to check live evidence and RCA.',
+        causeDefault:'Waiting for live RCA.', actionDefault:'Review evidence and choose the safest remediation.',
+        validation:'Validation', remediation:'Remediation', sent:'Sent to remediation',
+        storyTitle:'What likely happened', storyWaiting:'Ask “Why did it happen?” and AIOPS will summarize the RCA as a short story with practical recommendations.',
+        simpleView:'Simple explanation', technicalView:'Technical evidence', nextStep:'Next recommended step', fiveWhy:'Five Whys summary', rootNote:'Root cause in plain words', continueChat:'Continue in issue chat',
+        journey:'Impact journey', layer:'Layer', trigger:'Trigger', impacted:'Impacted', recovery:'Recovery',
+        rootOnly:'Simple root cause', evidenceOnly:'Live logs / technical evidence', diagram:'Visual journey', askHint:'Use a quick prompt below or ask for live logs when you need raw evidence.',
+        promptFive:'5 whys', promptSummary:'simple summary', promptJourney:'visual journey', shortSummary:'Simple summary', symptom:'User-visible symptom',
+      },
+      ja: {
+        subtitle:'AIOps テレメトリーと RCA', live:'ライブ', refresh:'更新', lang:'English',
+        hero:'運用状況の概要', copy:'問題を選び、影響を確認してから 助手 にライブ MCP RCA を依頼します。',
+        mcpTitle:'トポロジー RCA 問題', mcpCopy:'トポロジー付きの問題を選び、ビジュアルジャーニーで発生元、影響、メトリクス、アラート、ログを確認してください。',
+        search:'問題を検索', allStatus:'すべてのステータス', allSeverity:'すべての重大度',
+        open:'オープン', escalated:'エスカレート済み', resolved:'解決済み', critical:'重大', high:'高', medium:'中',
+        active:'対応中の問題', sev:'高/重大', fix:'解決済み', rate:'解決率',
+        summary:'概要', impact:'影響', owner:'サービス', age:'経過',
+        run:'なぜ起きたの？', chat:'チャットを開く', selected:'選択中の問題', remediate:'Remediationへ送る',
+        analysisTitle:'助手に聞く', analysisCopy:'下の入力欄から質問してください。助手が問題をやさしく説明します。生の証拠が必要な時だけライブログを依頼してください。',
+        normalize:'正規化', correlate:'相関', errorAgent:'エラー分析', rootAgent:'根本原因', recommend:'推奨対応',
+        problem:'問題', evidence:'ライブ証拠', cause:'推定原因', action:'推奨対応',
+        ask:'この問題について 助手 に聞く...', send:'質問', noEvidence:'「なぜ起きたの？」と聞くとライブ証拠とRCAを確認します。',
+        causeDefault:'ライブ RCA の実行待ちです。', actionDefault:'証拠を確認し、安全な対応を選択してください。',
+        validation:'検証', remediation:'対応', sent:'Remediationに送信しました',
+        storyTitle:'何が起きた可能性が高いか', storyWaiting:'「なぜ起きたの？」と入力すると、助手がRCAを短いストーリーと実務的な推奨対応にまとめます。',
+        simpleView:'やさしい説明', technicalView:'技術的な根拠', nextStep:'次に行う対応', fiveWhy:'5 Why サマリー', rootNote:'根本原因をやさしく言うと', continueChat:'この問題のチャットで続ける',
+        journey:'影響の流れ', layer:'発生レイヤー', trigger:'きっかけ', impacted:'影響先', recovery:'対応',
+        rootOnly:'シンプルな根本原因', evidenceOnly:'ライブログ / 技術的な根拠', diagram:'ビジュアルジャーニー', askHint:'下のクイック質問を使えます。生の証拠が必要な時だけライブログを依頼してください。',
+        promptFive:'5 whys', promptSummary:'簡単な要約', promptJourney:'ビジュアルジャーニー', shortSummary:'簡単な要約', symptom:'利用者に見える症状',
+      }
+    };
+
+    function tr(key){ return t[state.lang][key]; }
+    function titleOf(i){ return state.lang === 'ja' ? (i.title_ja || i.title) : (i.title_en || i.title); }
+    function descOf(i){ return state.lang === 'ja' ? (i.description_ja || i.description) : (i.description_en || i.description); }
+    function appOf(i){ return state.lang === 'ja' ? (i.app_name_ja || i.app_display_name || i.app_name) : (i.app_display_name || i.app_name); }
+    function sevText(s){ return tr(s) || s; }
+    function statusText(s){ return ({OPEN:tr('open'), ESCALATED:tr('escalated'), RESOLVED:tr('resolved')})[s] || s; }
+    function age(ts){ const d=(Date.now()-new Date(ts).getTime())/60000; if(d<60)return Math.max(1,Math.round(d))+'m'; if(d<1440)return Math.round(d/60)+'h'; return Math.round(d/1440)+'d'; }
+    function esc(v){ return String(v ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+    function issueMeta(issue){
+      const raw = issue?.metadata_json;
+      if(!raw) return {};
+      if(typeof raw === 'object') return raw;
+      try { return JSON.parse(raw) || {}; } catch { return {}; }
+    }
+
+    async function load(){
+      const res = await fetch('/api/issues');
+      const data = await res.json();
+      state.issues = data.issues || [];
+      state.selected = state.issues.find(i => issueMeta(i).topology) || state.issues[0];
+      state.rca = null; state.storedRca = null; state.remediation = null; state.diagram = null; state.diagramLoading = false; state.topologySelected = null;
+      render();
+    }
+
+    function renderText(){
+      document.documentElement.lang = state.lang;
+      brandName.textContent = state.lang === 'ja' ? '助手 Ops' : 'AIOPS';
+      brandMark.textContent = state.lang === 'ja' ? '助' : 'A';
+      subtitle.textContent = tr('subtitle'); liveText.textContent = tr('live'); refreshBtn.textContent = tr('refresh'); langBtn.textContent = tr('lang');
+      if(window.heroTitle) heroTitle.textContent = tr('hero');
+      if(window.heroCopy) heroCopy.textContent = tr('copy');
+      if(window.mcpTitle) mcpTitle.textContent = tr('mcpTitle');
+      if(window.mcpCopy) mcpCopy.textContent = tr('mcpCopy');
+      search.placeholder = tr('search');
+      statusFilter.options[0].textContent = tr('allStatus'); severityFilter.options[0].textContent = tr('allSeverity');
+    }
+
+    function renderMetrics(){
+      if(!window.metrics) return;
+      const open = state.issues.filter(i => i.status === 'OPEN').length;
+      const escalated = state.issues.filter(i => i.status === 'ESCALATED').length;
+      const resolved = state.issues.filter(i => i.status === 'RESOLVED').length;
+      const severe = state.issues.filter(i => ['critical','high'].includes(i.severity)).length;
+      const rate = state.issues.length ? Math.round(resolved / state.issues.length * 100) : 0;
+      metrics.innerHTML = [
+        [tr('active'), open],
+        [tr('escalated'), escalated],
+        [tr('sev'), severe],
+        [tr('fix'), resolved],
+        [tr('rate'), rate + '%'],
+      ].map(([label,value]) => `<div class="metric"><span>${label}</span><b>${value}</b></div>`).join('');
+    }
+
+    function filteredIssues(){
+      const q = search.value.trim().toLowerCase();
+      return state.issues.filter(i => {
+        const blob = [i.id, i.app_name, appOf(i), titleOf(i), descOf(i), i.rule_id].join(' ').toLowerCase();
+        return (!q || blob.includes(q)) && (!statusFilter.value || i.status === statusFilter.value) && (!severityFilter.value || i.severity === severityFilter.value);
+      }).slice(0, 80);
+    }
+
+    function renderIssues(){
+      const rows = filteredIssues();
+      issueList.innerHTML = rows.map(i => `
+        <div class="issue ${state.selected && state.selected.id === i.id ? 'active' : ''}" data-id="${i.id}">
+          <div>
+            <div class="issue-title">#${i.id} ${esc(titleOf(i))}</div>
+            <div class="issue-desc">${esc(descOf(i)).slice(0,150)}</div>
+            <div class="chips">
+              <span class="chip sev-${i.severity}">${sevText(i.severity)}</span>
+              <span class="chip ${String(i.status).toLowerCase()}">${statusText(i.status)}</span>
+              <span class="chip">${esc(i.rule_id || '-')}</span>
+            </div>
+          </div>
+          <div class="small muted">${age(i.created_at)}</div>
+        </div>`).join('') || `<div class="empty">No issues</div>`;
+      issueList.querySelectorAll('.issue').forEach(el => el.onclick = () => {
+        state.selected = state.issues.find(i => i.id === Number(el.dataset.id));
+        state.rca = null; state.storedRca = null; state.remediation = null; state.diagram = null; state.diagramLoading = false; state.topologySelected = null;
+        render();
+      });
+    }
+
+    function renderDetail(){
+      const i = state.selected;
+      if(!i){ detail.innerHTML = `<div class="empty">Select an issue</div>`; return; }
+      detail.innerHTML = `
+        <div class="detail-head">
+          <div>
+            <h3>${tr('selected')}</h3>
+            <div class="detail-title">#${i.id} ${esc(titleOf(i))}</div>
+            <div class="chips">
+              <span class="chip sev-${i.severity}">${sevText(i.severity)}</span>
+              <span class="chip ${String(i.status).toLowerCase()}">${statusText(i.status)}</span>
+              <span class="chip">${esc(i.rule_id || '-')}</span>
+              <span class="chip">${esc(appOf(i))}</span>
+            </div>
+          </div>
+          <div class="detail-actions">
+          </div>
+        </div>
+        ${renderImpactOverview(i)}
+        <div class="analysis-board">
+          <div class="analysis-head">
+            <div><h2>${tr('analysisTitle')}</h2><p>${tr('analysisCopy')} ${tr('askHint')}</p></div>
+            ${state.rca ? `<span class="chip ${state.rca.confidence === 'high' ? 'resolved' : 'open'}">${esc(state.rca.confidence || 'unknown')}</span>` : ''}
+          </div>
+          ${state.rca || state.storedRca ? renderStory(i) : `<div class="story-card waiting"><div class="story-kicker">${tr('storyTitle')}</div><p>${tr('storyWaiting')}</p></div>`}
+        </div>
+        ${state.remediation ? renderRemediationPanel(state.remediation) : ''}
+        <div class="chat-strip">
+          <input id="askInput" value="${state.lang === 'ja' ? 'なぜ起きたの？' : 'Why did it happen?'}" onkeydown="if(event.key==='Enter'){event.preventDefault();runRca()}">
+          <button class="btn primary" id="askBtn">${tr('send')}</button>
+        </div>
+        <div class="prompt-row">
+          <button class="prompt-chip" type="button" onclick="runPrompt('five')">${tr('promptFive')}</button>
+          <button class="prompt-chip" type="button" onclick="runPrompt('summary')">${tr('promptSummary')}</button>
+          <button class="prompt-chip" type="button" onclick="runPrompt('journey')">${tr('promptJourney')}</button>
+        </div>`;
+      askBtn.onclick = runRca;
+    }
+
+    function promptText(kind){
+      const prompts = state.lang === 'ja'
+        ? {five:'5 whys を見せて', summary:'何が起きたか短く要約して', journey:'ビジュアルジャーニーで見せて'}
+        : {five:'5 whys', summary:'simple summary', journey:'visual journey'};
+      return prompts[kind] || prompts.summary;
+    }
+
+    function runPrompt(kind){
+      const input = document.getElementById('askInput');
+      if(input) input.value = promptText(kind);
+      runRca();
+    }
+
+    async function runRca(){
+      const i = state.selected;
+      if(!i) return;
+      const btn = document.getElementById('askBtn');
+      if(btn) btn.innerHTML = '<span class="spinner"></span>';
+      const topologyNodes = issueMeta(i).topology?.nodes || [];
+      const affected = (topologyNodes.find(n => n.status === 'warn') || {}).name || i.app_name;
+      const root = (topologyNodes.find(n => n.status === 'error') || {}).name || i.app_name;
+      const message = document.getElementById('askInput')?.value || (state.lang === 'ja' ? 'なぜ起きたの？' : 'Why did it happen?');
+      const res = await fetch('/api/chat/rca/live', {
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({issue_id:i.id,message,service:affected,root_candidate_service:root,window_minutes:10,lang:state.lang})
+      });
+      state.rca = await res.json();
+      state.storedRca = await fetchStoredRca(i.id);
+      state.diagram = intentFrom(message) === 'diagram' || intentFrom(message) === 'journey' ? await fetchDiagram(i.id) : state.diagram;
+      renderDetail();
+    }
+
+    async function fetchStoredRca(id){
+      try{
+        const res = await fetch(`/api/analysis/issues/${id}?lang=${state.lang}&summary=true`);
+        if(res.status === 404) return null;
+        return await res.json();
+      }catch{return null}
+    }
+
+    async function fetchDiagram(id){
+      try{
+        const res = await fetch('/api/chat/rca/diagram', {
+          method:'POST',
+          headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({issue_id:id, lang:state.lang})
+        });
+        if(!res.ok) return null;
+        return await res.json();
+      }catch{return null}
+    }
+
+    function buildAgentCards(issue, live, stored){
+      const data = stored?.rca_data || {};
+      const norm = (data.normalization || {}).incident || data.normalization || {};
+      const corr = (data.correlation || {}).correlation || data.correlation || {};
+      const err = (data.error_analysis || {}).analysis || data.error_analysis || {};
+      const rca = (data.rca || {}).rca || data.rca || {};
+      const rec = (data.recommendations || {}).recommendations || data.recommendations || {};
+      const cards = [
+        [tr('normalize'), norm.error_type || issue.issue_type || '-', norm.error_summary || descOf(issue), 'done'],
+        [tr('correlate'), live?.root_candidate_service || corr.root_cause_candidate?.component || issue.app_name, live ? live.answer : corr.root_cause_candidate?.reason || tr('noEvidence'), live ? 'live' : 'done'],
+        [tr('errorAgent'), (err.errors || [])[0]?.severity || issue.severity, (err.errors || [])[0]?.error_message || `${issue.sev_label || issue.severity} / ${statusText(issue.status)}`, 'warn'],
+        [tr('rootAgent'), rca.root_cause?.component || live?.root_candidate_service || issue.app_name, rca.rca_summary || stored?.likely_cause || live?.answer || tr('causeDefault'), 'done'],
+        [tr('recommend'), rec.solutions?.[0]?.title || live?.knowledge_matches?.[0]?.title || tr('action'), rec.solutions?.[0]?.description || live?.knowledge_matches?.[0]?.recommended_action || stored?.recommended_action || tr('actionDefault'), 'done'],
+      ];
+      return cards.map((c,idx)=>`<div class="agent-card ${c[3]}"><div class="num">${idx+1}</div><h3>${esc(c[0])}</h3><b>${esc(c[1])}</b><p>${esc(c[2])}</p></div>`).join('');
+    }
+
+    function rcaPipelineData(stored){
+      if(!stored) return {};
+      if(stored.rca_data) return stored.rca_data;
+      for(const key of ['full_summary','full_summary_en','full_summary_ja']){
+        const raw = stored[key];
+        if(!raw || typeof raw !== 'string') continue;
+        try { return JSON.parse(raw); } catch {}
+      }
+      return {};
+    }
+
+    function unwrapPipeline(stored){
+      const data = rcaPipelineData(stored);
+      return {
+        norm: (data.normalization || {}).incident || data.normalization || {},
+        corr: (data.correlation || {}).correlation || data.correlation || {},
+        err: (data.error_analysis || {}).analysis || data.error_analysis || {},
+        rca: (data.rca || {}).rca || data.rca || {},
+        rec: (data.recommendations || {}).recommendations || data.recommendations || {},
+      };
+    }
+
+    function currentAnalysisParts(issue){
+      const live = state.rca || {};
+      const stored = state.storedRca || {};
+      const pipe = unwrapPipeline(stored);
+      const kb = live.knowledge_matches?.[0] || {};
+      const evidence = live.evidence || [];
+      const hazards = evidence.filter(e => ['warning','error','critical'].includes(e.severity));
+      const root = live.root_candidate_service || pipe.rca.root_cause?.component || kb.title || issue.app_name;
+      const affected = live.affected_service || issue.app_name;
+      const cause = live.answer || pipe.rca.rca_summary || stored.likely_cause || tr('causeDefault');
+      const action = kb.recommended_action || pipe.rec.solutions?.[0]?.description || pipe.rec.recommendation_summary || stored.recommended_action || live.suggested_next_action || tr('actionDefault');
+      const fiveWhy = pipe.rca.five_why_analysis || {};
+      const technical = hazards.length
+        ? hazards.slice(0,3).map(e => `${e.query_name || e.kind}: ${e.summary}`).join('\n')
+        : (pipe.err.analysis_summary || live.raw_summary || stored.evidence || tr('noEvidence'));
+      const layer = pipe.rca.root_cause?.component || pipe.corr.root_cause_candidate?.component || issue.app_name;
+      const trigger = pipe.norm.error_summary || pipe.err.errors?.[0]?.error_message || issue.issue_type;
+      const impact = pipe.err.error_impacts?.[0]?.impact_description || descOf(issue);
+      return {live, stored, pipe, kb, evidence, hazards, root, affected, cause, action, fiveWhy, technical, layer, trigger, impact};
+    }
+
+    function ensureImpactSnapshot(issue){
+      if(state.diagram || state.diagramLoading) return;
+      state.diagramLoading = true;
+      fetchDiagram(issue.id).then(diagram => {
+        if(state.selected && state.selected.id === issue.id && diagram) state.diagram = diagram;
+      }).catch(()=>{}).finally(() => {
+        state.diagramLoading = false;
+        if(state.selected && state.selected.id === issue.id) renderDetail();
+      });
+    }
+
+    function impactSnapshotFor(issue){
+      const p = currentAnalysisParts(issue);
+      const metaImpact = issueMeta(issue).topology?.impact || {};
+      const snap = state.diagram?.impact_snapshot || metaImpact || {};
+      const apps = snap.applications || [...new Set([
+        issue.app_name,
+        p.affected,
+        p.root
+      ].filter(Boolean).filter(x => !['all','unknown'].includes(String(x).toLowerCase())))];
+      return {
+        where: snap.where || `${p.affected} <- ${p.layer || p.root}`,
+        user_count: snap.user_count ?? (state.diagramLoading ? '...' : '-'),
+        applications: apps,
+        application_count: snap.application_count ?? apps.length,
+      };
+    }
+
+    function renderImpactOverview(issue){
+      ensureImpactSnapshot(issue);
+      const impact = impactSnapshotFor(issue);
+      const apps = impact.applications || [];
+      return `<div class="impact-panel">
+        <h2>${state.lang === 'ja' ? '現在の影響' : 'Current impact'}</h2>
+        <div class="impact-strip" style="margin-bottom:0">
+          <div class="impact-chip strong"><span>${state.lang === 'ja' ? '影響箇所' : 'Impact location'}</span><b title="${esc(impact.where || '')}">${esc(impact.where || '-')}</b></div>
+          <div class="impact-chip"><span>${state.lang === 'ja' ? '影響ユーザー' : 'Impacted users'}</span><b>${esc(impact.user_count ?? '-')} ${state.lang === 'ja' ? '人' : 'users'}</b></div>
+          <div class="impact-chip"><span>${state.lang === 'ja' ? '影響アプリ' : 'Impacted apps'}</span><b title="${esc(apps.join(', '))}">${esc((impact.application_count ?? apps.length) || '-')} ${state.lang === 'ja' ? '件' : 'apps'}${apps.length ? ' · ' + esc(apps.slice(0,2).join(', ')) : ''}</b></div>
+        </div>
+      </div>`;
+    }
+
+    function renderJourney(issue){
+      const p = currentAnalysisParts(issue);
+      const fix = p.kb.remediation_type || p.pipe.rec.solutions?.[0]?.category || 'review';
+      return `<div class="journey">
+        <div class="journey-node where"><div class="journey-icon">1</div><h3>${tr('layer')}</h3><b>${esc(p.layer)}</b><p>${esc(issue.rule_id || issue.issue_type)}</p></div>
+        <div class="journey-node why"><div class="journey-icon">2</div><h3>${tr('trigger')}</h3><b>${esc(p.trigger)}</b><p>${esc(p.root)}</p></div>
+        <div class="journey-node impact"><div class="journey-icon">3</div><h3>${tr('impacted')}</h3><b>${esc(p.affected)}</b><p>${esc(p.impact)}</p></div>
+        <div class="journey-node fix"><div class="journey-icon">4</div><h3>${tr('recovery')}</h3><b>${esc(fix)}</b><p>${esc(p.action).slice(0,120)}</p></div>
+      </div>`;
+    }
+
+    function intentFrom(text){
+      const q = String(text || '').toLowerCase();
+      if(q.includes('5 why') || q.includes('5 whys') || q.includes('five why') || q.includes('five whys') || q.includes('なぜなぜ') || q.includes('5why')) return 'five';
+      if(q.includes('technical') || q.includes('evidence') || q.includes('metric') || q.includes('log') || q.includes('logs') || q.includes('prometheus') || q.includes('技術') || q.includes('根拠') || q.includes('証拠') || q.includes('ログ')) return 'evidence';
+      if(q.includes('summary') || q.includes('summarize') || q.includes('要約')) return 'summary';
+      if(q.includes('root cause') || q.includes('cause only') || q.includes('原因だけ') || q.includes('根本原因')) return 'root';
+      if(q.includes('diagram') || q.includes('flow') || q.includes('picture') || q.includes('visual') || q.includes('journey') || q.includes('図') || q.includes('フロー') || q.includes('ビジュアル') || q.includes('ジャーニー')) return 'diagram';
+      if(q.includes('layer') || q.includes('where') || q.includes('どこ') || q.includes('レイヤー') || q.includes('層')) return 'journey';
+      return 'story';
+    }
+
+    function nodeStatusClass(status){ return status === 'error' ? 'error' : status === 'warn' ? 'warn' : 'ok'; }
+    function statusLabel(status){ return status === 'error' ? 'ERROR' : status === 'warn' ? 'WARN' : 'OK'; }
+    function pctValue(v){ const n = Number(v); return Number.isFinite(n) ? Math.max(0, Math.min(100, n)) : 0; }
+    function metricTone(v){ const n = Number(v); if(!Number.isFinite(n)) return 'ok'; if(n >= 85) return 'error'; if(n >= 60) return 'warn'; return 'ok'; }
+
+    function topologyData(diagram, issue){
+      const p = currentAnalysisParts(issue);
+      const meta = issueMeta(issue);
+      const topoMeta = meta.topology || {};
+      const correlation = meta.correlation || topoMeta.correlation || {};
+      const snap = diagram?.impact_snapshot || topoMeta.impact || impactSnapshotFor(issue);
+      const apps = snap.applications || [];
+      const trigger = (diagram?.nodes || []).find(n => n.kind === 'trigger')?.body || p.trigger;
+      const cause = topoMeta.root_cause_chain || (diagram?.nodes || []).find(n => n.kind === 'cause')?.body || p.cause;
+      const action = topoMeta.recommended_action || (diagram?.nodes || []).find(n => n.kind === 'action')?.body || p.action;
+      const normalizeNode = (n, idx) => ({
+        id: String(n.id || `node-${idx}`),
+        zone: n.zone || (idx === 0 ? 'host' : 'runtime'),
+        name: n.name || n.process_name || n.service || `node-${idx + 1}`,
+        role: n.role || n.description || '',
+        status: ['error','warn','ok'].includes(n.status) ? n.status : 'ok',
+        error: n.error_message || n.error || n.message || '',
+        chain: n.root_cause_chain || cause,
+        metrics: n.metrics || [],
+        logs: n.logs || [],
+        timestamp: n.timestamp || topoMeta.timestamp || issue.created_at,
+      });
+      let nodes = Array.isArray(topoMeta.nodes) && topoMeta.nodes.length ? topoMeta.nodes.map(normalizeNode) : [];
+      if(!nodes.length){
+        const rootName = p.layer || p.root || issue.app_name;
+        const impactedName = p.affected || issue.app_name;
+        const supporting = apps.filter(a => ![rootName, impactedName, issue.app_name].includes(a)).slice(0,4);
+        nodes = [
+          {id:'root', zone:'host', name:rootName, role:state.lang === 'ja' ? '推定された発生元' : 'Likely source', status:'error', error:trigger, chain:cause, metrics:[], logs:[], timestamp:issue.created_at},
+          {id:'impact', zone:'runtime', name:impactedName, role:state.lang === 'ja' ? '影響を受けたサービス' : 'Impacted service', status:'warn', error:p.impact || descOf(issue), chain:cause, metrics:[], logs:[], timestamp:issue.created_at},
+          ...supporting.map((name,idx)=>({id:`support-${idx}`, zone:'runtime', name, role:state.lang === 'ja' ? '関連サービス' : 'Related service', status:'ok', error:state.lang === 'ja' ? 'このRCAでは直接影響なし' : 'No direct impact shown in this RCA', chain:cause, metrics:[], logs:[], timestamp:issue.created_at}))
+        ];
+        if(!supporting.length && issue.app_name !== impactedName){
+          nodes.push({id:'app', zone:'runtime', name:issue.app_name, role:state.lang === 'ja' ? '監視対象アプリ' : 'Observed app', status:'ok', error:state.lang === 'ja' ? '補助的な関連ノード' : 'Context node for this issue', chain:cause, metrics:[], logs:[], timestamp:issue.created_at});
+        }
+      }
+      const metricRows = Array.isArray(topoMeta.metrics) && topoMeta.metrics.length
+        ? topoMeta.metrics.map(m => ({label:m.label || m.name, value:String(m.value ?? ''), pct:pctValue(m.percent ?? m.pct ?? m.value), tone:m.tone || metricTone(m.percent ?? m.pct ?? m.value)}))
+        : [];
+      if(!metricRows.length){
+        if(meta.cpu_percent != null) metricRows.push({label:'Host CPU', value:Number(meta.cpu_percent).toFixed(0) + '%', pct:pctValue(meta.cpu_percent), tone:metricTone(meta.cpu_percent)});
+        if(meta.memory_percent != null) metricRows.push({label:'Host Mem', value:Number(meta.memory_percent).toFixed(0) + '%', pct:pctValue(meta.memory_percent), tone:metricTone(meta.memory_percent)});
+        if(snap.user_count != null && snap.user_count !== '-') metricRows.push({label:state.lang === 'ja' ? '影響ユーザー' : 'Impacted users', value:String(snap.user_count), pct:Math.min(100, Number(snap.user_count) * 10 || 8), tone:Number(snap.user_count) > 0 ? 'warn' : 'ok'});
+        metricRows.push({label:state.lang === 'ja' ? '影響アプリ' : 'Impacted apps', value:String(snap.application_count || apps.length || 1), pct:Math.min(100, (snap.application_count || apps.length || 1) * 20), tone:(snap.application_count || apps.length || 1) > 1 ? 'warn' : 'ok'});
+      }
+      const traces = Array.isArray(topoMeta.traces) && topoMeta.traces.length
+        ? topoMeta.traces.map(t => ({status:t.status || 'ok', label:t.label || t.name || '', time:t.time || (t.timestamp ? new Date(t.timestamp).toLocaleTimeString() : '')}))
+        : (p.evidence || []).slice(0,4).map((e,idx)=>({status:e.severity === 'error' || e.severity === 'critical' ? 'fail' : e.severity === 'warning' ? 'slow' : 'ok', label:e.query_name || e.kind || `signal ${idx+1}`, time:e.timestamp ? age(e.timestamp) : age(issue.created_at)}));
+      if(!traces.length) traces.push({status:issue.severity === 'critical' ? 'fail' : 'slow', label:issue.issue_type || 'issue signal', time:age(issue.created_at)});
+      const alerts = Array.isArray(topoMeta.alerts) && topoMeta.alerts.length
+        ? topoMeta.alerts.map(a => ({name:a.name || a.alert || 'Alert', tone:a.tone || a.severity || 'warning'}))
+        : [{name: issue.rule_id || issue.issue_type || 'IssueActive', tone: issue.severity === 'critical' ? 'critical' : 'warning'}, ...(p.hazards || []).slice(0,2).map(e => ({name:e.query_name || e.kind || 'TelemetrySignal', tone:e.severity === 'critical' || e.severity === 'error' ? 'critical' : 'warning'}))];
+      return {nodes, metricRows, traces, alerts, cause, action, trigger, impact:snap, correlation, timestamp:topoMeta.timestamp || issue.created_at, propagationLabel:topoMeta.propagation_label || (state.lang === 'ja' ? '影響伝播' : 'impact propagation')};
+    }
+
+    function selectTopologyNode(id){ state.topologySelected = id; renderDetail(); }
+
+    function renderTopologyDetail(topo){
+      const node = topo.nodes.find(n => n.id === (state.topologySelected || 'root')) || topo.nodes[0];
+      const logs = (node.logs || []).map(log => {
+        const ts = log.timestamp ? new Date(log.timestamp).toLocaleString() : '';
+        const level = log.level || (node.status === 'error' ? 'ERROR' : node.status === 'warn' ? 'WARN' : 'INFO');
+        return `<div class="log-row"><b>${esc(ts)}</b><span class="${nodeStatusClass(node.status)}">${esc(level)}</span><div>${esc(log.message || log)}</div></div>`;
+      }).join('');
+      return `<div class="topology-detail">
+        <h3>${state.lang === 'ja' ? 'ノード詳細' : 'Node detail'}</h3>
+        <div class="detail-kv"><span>${state.lang === 'ja' ? '時刻' : 'Timestamp'}</span><b>${esc(new Date(node.timestamp || topo.timestamp).toLocaleString())}</b></div>
+        <div class="detail-kv"><span>${state.lang === 'ja' ? 'プロセス/サービス' : 'Process / service'}</span><b>${esc(node.name)}</b></div>
+        <div class="detail-kv"><span>${state.lang === 'ja' ? '状態' : 'Status'}</span><b>${esc(statusLabel(node.status))}</b></div>
+        <div class="detail-kv"><span>${state.lang === 'ja' ? 'メッセージ' : 'Message'}</span><div>${esc(node.error || topo.trigger)}</div></div>
+        <div class="detail-kv"><span>${state.lang === 'ja' ? '原因の流れ' : 'Root-cause chain'}</span><div>${esc(node.chain || topo.cause)}</div></div>
+        <div class="detail-kv"><span>${state.lang === 'ja' ? '関連メトリクス' : 'Relevant metrics'}</span><div>${(node.metrics && node.metrics.length ? node.metrics : topo.metricRows).map(m=>`${esc(m.label || m.name)}: ${esc(m.value)}`).join('<br>') || '-'}</div></div>
+        ${logs ? `<div class="log-list"><h3>${state.lang === 'ja' ? 'ログ' : 'Logs'}</h3>${logs}</div>` : ''}
+      </div>`;
+    }
+
+    function renderDiagram(diagram, fallbackIssue){
+      const topo = topologyData(diagram, fallbackIssue);
+      if(!state.topologySelected) state.topologySelected = (topo.nodes.find(n => n.status === 'error') || topo.nodes[0] || {}).id;
+      const hostNodes = topo.nodes.filter(n => n.zone === 'host');
+      const runtimeNodes = topo.nodes.filter(n => n.zone !== 'host');
+      const corr = topo.correlation || {};
+      const corrBanner = corr.root_issue_id
+        ? `<div class="correlation-banner">${state.lang === 'ja' ? '相関済み' : 'Correlated'}: ${state.lang === 'ja' ? '根本原因 Issue' : 'root issue'} #${esc(corr.root_issue_id)} · ${esc(corr.confidence || '')}</div>`
+        : (corr.impacted_issue_ids && corr.impacted_issue_ids.length ? `<div class="correlation-banner">${state.lang === 'ja' ? '影響先 Issue' : 'Impacts issues'} #${esc(corr.impacted_issue_ids.join(', #'))}</div>` : '');
+      const renderNode = n => `<button type="button" class="topology-node ${nodeStatusClass(n.status)} ${state.topologySelected === n.id ? 'selected' : ''}" onclick="selectTopologyNode('${esc(n.id)}')">
+        <span class="node-badge ${nodeStatusClass(n.status)}">${statusLabel(n.status)}</span>
+        <b>${esc(n.name)}</b><p>${esc(n.role)}</p>
+      </button>`;
+      return `<div class="diagram-board">
+        <div class="diagram-title">${esc(diagram?.title || tr('diagram'))}</div>
+        ${corrBanner}
+        <div class="topology-wrap">
+          <div>
+            <div class="topology-main">
+              <div class="topology-heading">${state.lang === 'ja' ? 'Host / Platform' : 'Host / Platform'}</div>
+              <div class="topology-grid">${hostNodes.map(renderNode).join('')}</div>
+              <div class="topology-arrow">${esc(topo.propagationLabel)}</div>
+              <div class="runtime-box">
+                <div class="topology-heading">${state.lang === 'ja' ? 'Runtime / Container boundary' : 'Runtime / Container boundary'}</div>
+                <div class="topology-grid">${runtimeNodes.map(renderNode).join('')}</div>
+              </div>
+            </div>
+            ${renderTopologyDetail(topo)}
+          </div>
+          <aside class="telemetry-side">
+            <h2>${state.lang === 'ja' ? 'Telemetry' : 'Telemetry'}</h2>
+            ${topo.metricRows.map(m=>`<div class="metric-bar"><div class="row"><span>${esc(m.label)}</span><b>${esc(m.value)}</b></div><div class="bar-track"><div class="bar-fill ${m.tone}" style="width:${m.pct}%"></div></div></div>`).join('')}
+            <div><h3>${state.lang === 'ja' ? 'Traces' : 'Traces'}</h3><div class="trace-mini">${topo.traces.map(t=>`<div class="trace-row"><div class="trace-line ${t.status}" title="${esc(t.label)}"></div><b>${esc(t.status)} · ${esc(t.time)}</b></div>`).join('')}</div></div>
+            <div><h3>${state.lang === 'ja' ? 'Alerts' : 'Alerts'}</h3><div class="alert-list">${topo.alerts.map(a=>`<div class="alert-item ${a.tone === 'warning' ? 'warn' : ''}">${esc(a.name)} ${state.lang === 'ja' ? '発火中' : 'firing'}</div>`).join('')}</div></div>
+          </aside>
+        </div>
+      </div>`;
+    }
+
+    function renderStory(issue){
+      const p = currentAnalysisParts(issue);
+      const asked = document.getElementById('askInput')?.value || '';
+      const intent = intentFrom(asked);
+      const whys = p.fiveWhy.whys || [];
+      const validation = p.kb.validation_steps || [];
+      const simple = state.lang === 'ja'
+        ? `${appOf(issue)} では、利用者から見ると「一時的に使えない」状態が起きています。RCAでは、下流の ${p.affected} だけの問題ではなく、上流の ${p.root} が高負荷または保護しきい値により応答できなくなり、その影響が呼び出し元に伝わった可能性を確認しています。`
+        : `${appOf(issue)} became temporarily unavailable from the user's point of view. The RCA indicates this is probably not only a downstream ${p.affected} problem: the upstream ${p.root} service appears to have hit load or guardrail limits, and that impact propagated to callers.`;
+      const defaultWhys = state.lang === 'ja'
+        ? [
+          ['なぜ利用者に影響が出た？', `${p.affected} が正常に応答できず、利用者から見ると処理が止まったためです。`],
+          ['なぜ応答できなかった？', `${p.root} 側の問題が ${p.affected} に伝播した可能性があるためです。`],
+          ['なぜ上流で問題が起きた？', `${p.trigger} が発生し、通常の処理条件を超えたためです。`],
+          ['なぜ検知された？', `${p.layer} のレイヤーで障害シグナルが出たためです。`],
+          ['根本的に何を直す？', p.action],
+        ]
+        : [
+          ['Why did users feel impact?', `${p.affected} could not respond normally, so the workflow looked unavailable to users.`],
+          ['Why could it not respond?', `The likely upstream contributor, ${p.root}, propagated failure into ${p.affected}.`],
+          ['Why did the upstream problem start?', `${p.trigger} crossed the normal operating condition.`],
+          ['Why was it detected here?', `The signal appeared at the ${p.layer} layer.`],
+          ['What fixes the root problem?', p.action],
+        ];
+      const whysToShow = whys.length ? whys.slice(0,5) : defaultWhys.map((w,idx)=>({step:idx+1, question:w[0], answer:w[1]}));
+      const whyHtml = `<div class="why-ladder">${whysToShow.map((w,idx)=>`
+        <div class="why-step">
+          <div class="why-num">${esc(w.step || idx + 1)}</div>
+          <div><b>${esc(w.question || `Why ${idx + 1}`)}</b><p>${esc(w.answer || '')}</p></div>
+        </div>`).join('')}</div>`;
+      const rootNote = p.fiveWhy.fundamental_root_cause || p.pipe.rca.root_cause?.description || p.stored.likely_cause || '';
+      if(intent === 'five') return `<div class="story-card"><div class="story-kicker">${tr('fiveWhy')}</div>${whyHtml}</div>`;
+      if(intent === 'summary') return `<div class="story-card"><div class="story-kicker">${tr('shortSummary')}</div><div class="story-title">${esc(titleOf(issue))}</div><p>${esc(simple)}</p><p><strong>${esc(p.action)}</strong></p></div>`;
+      if(intent === 'evidence') return `<div class="story-card"><div class="story-kicker">${tr('evidenceOnly')}</div><div class="story-title">${tr('technicalView')}</div><p style="white-space:pre-wrap">${esc(p.technical)}</p></div>`;
+      if(intent === 'root') return `<div class="story-card"><div class="story-kicker">${tr('rootOnly')}</div><div class="story-title">${esc(p.root)}</div><p>${esc(rootNote || p.cause)}</p></div>`;
+      if(intent === 'diagram') return `<div class="story-card"><div class="story-kicker">${tr('diagram')}</div>${renderDiagram(state.diagram, issue)}</div>`;
+      if(intent === 'journey') return `<div class="story-card"><div class="story-kicker">${tr('journey')}</div>${renderDiagram(state.diagram, issue)}</div>`;
+      return `<div class="story-card">
+        <div class="story-kicker">${tr('storyTitle')}</div>
+        <div class="story-title">${esc(titleOf(issue))}</div>
+        <p>${esc(simple)}</p>
+        <p>${esc(p.cause)}</p>
+        ${whyHtml ? `<div class="story-box" style="margin-top:12px"><h3>${tr('fiveWhy')}</h3>${whyHtml}</div>` : ''}
+        ${rootNote ? `<div class="root-note"><b>${tr('rootNote')}</b><span>${esc(rootNote)}</span></div>` : ''}
+        <div class="story-grid">
+          <div class="story-box"><h3>${tr('technicalView')}</h3><p style="white-space:pre-wrap">${esc(p.technical)}</p></div>
+          <div class="story-box"><h3>${tr('nextStep')}</h3><strong>${esc(p.action)}</strong>${validation.length ? `<ul>${validation.slice(0,4).map(x=>`<li>${esc(x)}</li>`).join('')}</ul>` : ''}</div>
+        </div>
+        <div class="story-actions">
+          <button class="btn primary" onclick="sendToRemediation()">${tr('remediate')}</button>
+        </div>
+      </div>`;
+    }
+
+    async function sendToRemediation(){
+      const i = state.selected;
+      if(!i) return;
+      state.remediation = {status:'sending', message: state.lang === 'ja' ? 'Remediationへ送信しています...' : 'Sending to remediation...'};
+      renderDetail();
+      try{
+        const remediationType = state.rca?.knowledge_matches?.[0]?.remediation_type || 'infra_change';
+        const res = await fetch(`/api/remediation/issues/${i.id}/start`, {
+          method:'POST',
+          headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({requested_by:'ops-dashboard', remediation_type: remediationType})
+        });
+        if(!res.ok) throw new Error(await res.text());
+        state.remediation = await res.json();
+      }catch(err){
+        state.remediation = {status:'failed', message: err.message};
+      }
+      renderDetail();
+    }
+
+    function renderRemediationPanel(data){
+      const status = data.status || data.resolution_status || 'started';
+      const message = data.message || data.detail || (
+        state.lang === 'ja'
+          ? 'Remediation ワークフローを開始しました。次は対象リポジトリ確認と対応案確認を、この問題のチャットで続けられます。'
+          : 'The remediation workflow has started. Continue in the issue chat to review the target repository and response plan.'
+      );
+      const pr = data.pr_url ? `<p style="margin-top:8px"><a href="${esc(data.pr_url)}" target="_blank" rel="noreferrer">Pull Request</a></p>` : '';
+      const primary = status === 'failed' ? tr('continueChat') : tr('continueChat');
+      return `<div class="remediation-panel"><h2>${tr('remediation')}</h2><div style="margin-top:8px"><span class="status">${esc(status)}</span></div><p class="muted" style="margin-top:8px">${esc(message)}</p>${pr}<div class="detail-actions" style="justify-content:flex-start;margin-top:12px"><button class="btn primary" onclick="location.href='/conversation_j?issue_id=${state.selected.id}&lang=${state.lang}&mode=remediation'">${primary}</button></div></div>`;
+    }
+
+    function render(){ renderText(); renderMetrics(); renderIssues(); renderDetail(); }
+    search.oninput = renderIssues; statusFilter.onchange = renderIssues; severityFilter.onchange = renderIssues;
+    refreshBtn.onclick = load;
+    langBtn.onclick = () => { state.lang = state.lang === 'ja' ? 'en' : 'ja'; render(); };
+    load().catch(err => { issueList.innerHTML = `<div class="empty">${esc(err.message)}</div>`; });
+  </script>
+</body>
+</html>

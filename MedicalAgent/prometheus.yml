@@ -12,6 +12,15 @@ scrape_configs:
         labels:
           app: "sample-agent"
 
+  - job_name: "triage-agent"
+    metrics_path: /metrics
+    static_configs:
+      - targets:
+          - "triage-agent:8010"
+        labels:
+          app: "triage-agent"
+          dependency: "sample-agent"
+
   - job_name: "cadvisor"
     metrics_path: /metrics
     static_configs:

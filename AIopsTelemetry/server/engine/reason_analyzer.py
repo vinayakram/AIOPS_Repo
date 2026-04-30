@@ -23,6 +23,7 @@ from sqlalchemy.orm import Session
 
 from server.database.engine import SessionLocal
 from server.database.models import Issue, Span, Trace, IssueAnalysis
+from server.engine.bilingual import bilingual_analysis_fields, select_text
 from server.engine.metrics_collector import get_snapshots_around, get_recent_snapshots
 
 logger = logging.getLogger("aiops.reason_analyzer")
@@ -81,6 +82,8 @@ async def _run_analysis(analysis_id: int, issue_id: int):
         # (e.g. the external rca_client pipeline finished first).
         if analysis.status == "done":
             return
+        analysis.status = "running"
+        db.commit()
 
         # ── Build context ─────────────────────────────────────────────────────
         context = _build_context(db, issue)
@@ -101,6 +104,14 @@ async def _run_analysis(analysis_id: int, issue_id: int):
         analysis.handoff_plan        = result.get("handoff_plan", "")
         analysis.full_summary        = result.get("full_summary", "")
         analysis.model_used          = result.get("model", "unknown")
+        fields = bilingual_analysis_fields(
+            likely_cause=analysis.likely_cause,
+            evidence=analysis.evidence,
+            recommended_action=analysis.recommended_action,
+            full_summary=analysis.full_summary,
+        )
+        for key, value in fields.items():
+            setattr(analysis, key, value)
         analysis.status              = "done"
         analysis.generated_at        = datetime.utcnow()
         db.commit()
@@ -489,14 +500,25 @@ def _analysis_to_dict(a: IssueAnalysis) -> dict:
         "id": a.id,
         "issue_id": a.issue_id,
         "status": a.status,
+        "lang": "ja",
+        "available_languages": ["ja", "en"],
+        "language_status": a.language_status or "pending",
         "model_used": a.model_used,
         "generated_at": a.generated_at.isoformat() if a.generated_at else None,
-        "likely_cause": a.likely_cause,
-        "evidence": a.evidence,
-        "recommended_action": a.recommended_action,
+        "likely_cause": select_text(a, "likely_cause", "ja"),
+        "evidence": select_text(a, "evidence", "ja"),
+        "recommended_action": select_text(a, "recommended_action", "ja"),
         "remediation_type": a.remediation_type,
         "handoff_plan": a.handoff_plan,
-        "full_summary": a.full_summary,
+        "full_summary": select_text(a, "full_summary", "ja"),
+        "likely_cause_en": a.likely_cause_en or a.likely_cause,
+        "likely_cause_ja": a.likely_cause_ja or a.likely_cause,
+        "evidence_en": a.evidence_en or a.evidence,
+        "evidence_ja": a.evidence_ja or a.evidence,
+        "recommended_action_en": a.recommended_action_en or a.recommended_action,
+        "recommended_action_ja": a.recommended_action_ja or a.recommended_action,
+        "full_summary_en": a.full_summary_en or a.full_summary,
+        "full_summary_ja": a.full_summary_ja or a.full_summary,
     }
 
 

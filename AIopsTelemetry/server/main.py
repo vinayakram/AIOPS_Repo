@@ -14,6 +14,8 @@ from server.api import autofix as autofix_api
 from server.api import analysis as analysis_api
 from server.api import incidents as incidents_api
 from server.api import remediation as remediation_api
+from server.api import chat as chat_api
+from server.api import knowledge as knowledge_api
 
 _escalation_task = None
 
@@ -79,6 +81,8 @@ app.include_router(autofix_api.router, prefix="/api")
 app.include_router(analysis_api.router, prefix="/api")
 app.include_router(incidents_api.router, prefix="/api")
 app.include_router(remediation_api.router, prefix="/api")
+app.include_router(chat_api.router, prefix="/api")
+app.include_router(knowledge_api.router, prefix="/api")
 
 # ── Dashboard SPA ─────────────────────────────────────────────────────────────
 _DASHBOARD_DIR = os.path.join(os.path.dirname(__file__), "dashboard")
@@ -120,9 +124,24 @@ async def serve_light_j_dashboard():
     return {"message": "Japanese light theme not found"}
 
 
+@app.get("/ops")
+@app.get("/ops_j")
+async def serve_ops_dashboard():
+    page = os.path.join(_DASHBOARD_DIR, "ops_dashboard.html")
+    if os.path.isfile(page):
+        return FileResponse(page)
+    return {"message": "Operations dashboard not found"}
+
+
 @app.get("/conversation_j")
 @app.get("/assistant_j")
 async def serve_japanese_conversation():
+    page = os.path.join(_DASHBOARD_DIR, "conversation_flow_j.html")
+    if os.path.isfile(page):
+        return FileResponse(page)
+    page = os.path.join(_DASHBOARD_DIR, "conversation_chat_j.html")
+    if os.path.isfile(page):
+        return FileResponse(page)
     page = os.path.join(_DASHBOARD_DIR, "conversation_j.html")
     if os.path.isfile(page):
         return FileResponse(page)

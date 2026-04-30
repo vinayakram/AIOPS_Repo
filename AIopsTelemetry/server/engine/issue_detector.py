@@ -15,6 +15,7 @@ from sqlalchemy import func
 
 from server.config import settings
 from server.database.models import Trace, Span, Issue, EscalationRule
+from server.engine.bilingual import issue_description_ja, issue_title_ja
 
 logger = logging.getLogger("aiops.issue_detector")
 
@@ -1129,6 +1130,12 @@ def _ensure_trace_scoped_issue(
         recurrence_count=recurrence_count,
         title=title,
         description=description,
+        title_en=title,
+        title_ja=issue_title_ja(title, app_name=app_name, rule_id=rule_id),
+        description_en=description,
+        description_ja=issue_description_ja(
+            description, app_name=app_name, rule_id=rule_id
+        ),
         span_name=span_name,
         trace_id=trace_id,
     )
@@ -1178,6 +1185,20 @@ def _ensure_issue(
         # service always analyses a current trace, not a stale one.
         if trace_id and trace_id != open_existing.trace_id:
             open_existing.trace_id = trace_id
+        if not open_existing.title_en:
+            open_existing.title_en = open_existing.title
+        if not open_existing.title_ja:
+            open_existing.title_ja = issue_title_ja(
+                open_existing.title, app_name=app_name, rule_id=rule_id
+            )
+        if not open_existing.description_en:
+            open_existing.description_en = open_existing.description
+        if not open_existing.description_ja:
+            open_existing.description_ja = issue_description_ja(
+                open_existing.description,
+                app_name=app_name,
+                rule_id=rule_id,
+            )
         try:
             existing_meta = json.loads(open_existing.metadata_json) if open_existing.metadata_json else {}
         except (json.JSONDecodeError, TypeError):
@@ -1219,6 +1240,12 @@ def _ensure_issue(
         recurrence_count=recurrence_count,
         title=title,
         description=description,
+        title_en=title,
+        title_ja=issue_title_ja(title, app_name=app_name, rule_id=rule_id),
+        description_en=description,
+        description_ja=issue_description_ja(
+            description, app_name=app_name, rule_id=rule_id
+        ),
         span_name=span_name,
         trace_id=trace_id,
         metadata_json=json.dumps(metadata) if metadata else None,

@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AIOps Assistant</title>
+<style>
+:root{--bg:#fff;--rail:#f7f7f8;--hover:#ececef;--border:#dedede;--text:#202123;--muted:#8a8f98;--soft:#f3f4f6;--red:#c91f37;--amber:#9a6700;--blue:#2563eb}
+*{box-sizing:border-box;margin:0;padding:0}body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans JP",system-ui,sans-serif;font-size:15px;line-height:1.6}
+button,input,select,textarea{font:inherit}.app{height:100vh;display:grid;grid-template-columns:304px minmax(0,1fr)}.rail{background:var(--rail);border-right:1px solid var(--border);display:flex;flex-direction:column;min-width:0}
+.rail-top{padding:14px;display:flex;align-items:center;justify-content:space-between}.mark{width:34px;height:34px;border:1px solid #cfcfcf;border-radius:10px;background:#fff;display:grid;place-items:center;font-weight:800}.icon-btn{width:36px;height:36px;border:0;background:transparent;border-radius:10px;cursor:pointer;color:#5f6368;font-size:20px}.icon-btn:hover{background:var(--hover);color:var(--text)}
+.rail-actions{padding:0 12px 12px;display:grid;gap:6px}.rail-btn{height:44px;border:0;background:transparent;border-radius:12px;padding:0 12px;display:flex;align-items:center;gap:10px;cursor:pointer;text-align:left;color:var(--text)}.rail-btn:hover,.rail-btn.active{background:var(--hover)}.rail-section{padding:14px 14px 8px;color:var(--muted);font-size:13px}.ticket-list{padding:0 10px 16px;overflow:auto;display:grid;gap:6px}
+.ticket{border:0;background:transparent;border-radius:12px;padding:10px 12px;text-align:left;cursor:pointer;color:var(--text)}.ticket:hover,.ticket.selected{background:var(--hover)}.ticket-title{font-size:14px;line-height:1.35;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.ticket-meta{font-size:12px;color:var(--muted);margin-top:3px;display:flex;align-items:center;gap:6px}.dot{width:7px;height:7px;border-radius:50%;background:var(--muted)}.dot.critical{background:var(--red)}.dot.high{background:var(--amber)}.dot.medium{background:var(--blue)}
+.main{min-width:0;display:flex;flex-direction:column;height:100vh}.topbar{height:56px;display:flex;align-items:center;justify-content:space-between;padding:0 28px}.brand{display:flex;align-items:center;gap:8px;font-size:20px;font-weight:700}.brand small{font-size:13px;color:var(--muted);font-weight:500}.top-actions{display:flex;gap:8px}.text-btn{height:36px;border:1px solid transparent;background:transparent;color:#5f6368;border-radius:10px;padding:0 11px;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center}.text-btn:hover{background:var(--soft);color:var(--text)}.text-btn.outline{border-color:var(--border);background:#fff}
+.content{flex:1;overflow:auto;padding:0 24px 24px}.center{max-width:980px;margin:0 auto;min-height:calc(100vh - 170px);display:flex;flex-direction:column}.welcome{margin:auto 0 22px;text-align:center;padding-top:34px}.welcome h1{font-size:34px;line-height:1.25;font-weight:500;letter-spacing:0;margin-bottom:22px}.prompt-wrap{max-width:760px;margin:0 auto}.composer{min-height:58px;border:1px solid #cfcfcf;border-radius:28px;background:#fff;box-shadow:0 8px 28px rgba(0,0,0,.08);display:grid;grid-template-columns:42px 1fr 42px;align-items:center;padding:8px 10px}.composer input{border:0;outline:0;font-size:16px;padding:0 8px}.composer input::placeholder{color:#939393}.send{width:38px;height:38px;border:0;border-radius:50%;background:#111;color:#fff;cursor:pointer;font-weight:700}
+.quick{display:flex;justify-content:center;gap:10px;flex-wrap:wrap;margin-top:22px}.quick button{height:44px;border:1px solid var(--border);background:#fff;border-radius:999px;padding:0 18px;color:#5f6368;cursor:pointer}.quick button:hover{background:#fafafa;color:var(--text)}
+.chat{display:flex;flex-direction:column;gap:18px;padding:20px 0 18px}.msg{display:grid;grid-template-columns:34px minmax(0,1fr);gap:12px;max-width:840px}.msg.user{align-self:flex-end;display:block;max-width:min(680px,86%)}.bubble{background:var(--soft);border-radius:20px;padding:10px 16px;white-space:pre-wrap}.msg.agent .bubble{background:#fff;padding:4px 0}.avatar{width:32px;height:32px;border-radius:50%;background:#111;color:#fff;display:grid;place-items:center;font-size:13px;font-weight:700}.msg h3{font-size:16px;margin:0 0 5px}.msg ul{padding-left:20px;margin-top:8px}.soft-panel{border:1px solid var(--border);border-radius:16px;background:#fff;padding:14px;margin-top:10px}
+.detail{border-top:1px solid var(--border);padding:14px 24px;background:#fff}.detail-inner{max-width:980px;margin:0 auto;display:none}.detail-inner.open{display:block}.detail-head{display:flex;justify-content:space-between;gap:14px;margin-bottom:10px}.detail-title{font-weight:700}.detail-sub{font-size:13px;color:var(--muted)}.pills{display:flex;gap:8px;flex-wrap:wrap}.pill{border:1px solid var(--border);border-radius:999px;padding:3px 9px;font-size:12px;color:#5f6368;background:#fff}.pill.danger{background:#fff2f3;color:var(--red);border-color:#ffd3d8}.pill.warn{background:#fff8e7;color:var(--amber);border-color:#efd693}
+.detail-body{display:grid;grid-template-columns:minmax(0,1fr) 270px;gap:14px}.issue-box,.remediate{border:1px solid var(--border);border-radius:16px;padding:14px;background:#fff}.remediate{background:#fafafa}.fields{display:grid;gap:8px}.field-row{display:grid;grid-template-columns:92px 1fr;gap:10px;font-size:13px}.field-row span:first-child{color:var(--muted)}.remediate label{display:block;font-size:12px;color:var(--muted);margin-bottom:4px}.remediate input,.remediate select,.remediate textarea{width:100%;border:1px solid var(--border);border-radius:10px;background:#fff;padding:8px 10px;margin-bottom:8px}.remediate textarea{min-height:70px;resize:vertical}.primary{height:38px;border:0;border-radius:999px;background:#111;color:#fff;padding:0 16px;cursor:pointer}.primary:disabled{background:#e5e7eb;color:#9ca3af}.secondary{height:36px;border:1px solid var(--border);border-radius:999px;background:#fff;color:#5f6368;padding:0 14px;cursor:pointer}.status{font-size:13px;color:var(--muted)}.hidden{display:none!important}.empty{color:var(--muted);font-size:13px;padding:12px}.error{color:var(--red)}
+@media(max-width:980px){.app{grid-template-columns:1fr}.rail{display:none}.topbar{padding:0 16px}.content{padding:0 16px 20px}.welcome h1{font-size:28px}.detail{padding:14px 16px}.detail-body{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="rail">
+    <div class="rail-top"><div class="mark">AI</div><button class="icon-btn" onclick="loadTickets({silent:false})" title="更新">+</button></div>
+    <div class="rail-actions">
+      <button class="rail-btn active" onclick="resetConversation()">新しい相談</button>
+      <button class="rail-btn" onclick="loadTickets({silent:false})">対応が必要なもの</button>
+      <button class="rail-btn" onclick="location.href='/light_j'">一覧ダッシュボード</button>
+    </div>
+    <div class="rail-section">最近の問題</div>
+    <div id="ticket-list" class="ticket-list"><div class="empty">読み込み中...</div></div>
+  </aside>
+  <main class="main">
+    <header class="topbar">
+      <div class="brand">AIOps Assistant <small id="session-state">待機中</small></div>
+      <div class="top-actions"><button class="text-btn outline" id="lang-toggle" onclick="toggleLanguage()">English</button><a class="text-btn" href="/light_j">一覧を見る</a></div>
+    </header>
+    <section class="content">
+      <div class="center">
+        <div id="welcome" class="welcome">
+          <h1>今日はどの問題を確認しますか？</h1>
+          <div class="prompt-wrap">
+            <div class="composer"><button class="icon-btn" onclick="loadTickets({silent:false})" title="最新の問題">+</button><input id="chat-input" placeholder="例: 重大な問題を見せて" onkeydown="handleComposerKey(event)"><button class="send" onclick="sendComposer()">↑</button></div>
+            <div class="quick"><button onclick="quickAction('tickets')">未対応を見る</button><button onclick="quickAction('summary')">やさしく要約</button><button onclick="quickAction('rca')">原因を確認</button><button onclick="quickAction('remediate')">対応を進める</button></div>
+          </div>
+        </div>
+        <div id="chat" class="chat"></div>
+      </div>
+    </section>
+    <section class="detail">
+      <div id="detail-inner" class="detail-inner">
+        <div class="detail-head"><div><div class="detail-title" id="detail-title">問題を選択してください</div><div class="detail-sub" id="detail-sub"></div></div><div class="pills" id="detail-pills"></div></div>
+        <div class="detail-body">
+          <div class="issue-box" id="issue-detail"></div>
+          <div class="remediate">
+            <label>担当者</label><input id="requested-by" value="support-engineer-jp">
+            <label>対応の種類</label><select id="remediation-type"><option value="config_change">設定変更</option><option value="code_change">コード変更</option><option value="infra_change">インフラ変更</option></select>
+            <label>完了条件</label><textarea id="acceptance">利用者影響が解消していること
+ヘルスチェックが成功すること
+変更理由が記録されていること</textarea>
+            <button class="primary" id="start-remediation" onclick="startRemediation()" disabled>対応を開始</button>
+            <button class="secondary" id="refresh-remediation" onclick="refreshRemediation()" disabled style="margin-top:8px">進捗を見る</button>
+            <div id="remediation-box" class="status" style="margin-top:10px"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+</div>
+<script>
+const severityRank={critical:4,high:3,medium:2,low:1};
+const sevLabel={critical:'重大',high:'高',medium:'中',low:'低'};
+const statusLabel={OPEN:'未対応',ACKNOWLEDGED:'確認中',ESCALATED:'エスカレーション',RESOLVED:'解決済み'};
+let currentIssue=null,currentAnalysis=null,currentLang='ja',ticketsCache=[];
+function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+async function api(url,opt={}){const r=await fetch(url,{headers:{'Content-Type':'application/json'},...opt});if(!r.ok){let m=await r.text();try{m=JSON.parse(m).detail||m}catch{}throw new Error(m)}return r.json();}
+function setState(t){document.getElementById('session-state').textContent=t}
+function hideWelcome(){document.getElementById('welcome').classList.add('hidden')}
+function addMsg(kind,html){hideWelcome();const el=document.createElement('div');el.className=`msg ${kind}`;el.innerHTML=kind==='user'?`<div class="bubble">${html}</div>`:`<div class="avatar">AI</div><div class="bubble">${html}</div>`;document.getElementById('chat').appendChild(el);el.scrollIntoView({block:'nearest'})}
+function resetConversation(){currentIssue=null;currentAnalysis=null;document.getElementById('chat').innerHTML='';document.getElementById('detail-inner').classList.remove('open');document.getElementById('welcome').classList.remove('hidden');setState('待機中')}
+function prioritySort(a,b){return(severityRank[b.severity]||0)-(severityRank[a.severity]||0)||new Date(b.created_at||0)-new Date(a.created_at||0)}
+async function loadTickets(options={}){const silent=options.silent!==false;setState('確認中');document.getElementById('ticket-list').innerHTML='<div class="empty">読み込み中...</div>';try{const data=await api(`/api/issues?limit=200&lang=${currentLang}`);ticketsCache=(data.issues||[]).filter(i=>i.status!=='RESOLVED').sort(prioritySort);renderTickets();if(!ticketsCache.length){if(!silent)addMsg('agent','現在、対応が必要な問題はありません。監視は続けています。');setState('問題なし');return}if(!silent)addMsg('agent',`対応が必要な問題が${ticketsCache.length}件あります。左から選ぶか、「重大な問題を見せて」と入力してください。`);setState(`${ticketsCache.length}件`)}catch(e){document.getElementById('ticket-list').innerHTML=`<div class="empty error">${esc(e.message)}</div>`;if(!silent)addMsg('agent',`問題一覧を取得できませんでした: ${esc(e.message)}`);setState('取得失敗')}}
+function renderTickets(){const list=document.getElementById('ticket-list');if(!ticketsCache.length){list.innerHTML='<div class="empty">未対応の問題はありません。</div>';return}list.innerHTML=ticketsCache.map(ticketCard).join('')}
+function ticketCard(i){const name=i.app_display_name||i.app_name;return`<button class="ticket" id="ticket-${i.id}" onclick="selectIssue(${i.id})"><div class="ticket-title">${esc(i.title)}</div><div class="ticket-meta"><span class="dot ${esc(i.severity)}"></span>${esc(sevLabel[i.severity]||i.severity)} · ${esc(name)}</div></button>`}
+async function selectIssue(id){setState(`#${id}`);document.querySelectorAll('.ticket').forEach(el=>el.classList.remove('selected'));const card=document.getElementById(`ticket-${id}`);if(card)card.classList.add('selected');try{currentIssue=await api(`/api/issues/${id}?lang=${currentLang}`);currentAnalysis=null;document.getElementById('detail-inner').classList.add('open');renderIssue();addMsg('user','この問題を確認します。');await loadRCA(id)}catch(e){addMsg('agent',`問題の詳細を取得できませんでした: ${esc(e.message)}`)}}
+function renderIssue(extra=''){const i=currentIssue;if(!i)return;const name=i.app_display_name||i.app_name;document.getElementById('detail-title').textContent=i.title;document.getElementById('detail-sub').textContent=`${name} · #${i.id}`;const sevClass=i.severity==='critical'?'danger':i.severity==='high'?'warn':'';document.getElementById('detail-pills').innerHTML=`<span class="pill ${sevClass}">${esc(sevLabel[i.severity]||i.severity)}</span><span class="pill">${esc(statusLabel[i.status]||i.status)}</span>`;const recurrence=i.recurrence_count>0?`<div class="field-row"><span>再発</span><div>${i.recurrence_count}回目の類似問題です</div></div>`:'';document.getElementById('issue-detail').innerHTML=`<div class="fields"><div class="field-row"><span>概要</span><div>${esc(i.description||'説明はありません')}</div></div><div class="field-row"><span>サービス</span><div>${esc(name)}<br><small style="color:var(--muted)">${esc(i.app_name)}</small></div></div>${recurrence}${extra}</div>`}
+async function loadRCA(id){addMsg('agent','保存済みの原因分析を確認します。完了済みならすぐに表示します。');try{currentAnalysis=await api(`/api/analysis/issues/${id}?lang=${currentLang}&summary=true`)}catch{await api(`/api/analysis/issues/${id}`,{method:'POST'});currentAnalysis=await pollRCA(id)}const a=currentAnalysis||{};const evidence=(a.evidence||'').split('\n').filter(Boolean).slice(0,3).map(x=>`<li>${esc(x.replace(/^[-・•]\s*/,''))}</li>`).join('');renderIssue(`<div class="field-row"><span>原因候補</span><div>${esc(a.likely_cause||'分析中です')}</div></div><div class="field-row"><span>対応案</span><div>${esc(a.recommended_action||'分析完了後に表示します')}</div></div>`);addMsg('agent',`<h3>確認結果</h3><div class="soft-panel"><strong>原因候補</strong><br>${esc(a.likely_cause||'未取得')}<br><br><strong>次の対応</strong><br>${esc(a.recommended_action||'未取得')}${evidence?`<ul>${evidence}</ul>`:''}</div>`);await checkReuse()}
+async function pollRCA(id){for(let i=0;i<24;i++){await new Promise(r=>setTimeout(r,2500));try{const a=await api(`/api/analysis/issues/${id}?lang=${currentLang}&summary=true`);if(a.status!=='pending'&&a.status!=='running')return a}catch{}}throw new Error('RCAが時間内に完了しませんでした。')}
+async function checkReuse(){const i=currentIssue;if(!i)return;document.getElementById('start-remediation').disabled=false;if(!i.previous_issue_id||!i.recurrence_count){setState('対応可能');return}try{const prev=await api(`/api/issues/${i.previous_issue_id}?lang=${currentLang}`);addMsg('agent',`似た問題が以前にもありました。前回は #${prev.id}「${esc(prev.title)}」です。必要なら前回の対応も参考にできます。`)}catch{}setState('対応可能')}
+function handleComposerKey(e){if(e.key==='Enter'){e.preventDefault();sendComposer()}}
+function sendComposer(){const input=document.getElementById('chat-input');const text=input.value.trim();if(!text)return;input.value='';addMsg('user',esc(text));const low=text.toLowerCase();if(text.includes('重大')||low.includes('critical')){const first=ticketsCache.find(t=>t.severity==='critical')||ticketsCache[0];if(first){addMsg('agent','一番優先度が高い問題を開きます。');selectIssue(first.id)}else loadTickets({silent:false})}else if(text.includes('原因')||low.includes('rca')){if(currentIssue)loadRCA(currentIssue.id);else addMsg('agent','まず左側から確認したい問題を選んでください。')}else if(text.includes('対応')||text.includes('修復')||low.includes('fix')){quickAction('remediate')}else{loadTickets({silent:false})}}
+function quickAction(type){if(type==='tickets'){addMsg('user','未対応の問題を見せて');loadTickets({silent:false});return}if(type==='summary'){addMsg('user','やさしく要約して');if(currentIssue)addMsg('agent',`${esc(currentIssue.title)}\n\n${esc(currentIssue.description||'説明はありません')}`);else addMsg('agent','まず問題を選ぶと、短くわかりやすく要約します。');return}if(type==='rca'){addMsg('user','原因を確認して');if(currentIssue)loadRCA(currentIssue.id);else addMsg('agent','左側から問題を選んでください。保存済みの原因分析をすぐに表示します。');return}if(type==='remediate'){addMsg('user','対応を進めたい');if(!currentIssue){addMsg('agent','まず対応したい問題を選んでください。');return}document.getElementById('detail-inner').classList.add('open');addMsg('agent','画面下の「対応を開始」から進められます。実行前に完了条件を確認してください。')}}
+async function toggleLanguage(){currentLang=currentLang==='ja'?'en':'ja';document.getElementById('lang-toggle').textContent=currentLang==='ja'?'English':'日本語';await loadTickets({silent:true});if(currentIssue){currentIssue=await api(`/api/issues/${currentIssue.id}?lang=${currentLang}`);renderIssue();try{currentAnalysis=await api(`/api/analysis/issues/${currentIssue.id}?lang=${currentLang}&summary=true`);renderIssue(`<div class="field-row"><span>${currentLang==='ja'?'原因候補':'Cause'}</span><div>${esc(currentAnalysis.likely_cause||'')}</div></div>`)}catch{}}}
+function acceptanceList(){return document.getElementById('acceptance').value.split('\n').map(x=>x.trim()).filter(Boolean)}
+async function startRemediation(){if(!currentIssue)return;setState('対応開始');document.getElementById('start-remediation').disabled=true;try{const body={requested_by:document.getElementById('requested-by').value,remediation_type:document.getElementById('remediation-type').value,acceptance_criteria:acceptanceList()};const data=await api(`/api/remediation/issues/${currentIssue.id}/start`,{method:'POST',body:JSON.stringify(body)});addMsg('agent',`対応ワークフローを開始しました。状態: ${esc(data.status||'開始済み')}`);document.getElementById('refresh-remediation').disabled=false;renderRemediation(data)}catch(e){addMsg('agent',`対応開始に失敗しました: ${esc(e.message)}`);document.getElementById('start-remediation').disabled=false}}
+async function refreshRemediation(){if(!currentIssue)return;try{renderRemediation(await api(`/api/remediation/issues/${currentIssue.id}/status`))}catch(e){renderRemediation({error:e.message})}}
+function renderRemediation(data){const box=document.getElementById('remediation-box');if(data.error){box.innerHTML=`<span class="error">${esc(data.error)}</span>`;return}const pr=data.pr_url?`<div style="margin-top:8px"><a href="${esc(data.pr_url)}" target="_blank">Pull Requestを開く</a></div>`:'';box.innerHTML=`状態: ${esc(data.status||data.message||'確認中')}${pr}<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:10px"><button class="secondary" onclick="startPlan()">対応案作成</button><button class="secondary" onclick="getPlan()">対応案を見る</button><button class="secondary" onclick="approvePlan()">実装へ進む</button><button class="secondary" onclick="createPR()">PR作成</button></div>`}
+async function startPlan(){await remediationAction('plan/start','対応案の作成を開始しました。')}async function approvePlan(){await remediationAction('plan/approve','実装へ進みます。')}async function createPR(){await remediationAction('pr','PR作成を開始しました。')}
+async function remediationAction(path,msg){try{const d=await api(`/api/remediation/issues/${currentIssue.id}/${path}`,{method:'POST',body:'{}'});addMsg('agent',msg);renderRemediation(d)}catch(e){addMsg('agent',`操作に失敗しました: ${esc(e.message)}`)}}
+async function getPlan(){try{const d=await api(`/api/remediation/issues/${currentIssue.id}/plan`);addMsg('agent',`<h3>対応案</h3><div class="soft-panel">${esc((d.plan||d.content||d.markdown||JSON.stringify(d,null,2)).slice(0,1000))}</div>`);renderRemediation(d)}catch(e){addMsg('agent',`対応案を取得できません: ${esc(e.message)}`)}}
+loadTickets({silent:true});
+</script>
+</body>
+</html>

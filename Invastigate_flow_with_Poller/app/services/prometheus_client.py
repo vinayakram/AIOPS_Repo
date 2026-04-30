@@ -92,6 +92,41 @@ DEFAULT_QUERIES: list[dict[str, str]] = [
         "description": "SampleAgent pod threshold breach count in the query window",
     },
     {
+        "name": "dependent_agent_upstream_errors",
+        "query": 'sum(increase(dependent_agent_upstream_requests_total{{upstream="sample-agent",result=~"upstream_error|upstream_timeout|upstream_unreachable"}}[{window}]))',
+        "description": "Dependent agent upstream failures attributed to sample-agent",
+    },
+    {
+        "name": "dependent_agent_cascade_failures",
+        "query": 'sum(increase(dependent_agent_cascade_failures_total{{upstream="sample-agent"}}[{window}]))',
+        "description": "Dependent agent cascade failure count for sample-agent dependency",
+    },
+    {
+        "name": "dependent_agent_last_upstream_status",
+        "query": 'min_over_time(dependent_agent_last_upstream_status{{app=~"{agent}|triage-agent",upstream="sample-agent"}}[{window}])',
+        "description": "Dependent agent last observed sample-agent upstream status",
+    },
+    {
+        "name": "dependent_agent_upstream_p95_latency",
+        "query": 'histogram_quantile(0.95, sum(rate(dependent_agent_upstream_request_duration_seconds_bucket{{upstream="sample-agent"}}[{window}])) by (le))',
+        "description": "Dependent agent p95 latency calling sample-agent",
+    },
+    {
+        "name": "dependent_agent_http_5xx",
+        "query": 'sum(increase(dependent_agent_http_requests_total{{status=~"5.."}}[{window}]))',
+        "description": "Dependent agent HTTP 5xx responses",
+    },
+    {
+        "name": "cross_service_sample_agent_guard_active",
+        "query": 'max_over_time(sample_agent_pod_threshold_breaches_total{{reason!=""}}[{window}])',
+        "description": "Cross-service evidence that sample-agent resource guard has breached",
+    },
+    {
+        "name": "cross_service_sample_agent_http_503",
+        "query": 'sum(increase(sample_agent_http_requests_total{{app="sample-agent",status="503"}}[{window}]))',
+        "description": "Sample-agent HTTP 503 responses during the incident window",
+    },
+    {
         "name": "cadvisor_sample_agent_cpu_limit_usage_percent",
         "query": '100 * sum by (name) (rate(container_cpu_usage_seconds_total{name=~".*sample-agent-pod.*|.*{agent}.*",image!="",cpu="total"}[{window}])) / (max by (name) (container_spec_cpu_quota{name=~".*sample-agent-pod.*|.*{agent}.*",image!=""}) / max by (name) (container_spec_cpu_period{name=~".*sample-agent-pod.*|.*{agent}.*",image!=""}))',
         "description": "cAdvisor Sample Agent container CPU usage as a percentage of its configured CPU limit",
@@ -334,6 +369,17 @@ class PrometheusClient:
                 elif query_name == "up_status" and numeric_val == 0:
                     level = "ERROR"
                 elif query_name == "restart_count" and numeric_val > 0:
+                    level = "WARN"
+                elif query_name in {
+                    "dependent_agent_upstream_errors",
+                    "dependent_agent_cascade_failures",
+                    "dependent_agent_http_5xx",
+                    "cross_service_sample_agent_http_503",
+                } and numeric_val > 0:
+                    level = "ERROR"
+                elif query_name == "dependent_agent_last_upstream_status" and numeric_val == 0:
+                    level = "ERROR"
+                elif query_name == "cross_service_sample_agent_guard_active" and numeric_val > 0:
                     level = "WARN"
             except (ValueError, TypeError):
                 pass

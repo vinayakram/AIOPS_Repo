@@ -15,6 +15,7 @@ MONITOR_UI_PORT="${MONITOR_UI_PORT:-5173}"
 PREVIEW_PORT="${PREVIEW_PORT:-8088}"
 PREVIEW_LAUNCHER_PORT="${PREVIEW_LAUNCHER_PORT:-8765}"
 MEDICAL_URL="${MEDICAL_URL:-http://localhost:8002}"
+TRIAGE_AGENT_URL="${TRIAGE_AGENT_URL:-http://localhost:8010}"
 AIOPS_URL="${AIOPS_URL:-http://localhost:${AI_OPS_PORT}}"
 RCA_URL="${RCA_URL:-http://localhost:${RCA_PORT}}"
 REMEDIATION_URL="${REMEDIATION_URL:-http://localhost:${REMEDIATION_PORT}}"
@@ -112,6 +113,7 @@ else
 fi
 
 wait_for_url "sample-agent" "${MEDICAL_URL}/api/health" 45
+wait_for_url "triage-agent" "${TRIAGE_AGENT_URL}/api/health" 45
 
 if [ "${STEADY_LOAD_ENABLED}" = "1" ]; then
   start_background \
@@ -136,6 +138,7 @@ cat <<EOF
 
 Demo applications started.
   sample-agent        ${MEDICAL_URL}
+  triage-agent        ${TRIAGE_AGENT_URL}
   AIopsTelemetry      ${AIOPS_URL}
   Invastigate RCA     ${RCA_URL}
   AIOPS remediation   ${REMEDIATION_URL}

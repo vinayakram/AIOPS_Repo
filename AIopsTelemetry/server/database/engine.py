@@ -29,18 +29,57 @@ def init_db():
         _add_column_if_missing(conn, "issues", "base_fingerprint", "VARCHAR")
         _add_column_if_missing(conn, "issues", "previous_issue_id", "INTEGER")
         _add_column_if_missing(conn, "issues", "recurrence_count", "INTEGER DEFAULT 0")
+        _add_column_if_missing(conn, "issues", "title_en", "VARCHAR")
+        _add_column_if_missing(conn, "issues", "title_ja", "VARCHAR")
+        _add_column_if_missing(conn, "issues", "description_en", "TEXT")
+        _add_column_if_missing(conn, "issues", "description_ja", "TEXT")
         _add_column_if_missing(conn, "escalation_rules", "nfr_id", "VARCHAR")
         _add_column_if_missing(conn, "escalation_rules", "description", "TEXT")
         _add_column_if_missing(conn, "issue_analyses", "rca_json", "TEXT")
         _add_column_if_missing(conn, "issue_analyses", "remediation_type", "VARCHAR")
         _add_column_if_missing(conn, "issue_analyses", "handoff_plan", "TEXT")
+        _add_column_if_missing(conn, "issue_analyses", "likely_cause_en", "TEXT")
+        _add_column_if_missing(conn, "issue_analyses", "likely_cause_ja", "TEXT")
+        _add_column_if_missing(conn, "issue_analyses", "evidence_en", "TEXT")
+        _add_column_if_missing(conn, "issue_analyses", "evidence_ja", "TEXT")
+        _add_column_if_missing(conn, "issue_analyses", "recommended_action_en", "TEXT")
+        _add_column_if_missing(conn, "issue_analyses", "recommended_action_ja", "TEXT")
+        _add_column_if_missing(conn, "issue_analyses", "full_summary_en", "TEXT")
+        _add_column_if_missing(conn, "issue_analyses", "full_summary_ja", "TEXT")
+        _add_column_if_missing(conn, "issue_analyses", "language_status", "VARCHAR")
         # Backfill base_fingerprint for rows created before recurrence tracking
         from sqlalchemy import text
         conn.execute(text(
             "UPDATE issues SET base_fingerprint = fingerprint WHERE base_fingerprint IS NULL"
         ))
+        conn.execute(text(
+            "UPDATE issues SET title_en = title WHERE title_en IS NULL"
+        ))
+        conn.execute(text(
+            "UPDATE issues SET description_en = description WHERE description_en IS NULL"
+        ))
+        conn.execute(text(
+            "UPDATE issue_analyses SET likely_cause_en = likely_cause WHERE likely_cause_en IS NULL"
+        ))
+        conn.execute(text(
+            "UPDATE issue_analyses SET evidence_en = evidence WHERE evidence_en IS NULL"
+        ))
+        conn.execute(text(
+            "UPDATE issue_analyses SET recommended_action_en = recommended_action WHERE recommended_action_en IS NULL"
+        ))
+        conn.execute(text(
+            "UPDATE issue_analyses SET full_summary_en = full_summary WHERE full_summary_en IS NULL"
+        ))
         conn.commit()
     _seed_nfr_escalation_rules()
+    _backfill_bilingual_display_fields()
+    if settings.RCA_KB_ENABLED:
+        try:
+            from server.engine.knowledge_base import init_knowledge_base
+            init_knowledge_base()
+        except Exception as e:
+            import logging
+            logging.getLogger("aiops.db").warning("RCA knowledge base init failed: %s", e)
 
 
 # ── NFR rule seed data ────────────────────────────────────────────────────────
@@ -120,3 +159,75 @@ def _add_column_if_missing(conn, table: str, column: str, col_type: str):
     if column not in existing:
         conn.execute(text(f"ALTER TABLE {table} ADD COLUMN {column} {col_type}"))
         conn.commit()
+
+
+def _backfill_bilingual_display_fields():
+    """Populate Japanese display fields for rows that predate bilingual storage."""
+    from server.database.models import Issue, IssueAnalysis
+    from server.engine.bilingual import (
+        bilingual_analysis_fields,
+        issue_description_ja,
+        issue_title_ja,
+    )
+
+    db = SessionLocal()
+    try:
+        changed = False
+        issues = db.query(Issue).filter(
+            (Issue.title_en.is_(None)) |
+            (Issue.title_ja.is_(None)) |
+            (Issue.description_en.is_(None)) |
+            (Issue.description_ja.is_(None))
+        ).limit(1000).all()
+        for issue in issues:
+            if not issue.title_en:
+                issue.title_en = issue.title
+                changed = True
+            if not issue.title_ja:
+                issue.title_ja = issue_title_ja(
+                    issue.title, app_name=issue.app_name, rule_id=issue.rule_id
+                )
+                changed = True
+            if issue.description and not issue.description_en:
+                issue.description_en = issue.description
+                changed = True
+            if issue.description and not issue.description_ja:
+                issue.description_ja = issue_description_ja(
+                    issue.description,
+                    app_name=issue.app_name,
+                    rule_id=issue.rule_id,
+                )
+                changed = True
+
+        analyses = db.query(IssueAnalysis).filter(
+            IssueAnalysis.status == "done",
+            (
+                (IssueAnalysis.language_status.is_(None)) |
+                (IssueAnalysis.language_status != "ready") |
+                (IssueAnalysis.likely_cause_ja.is_(None)) |
+                (IssueAnalysis.recommended_action_ja.is_(None))
+            ),
+        ).limit(1000).all()
+        for analysis in analyses:
+            fields = bilingual_analysis_fields(
+                likely_cause=analysis.likely_cause,
+                evidence=analysis.evidence,
+                recommended_action=analysis.recommended_action,
+                full_summary=analysis.full_summary,
+            )
+            for key, value in fields.items():
+                if not getattr(analysis, key, None):
+                    setattr(analysis, key, value)
+                    changed = True
+            if analysis.language_status != "ready":
+                analysis.language_status = "ready"
+                changed = True
+
+        if changed:
+            db.commit()
+    except Exception as e:
+        db.rollback()
+        import logging
+        logging.getLogger("aiops.db").warning("Bilingual backfill failed: %s", e)
+    finally:
+        db.close()

@@ -33,6 +33,7 @@ import httpx
 from server.config import settings
 from server.database.engine import SessionLocal
 from server.database.models import Issue, IssueAnalysis, Trace
+from server.engine.bilingual import bilingual_analysis_fields, normalize_lang, select_text
 
 logger = logging.getLogger("aiops.rca_client")
 
@@ -85,7 +86,12 @@ async def request_rca(issue_id: int) -> dict:
     return {"id": analysis_id, "issue_id": issue_id, "status": "pending"}
 
 
-def get_rca_analysis(issue_id: int) -> Optional[dict]:
+def get_rca_analysis(
+    issue_id: int,
+    *,
+    lang: str = "ja",
+    summary: bool = False,
+) -> Optional[dict]:
     """Read path — returns dict with rca_data key, or None if no row exists."""
     db = SessionLocal()
     try:
@@ -94,7 +100,7 @@ def get_rca_analysis(issue_id: int) -> Optional[dict]:
             .filter(IssueAnalysis.issue_id == issue_id)
             .first()
         )
-        return _to_dict(row) if row else None
+        return _to_dict(row, lang=lang, summary=summary) if row else None
     finally:
         db.close()
 
@@ -116,6 +122,9 @@ async def _run_rca(analysis_id: int, issue_id: int) -> None:
                 analysis_id, issue_id,
             )
             return
+
+        analysis.status = "running"
+        db.commit()
 
         trace_id, agent_name, timestamp = _extract_params(db, issue)
 
@@ -323,6 +332,7 @@ def _store_result(db, analysis: IssueAnalysis, rca_data: dict) -> None:
         analysis.evidence = norm.get("error_summary") or ""
         analysis.recommended_action = "No action required."
         analysis.full_summary = json.dumps(inner, indent=2)
+        _apply_bilingual_fields(analysis, rca_data=inner)
         analysis.status = "done"
         db.commit()
         return
@@ -387,8 +397,25 @@ def _store_result(db, analysis: IssueAnalysis, rca_data: dict) -> None:
     analysis.recommended_action = _soften_recommendation(analysis.recommended_action)
 
     analysis.full_summary = json.dumps(inner, indent=2)
+    _apply_bilingual_fields(analysis, rca_data=inner)
     analysis.status = "done"
     db.commit()
+
+
+def _apply_bilingual_fields(
+    analysis: IssueAnalysis,
+    *,
+    rca_data: dict | None = None,
+) -> None:
+    fields = bilingual_analysis_fields(
+        likely_cause=analysis.likely_cause,
+        evidence=analysis.evidence,
+        recommended_action=analysis.recommended_action,
+        full_summary=analysis.full_summary,
+        rca_data=rca_data,
+    )
+    for key, value in fields.items():
+        setattr(analysis, key, value)
 
 
 def _soften_recommendation(text: str) -> str:
@@ -434,22 +461,41 @@ def _mark_failed(analysis_id: int, msg: str) -> None:
         fresh.close()
 
 
-def _to_dict(row: IssueAnalysis) -> dict:
+def _to_dict(
+    row: IssueAnalysis,
+    *,
+    lang: str = "ja",
+    summary: bool = False,
+) -> dict:
     """Serialise IssueAnalysis row to a dict, including parsed rca_data."""
+    lang = normalize_lang(lang)
     d = {
         "id": row.id,
         "issue_id": row.issue_id,
         "status": row.status,
+        "lang": lang,
+        "available_languages": ["ja", "en"],
+        "language_status": row.language_status or "pending",
         "model_used": row.model_used,
         "generated_at": (
             row.generated_at.isoformat() if row.generated_at else None
         ),
-        "likely_cause": row.likely_cause,
-        "evidence": row.evidence,
-        "recommended_action": row.recommended_action,
-        "full_summary": row.full_summary,
+        "likely_cause": select_text(row, "likely_cause", lang),
+        "evidence": select_text(row, "evidence", lang),
+        "recommended_action": select_text(row, "recommended_action", lang),
+        "full_summary": select_text(row, "full_summary", lang),
+        "likely_cause_en": row.likely_cause_en or row.likely_cause,
+        "likely_cause_ja": row.likely_cause_ja or row.likely_cause,
+        "evidence_en": row.evidence_en or row.evidence,
+        "evidence_ja": row.evidence_ja or row.evidence,
+        "recommended_action_en": row.recommended_action_en or row.recommended_action,
+        "recommended_action_ja": row.recommended_action_ja or row.recommended_action,
+        "full_summary_en": row.full_summary_en or row.full_summary,
+        "full_summary_ja": row.full_summary_ja or row.full_summary,
         "rca_data": None,
     }
+    if summary:
+        return d
     if row.rca_json:
         try:
             raw = json.loads(row.rca_json)

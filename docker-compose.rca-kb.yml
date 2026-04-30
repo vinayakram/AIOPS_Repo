@@ -1,0 +1,21 @@
+services:
+  rca-kb-postgres:
+    image: pgvector/pgvector:pg16
+    container_name: aiops-rca-kb-postgres
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: aiops
+      POSTGRES_USER: aiops
+      POSTGRES_PASSWORD: aiops
+    volumes:
+      - rca-kb-postgres-data:/var/lib/postgresql/data
+      - ./AIopsTelemetry/db/postgres_pgvector.sql:/docker-entrypoint-initdb.d/20-pgvector.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U aiops -d aiops"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  rca-kb-postgres-data:

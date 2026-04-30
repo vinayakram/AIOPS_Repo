@@ -12,6 +12,7 @@ For the product narrative, see [PRODUCT.md](PRODUCT.md).
 - `Invastigate_flow_with_Poller/` - RCA and correlation service that polls incidents and runs the investigation agent flow.
 - `AIOPS/` - remediation service that turns approved plans into code changes and pull requests.
 - `MedicalAgent/` - sample RAG application used as the monitored workload.
+- `MCPObservability/` - stdio MCP server exposing bounded Prometheus and Langfuse evidence tools.
 - `SampleAgent_GitHub/` - GitHub-facing copy of the sample app used by remediation workflows.
 - `demo/` - local demo launcher, preview page, presenter scripts, and shared demo helpers.
 
@@ -26,6 +27,7 @@ From the repository root:
 This starts the local demo stack:
 
 - Sample Agent on `http://localhost:8002`
+- Triage Agent dependent workload on `http://localhost:8010`
 - AIopsTelemetry on `http://localhost:7000`
 - Japanese conversational workbench on `http://localhost:7000/conversation_j`
 - RCA service on `http://localhost:8000`
@@ -60,6 +62,32 @@ Run the pod-pressure scenario directly:
 ./demo/sample_agent_pod_pressure.sh
 ```
 
+Run the cross-service cascade scenario, where `triage-agent` fails because its
+upstream `sample-agent` is returning threshold-guard failures:
+
+```bash
+cd MedicalAgent
+./scripts/run_cascade_threshold_scenario.sh
+```
+
+Run the observability MCP server for RCA agents:
+
+```bash
+python3 MCPObservability/server.py
+```
+
+Start the optional PostgreSQL + pgvector RCA knowledge store:
+
+```bash
+docker compose -f docker-compose.rca-kb.yml up -d
+```
+
+Then point AIopsTelemetry at it:
+
+```env
+AIOPS_DATABASE_URL=postgresql+psycopg://aiops:aiops@localhost:5432/aiops
+```
+
 Check the main services:
 
 ```bash
@@ -67,6 +95,7 @@ curl -fsS http://localhost:7000/health
 curl -fsS http://localhost:8000/health
 curl -fsS http://localhost:8005/
 curl -fsS http://localhost:8002/api/health
+curl -fsS http://localhost:8010/api/health
 ```
 
 Open the conversational AIOps flow:

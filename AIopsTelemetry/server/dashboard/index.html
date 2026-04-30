@@ -1338,7 +1338,7 @@ async function loadIssues(){
   const app=document.getElementById('issue-app-filter').value;
   const status=document.getElementById('issue-status-filter').value;
   const sev=document.getElementById('issue-sev-filter').value;
-  let url='/api/issues?limit=200';
+  let url='/api/issues?limit=200&lang=en';
   if(app)url+=`&app_name=${encodeURIComponent(app)}`;
   if(status)url+=`&status=${status}`;
   if(sev)url+=`&severity=${sev}`;
@@ -1804,7 +1804,7 @@ async function toggleAnalysis(issueId, event){
   _analysisOpen.add(issueId);
   row.style.display='table-row';
   panel.innerHTML=`
-    <div class="analysis-pending"><div class="analysis-spinner"></div>Running 5-agent RCA pipeline (may take ~60–90 s)…</div>
+    <div class="analysis-pending"><div class="analysis-spinner"></div>Checking stored RCA…</div>
     <div class="rca-pipeline-bar" style="margin-top:10px">
       <span class="rca-step pending">Normalization</span><span class="rca-step-arrow">›</span>
       <span class="rca-step pending">Correlation</span><span class="rca-step-arrow">›</span>
@@ -1813,13 +1813,21 @@ async function toggleAnalysis(issueId, event){
       <span class="rca-step pending">Recommendations</span>
     </div>`;
 
-  // Force-trigger analysis so each row click kicks a fresh external RCA run.
   try{
-    await api(`/api/analysis/issues/${issueId}?force=true`,{method:'POST'});
+    const cached = await api(`/api/analysis/issues/${issueId}?lang=en`);
+    if(cached.status==='done'){
+      _renderRca(issueId, cached);
+      return;
+    }
   }catch(e){
-    panel.innerHTML=`<div style="color:var(--red);font-size:12px;padding:8px">Failed to trigger RCA: ${esc(e.message)}</div>`;
-    return;
+    try{
+      await api(`/api/analysis/issues/${issueId}`,{method:'POST'});
+    }catch(err){
+      panel.innerHTML=`<div style="color:var(--red);font-size:12px;padding:8px">Failed to trigger RCA: ${esc(err.message)}</div>`;
+      return;
+    }
   }
+  panel.querySelector('.analysis-pending').innerHTML='<div class="analysis-spinner"></div>Running 5-agent RCA pipeline (may take ~60–90 s)…';
   _pollAnalysis(issueId);
 }
 
@@ -1827,7 +1835,7 @@ function _pollAnalysis(issueId){
   clearInterval(_analysisPoll[issueId]);
   _analysisPoll[issueId] = setInterval(async ()=>{
     try{
-      const a = await api(`/api/analysis/issues/${issueId}`);
+      const a = await api(`/api/analysis/issues/${issueId}?lang=en`);
       if(a.status==='done'){
         clearInterval(_analysisPoll[issueId]);
         _renderRca(issueId, a);

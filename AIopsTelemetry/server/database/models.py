@@ -60,6 +60,18 @@ class IssueAnalysis(Base):
     handoff_plan = Column(Text, nullable=True)
     full_summary = Column(Text, nullable=True)    # raw LLM text
 
+    # Bilingual display fields. Legacy columns above remain populated so older
+    # readers continue to work; UI/API reads should prefer these language fields.
+    likely_cause_en = Column(Text, nullable=True)
+    likely_cause_ja = Column(Text, nullable=True)
+    evidence_en = Column(Text, nullable=True)
+    evidence_ja = Column(Text, nullable=True)
+    recommended_action_en = Column(Text, nullable=True)
+    recommended_action_ja = Column(Text, nullable=True)
+    full_summary_en = Column(Text, nullable=True)
+    full_summary_ja = Column(Text, nullable=True)
+    language_status = Column(String, nullable=True)  # pending | ready | partial | failed
+
     # Snapshot of context used (JSON)
     context_snapshot_json = Column(Text, nullable=True)
 
@@ -116,6 +128,10 @@ class Issue(Base):
     fingerprint = Column(String, unique=True, nullable=False)
     title = Column(String, nullable=False)
     description = Column(Text, nullable=True)
+    title_en = Column(String, nullable=True)
+    title_ja = Column(String, nullable=True)
+    description_en = Column(Text, nullable=True)
+    description_ja = Column(Text, nullable=True)
     span_name = Column(String, nullable=True)
     trace_id = Column(String, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
@@ -170,3 +186,84 @@ class EscalationLog(Base):
     status = Column(String, nullable=False)         # fired | failed | skipped
     detail = Column(Text, nullable=True)
     fired_at = Column(DateTime, default=datetime.utcnow)
+
+
+class RCAIncidentPattern(Base):
+    __tablename__ = "rca_incident_patterns"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    name = Column(String, nullable=False, unique=True)
+    description = Column(Text, nullable=False)
+    signal_type = Column(String, nullable=True)
+    affected_layer = Column(String, nullable=True)       # app | infra | llm | network | dependency | data
+    industry_category = Column(String, nullable=True)    # capacity | timeout | saturation | regression | ...
+    default_remediation_type = Column(String, nullable=True)
+    severity_hint = Column(String, nullable=True)
+    keywords_json = Column(Text, nullable=True)
+    embedding_json = Column(Text, nullable=True)         # SQLite fallback; Postgres may also have vector column
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+
+class RCAResolutionPlaybook(Base):
+    __tablename__ = "rca_resolution_playbooks"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    pattern_id = Column(Integer, ForeignKey("rca_incident_patterns.id"), nullable=False)
+    title = Column(String, nullable=False)
+    recommended_action = Column(Text, nullable=False)
+    remediation_type = Column(String, nullable=False)
+    validation_steps_json = Column(Text, nullable=True)
+    rollback_steps_json = Column(Text, nullable=True)
+    risk_notes = Column(Text, nullable=True)
+    source = Column(String, default="industry")          # industry | organization | vendor | manual
+    priority = Column(Integer, default=50)
+    embedding_json = Column(Text, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+
+class RCAIncidentMemory(Base):
+    __tablename__ = "rca_incident_memory"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    issue_id = Column(Integer, ForeignKey("issues.id"), nullable=True, index=True)
+    app_name = Column(String, nullable=True, index=True)
+    rule_id = Column(String, nullable=True, index=True)
+    title = Column(String, nullable=False)
+    summary = Column(Text, nullable=True)
+    root_cause = Column(Text, nullable=True)
+    remediation_type = Column(String, nullable=True)
+    action_taken = Column(Text, nullable=True)
+    resolution_status = Column(String, default="unknown")  # succeeded | failed | partial | unknown
+    recurrence_after_fix = Column(Boolean, default=False)
+    validation_result = Column(Text, nullable=True)
+    pr_url = Column(String, nullable=True)
+    embedding_json = Column(Text, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    resolved_at = Column(DateTime, nullable=True)
+
+
+class RCAPatternMatch(Base):
+    __tablename__ = "rca_pattern_matches"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    issue_id = Column(Integer, ForeignKey("issues.id"), nullable=False, index=True)
+    pattern_id = Column(Integer, ForeignKey("rca_incident_patterns.id"), nullable=False)
+    similarity_score = Column(Float, nullable=True)
+    match_reason = Column(Text, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+
+class RCAKnowledgeFeedback(Base):
+    __tablename__ = "rca_knowledge_feedback"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    issue_id = Column(Integer, ForeignKey("issues.id"), nullable=True, index=True)
+    was_helpful = Column(Boolean, nullable=True)
+    was_correct = Column(Boolean, nullable=True)
+    actual_root_cause = Column(Text, nullable=True)
+    actual_fix = Column(Text, nullable=True)
+    notes = Column(Text, nullable=True)
+    created_by = Column(String, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)

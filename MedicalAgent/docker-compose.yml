@@ -21,6 +21,28 @@ services:
       - "host.docker.internal:host-gateway"
     restart: unless-stopped
 
+  triage-agent:
+    build:
+      context: ./dependent_agent
+      dockerfile: Dockerfile
+    container_name: triage-agent
+    ports:
+      - "8010:8010"
+    env_file:
+      - .env
+    environment:
+      DEPENDENT_AGENT_NAME: "triage-agent"
+      UPSTREAM_SERVICE_NAME: "sample-agent"
+      SAMPLE_AGENT_URL: "http://medical-rag-pod:8002"
+      AIOPS_SERVER_URL: "http://host.docker.internal:7000"
+      AIOPS_ENABLED: "true"
+      UPSTREAM_TIMEOUT_SECONDS: "3"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      - medical-rag-pod
+    restart: unless-stopped
+
   cadvisor:
     image: gcr.io/cadvisor/cadvisor:v0.55.1
     container_name: sample-agent-cadvisor
@@ -48,5 +70,6 @@ services:
       - --web.enable-lifecycle
     depends_on:
       - medical-rag-pod
+      - triage-agent
       - cadvisor
     restart: unless-stopped

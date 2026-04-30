@@ -36,6 +36,15 @@ async def request_analysis(issue_id: int, force: bool = Query(False)):
                     existing.recommended_action = None
                     existing.full_summary = None
                     existing.rca_json = None        # clear external result
+                    existing.likely_cause_en = None
+                    existing.likely_cause_ja = None
+                    existing.evidence_en = None
+                    existing.evidence_ja = None
+                    existing.recommended_action_en = None
+                    existing.recommended_action_ja = None
+                    existing.full_summary_en = None
+                    existing.full_summary_ja = None
+                    existing.language_status = "pending"
                     db.commit()
             finally:
                 db.close()
@@ -47,13 +56,17 @@ async def request_analysis(issue_id: int, force: bool = Query(False)):
 
 
 @router.get("/issues/{issue_id}")
-def get_issue_analysis(issue_id: int):
+def get_issue_analysis(
+    issue_id: int,
+    lang: str = Query("ja", pattern="^(ja|en)$"),
+    summary: bool = Query(False),
+):
     """
     Return the stored analysis for an issue.
     Response includes rca_data key with the full external pipeline result
     when available, in addition to the legacy cause/evidence/action fields.
     """
-    result = get_rca_analysis(issue_id)
+    result = get_rca_analysis(issue_id, lang=lang, summary=summary)
     if result is None:
         raise HTTPException(
             status_code=404,

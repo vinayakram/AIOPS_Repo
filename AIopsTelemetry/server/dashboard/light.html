@@ -1452,7 +1452,7 @@ async function loadIssues(){
   const app=document.getElementById('issue-app-filter').value;
   const status=document.getElementById('issue-status-filter').value;
   const sev=document.getElementById('issue-sev-filter').value;
-  let url='/api/issues?limit=200';
+  let url='/api/issues?limit=200&lang=en';
   if(app)url+=`&app_name=${encodeURIComponent(app)}`;
   if(status)url+=`&status=${status}`;
   if(sev)url+=`&severity=${sev}`;
@@ -1474,7 +1474,7 @@ async function loadIssues(){
 function _renderIssueAnalytics(issues){
   // Always fetch the full unfiltered set for the summary cards so filters
   // on the table don't distort the top-level numbers.
-  api('/api/issues?limit=500').then(data=>{
+  api('/api/issues?limit=500&lang=en').then(data=>{
     const all=data.issues||[];
     const count=(fn)=>all.filter(fn).length;
     const open   = count(i=>i.status==='OPEN');
@@ -1945,15 +1945,23 @@ async function toggleAnalysis(issueId, event){
 
   _analysisOpen.add(issueId);
   row.style.display='table-row';
-  panel.innerHTML=`<div class="analysis-pending"><div class="analysis-spinner"></div>Requesting analysis…</div>`;
+  panel.innerHTML=`<div class="analysis-pending"><div class="analysis-spinner"></div>Checking stored RCA…</div>`;
 
-  // Force-trigger analysis so each row click kicks a fresh external RCA run.
   try{
-    await api(`/api/analysis/issues/${issueId}?force=true`,{method:'POST'});
+    const cached = await api(`/api/analysis/issues/${issueId}?lang=en`);
+    if(cached.status==='done'){
+      _renderAnalysis(issueId, cached);
+      return;
+    }
   }catch(e){
-    panel.innerHTML=`<div style="color:var(--red);font-size:12px;padding:8px">Failed to trigger RCA: ${esc(e.message)}</div>`;
-    return;
+    try{
+      await api(`/api/analysis/issues/${issueId}`,{method:'POST'});
+    }catch(err){
+      panel.innerHTML=`<div style="color:var(--red);font-size:12px;padding:8px">Failed to trigger RCA: ${esc(err.message)}</div>`;
+      return;
+    }
   }
+  panel.innerHTML=`<div class="analysis-pending"><div class="analysis-spinner"></div>Running RCA…</div>`;
   _pollAnalysis(issueId);
 }
 
@@ -1961,7 +1969,7 @@ function _pollAnalysis(issueId){
   clearInterval(_analysisPoll[issueId]);
   _analysisPoll[issueId] = setInterval(async ()=>{
     try{
-      const a = await api(`/api/analysis/issues/${issueId}`);
+      const a = await api(`/api/analysis/issues/${issueId}?lang=en`);
       if(a.status==='done'){
         clearInterval(_analysisPoll[issueId]);
         _renderAnalysis(issueId, a);

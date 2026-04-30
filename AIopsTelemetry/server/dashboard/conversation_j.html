@@ -44,6 +44,7 @@ textarea,input,select{width:100%;border:1px solid var(--border);border-radius:6p
     <span class="tag">日本向け運用フロー</span>
   </div>
   <div class="top-actions">
+    <button class="btn" id="lang-toggle" onclick="toggleLanguage()">English</button>
     <a href="/light_j">既存ダッシュボード</a>
     <a href="/light">English</a>
   </div>
@@ -114,6 +115,7 @@ const sevLabel={critical:'重大',high:'高',medium:'中',low:'低'};
 const statusLabel={OPEN:'未対応',ACKNOWLEDGED:'確認中',ESCALATED:'エスカレーション',RESOLVED:'解決済み'};
 let currentIssue=null;
 let currentAnalysis=null;
+let currentLang='ja';
 
 function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 async function api(url,opt={}){const r=await fetch(url,{headers:{'Content-Type':'application/json'},...opt});if(!r.ok){let m=await r.text();try{m=JSON.parse(m).detail||m}catch{}throw new Error(m)}return r.json();}
@@ -127,17 +129,19 @@ async function loadTickets(){
   setFlow([], 'tickets');
   document.getElementById('ticket-list').innerHTML='<div class="empty">最新チケットを取得しています...</div>';
   try{
-    const data=await api('/api/issues?limit=200');
+    const data=await api(`/api/issues?limit=200&lang=${currentLang}`);
     const tickets=(data.issues||[]).filter(i=>i.status!=='RESOLVED').sort(prioritySort);
-    addMsg('user','最新の未解決チケットを優先度順に見せてください。');
+    addMsg('user',currentLang==='ja'?'最新の未解決チケットを優先度順に見せてください。':'Show unresolved tickets by priority.');
     if(!tickets.length){
       document.getElementById('ticket-list').innerHTML='<div class="empty">現在、対応が必要なチケットはありません。</div>';
-      addMsg('agent','現在、対応が必要な未解決チケットはありません。監視は継続しています。');
+      addMsg('agent',currentLang==='ja'?'現在、対応が必要な未解決チケットはありません。監視は継続しています。':'There are no unresolved tickets that need action right now. Monitoring continues.');
       setState('未解決なし');
       return;
     }
     document.getElementById('ticket-list').innerHTML=tickets.map(ticketCard).join('');
-    addMsg('agent',`未解決チケットを${tickets.length}件見つけました。重大度と発生時刻で優先度順に並べています。担当するチケットを選択してください。`);
+    addMsg('agent',currentLang==='ja'
+      ?`未解決チケットを${tickets.length}件見つけました。重大度と発生時刻で優先度順に並べています。担当するチケットを選択してください。`
+      :`Found ${tickets.length} unresolved ticket(s), sorted by severity and time. Select the ticket you want to handle.`);
     setState(`${tickets.length}件の候補`);
   }catch(e){
     document.getElementById('ticket-list').innerHTML=`<div class="empty error">取得できません: ${esc(e.message)}</div>`;
@@ -161,10 +165,10 @@ async function selectIssue(id){
   document.querySelectorAll('.ticket').forEach(el=>el.classList.remove('selected'));
   const card=document.getElementById(`ticket-${id}`); if(card)card.classList.add('selected');
   try{
-    currentIssue=await api(`/api/issues/${id}`);
+    currentIssue=await api(`/api/issues/${id}?lang=${currentLang}`);
     currentAnalysis=null;
     renderIssue();
-    addMsg('user',`チケット #${id} を担当します。RCAを確認してください。`);
+    addMsg('user',currentLang==='ja'?`チケット #${id} を担当します。RCAを確認してください。`:`I will handle ticket #${id}. Please show the RCA.`);
     await loadRCA(id);
   }catch(e){
     addMsg('agent',`チケット確認に失敗しました: ${esc(e.message)}`);
@@ -186,29 +190,52 @@ function renderIssue(extra=''){
 
 async function loadRCA(id){
   setFlow(['tickets','select'],'rca');
-  addMsg('agent','RCAを確認します。既存の分析がなければ、RCAエージェントを起動します。');
+  addMsg('agent',currentLang==='ja'
+    ?'RCAを確認します。保存済みの分析があればすぐに表示し、未作成の場合だけRCAエージェントを起動します。'
+    :'Checking RCA. I will show the stored analysis immediately, and only start the RCA agent if no analysis exists.');
   try{
-    currentAnalysis=await api(`/api/analysis/issues/${id}`);
+    currentAnalysis=await api(`/api/analysis/issues/${id}?lang=${currentLang}`);
   }catch{
-    await api(`/api/analysis/issues/${id}?force=true`,{method:'POST'});
+    await api(`/api/analysis/issues/${id}`,{method:'POST'});
     currentAnalysis=await pollRCA(id);
   }
   const a=currentAnalysis||{};
   const evidence=(a.evidence||'').split('\n').filter(Boolean).slice(0,5).map(x=>`<li>${esc(x.replace(/^[-•]\s*/,''))}</li>`).join('');
   renderIssue(`<hr style="border:0;border-top:1px solid var(--border);margin:10px 0">
     <h3 style="font-size:13px;margin-bottom:5px">RCA</h3>
-    <div class="kv"><span>原因候補</span><div>${esc(a.likely_cause||'分析中または未取得')}</div></div>
-    <div class="kv"><span>推奨対応</span><div>${esc(a.recommended_action||'RCA完了後に表示')}</div></div>`);
-  addMsg('agent',`RCA結果です。<ul><li>原因候補: ${esc(a.likely_cause||'未取得')}</li><li>推奨対応: ${esc(a.recommended_action||'未取得')}</li>${evidence}</ul>`);
+    <div class="kv"><span>${currentLang==='ja'?'原因候補':'Likely cause'}</span><div>${esc(a.likely_cause||(currentLang==='ja'?'分析中または未取得':'Still analyzing or unavailable'))}</div></div>
+    <div class="kv"><span>${currentLang==='ja'?'推奨対応':'Recommended action'}</span><div>${esc(a.recommended_action||(currentLang==='ja'?'RCA完了後に表示':'Shown after RCA completes'))}</div></div>`);
+  addMsg('agent',currentLang==='ja'
+    ?`RCA結果です。<ul><li>原因候補: ${esc(a.likely_cause||'未取得')}</li><li>推奨対応: ${esc(a.recommended_action||'未取得')}</li>${evidence}</ul>`
+    :`RCA result:<ul><li>Likely cause: ${esc(a.likely_cause||'Unavailable')}</li><li>Recommended action: ${esc(a.recommended_action||'Unavailable')}</li>${evidence}</ul>`);
   await checkReuse();
 }
 
 async function pollRCA(id){
   for(let i=0;i<24;i++){
     await new Promise(r=>setTimeout(r,2500));
-    try{const a=await api(`/api/analysis/issues/${id}`); if(a.status!=='pending')return a;}catch{}
+    try{const a=await api(`/api/analysis/issues/${id}?lang=${currentLang}`); if(a.status!=='pending'&&a.status!=='running')return a;}catch{}
   }
   throw new Error('RCAが時間内に完了しませんでした。');
+}
+
+async function toggleLanguage(){
+  currentLang=currentLang==='ja'?'en':'ja';
+  document.getElementById('lang-toggle').textContent=currentLang==='ja'?'English':'日本語';
+  if(currentIssue){
+    currentIssue=await api(`/api/issues/${currentIssue.id}?lang=${currentLang}`);
+    renderIssue();
+    try{
+      currentAnalysis=await api(`/api/analysis/issues/${currentIssue.id}?lang=${currentLang}`);
+      const a=currentAnalysis||{};
+      renderIssue(`<hr style="border:0;border-top:1px solid var(--border);margin:10px 0">
+        <h3 style="font-size:13px;margin-bottom:5px">RCA</h3>
+        <div class="kv"><span>${currentLang==='ja'?'原因候補':'Likely cause'}</span><div>${esc(a.likely_cause||'')}</div></div>
+        <div class="kv"><span>${currentLang==='ja'?'推奨対応':'Recommended action'}</span><div>${esc(a.recommended_action||'')}</div></div>`);
+    }catch{}
+  }else{
+    await loadTickets();
+  }
 }
 
 async function checkReuse(){
@@ -221,7 +248,7 @@ async function checkReuse(){
     return;
   }
   try{
-    const prev=await api(`/api/issues/${i.previous_issue_id}`);
+      const prev=await api(`/api/issues/${i.previous_issue_id}?lang=${currentLang}`);
     let resolution='';
     try{
       const res=await api(`/api/remediation/issues/${i.previous_issue_id}/resolution`);

@@ -27,6 +27,7 @@ from sqlalchemy.orm import Session
 from server.config import settings
 from server.database.engine import SessionLocal
 from server.database.models import Issue
+from server.engine.knowledge_base import KnowledgeMatch, find_matches_for_issue
 
 logger = logging.getLogger("aiops.remediation_proxy")
 
@@ -195,6 +196,26 @@ def _rca_context_text(handoff: dict) -> str:
     return "\n".join(parts)
 
 
+def _knowledge_context_text(matches: list[KnowledgeMatch]) -> str:
+    if not matches:
+        return ""
+    top = matches[0]
+    parts = [
+        "RCA knowledge base guidance:",
+        f"Matched pattern: {top.title}",
+        f"Recommended remediation type: {top.remediation_type}",
+        f"Recommendation: {top.recommended_action}",
+    ]
+    if top.validation_steps:
+        parts.append("Validation steps:")
+        parts.extend(f"- {item}" for item in top.validation_steps[:6])
+    if top.reason:
+        parts.append(f"Match reason: {top.reason}")
+    if top.prior_outcome:
+        parts.append(f"Prior outcome: {top.prior_outcome}")
+    return "\n".join(parts)
+
+
 async def _proxy(method: str, url: str, body: dict | None = None) -> Any:
     """Forward a request to the AIOPS service and return the parsed JSON."""
     try:
@@ -254,12 +275,15 @@ async def start_remediation(issue_id: int, body: dict = {}, db: Session = Depend
     rca_handoff = _latest_rca_handoff(db, issue_id)
     rca_context = _rca_context_text(rca_handoff)
 
-    description = (base_description + rca_context).strip() or f"{issue.issue_type} detected in {issue.app_name}"
+    knowledge_matches = find_matches_for_issue(db, issue, limit=3)
+    knowledge_context = _knowledge_context_text(knowledge_matches)
+    description_parts = [base_description, rca_context, knowledge_context]
+    description = "\n\n".join(part.strip() for part in description_parts if part and part.strip())
+    description = description or f"{issue.issue_type} detected in {issue.app_name}"
 
-    
-    remediation_type = body.get("remediation_type", "code_change")
-    if issue.rule_id == "NFR-33" or issue.issue_type == "nfr_pod_resource_threshold_breach":
-        remediation_type = "config_change"
+    remediation_type = body.get("remediation_type") or (
+        knowledge_matches[0].remediation_type if knowledge_matches else "code_change"
+    )
 
     payload = {
         "application_name": issue.app_name,
@@ -277,6 +301,8 @@ async def start_remediation(issue_id: int, body: dict = {}, db: Session = Depend
     }
     if body.get("acceptance_criteria"):
         payload["acceptance_criteria"] = body["acceptance_criteria"]
+    elif knowledge_matches and knowledge_matches[0].validation_steps:
+        payload["acceptance_criteria"] = knowledge_matches[0].validation_steps
 
     data = await _proxy("POST", _aiops_url("/api/issues"), payload)
 
