@@ -3,247 +3,952 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>助手 | AIOps Assistant</title>
+<title>助手 | AIOps Chat</title>
 <style>
-:root{--bg:#f4f6f9;--rail:#fbfcfe;--hover:#eef4ff;--border:#cfd8e6;--border2:#e8edf4;--text:#0f1728;--muted:#52627a;--soft:#f8fafc;--soft2:#fbfcfe;--ink:#0b0b0d;--red:#d92d20;--red-bg:#fff5f4;--amber:#b54708;--amber-bg:#fffbf4;--blue:#155eef;--blue-bg:#eef4ff;--blue-line:#b8ccff;--green:#067647;--green-bg:#f6fef9;--purple:#6941c6;--purple-bg:#f4f3ff}
-*{box-sizing:border-box;margin:0;padding:0}body{background:var(--bg);color:var(--text);font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans JP",system-ui,sans-serif;font-size:15px;line-height:1.6}
-button,input,select{font:inherit}button{font-weight:750}.app{height:100vh;display:grid;grid-template-columns:310px minmax(0,1fr)}.rail{background:var(--rail);border-right:1px solid var(--border);display:flex;flex-direction:column;min-width:0;box-shadow:1px 0 0 rgba(16,24,40,.02)}.rail-top{height:64px;padding:14px 16px;display:flex;align-items:center;justify-content:space-between}.mark{width:36px;height:36px;border:1px solid var(--border);border-radius:50%;background:var(--ink);color:#fff;display:grid;place-items:center;font-weight:900}.icon-btn{width:38px;height:38px;border:1px solid transparent;background:transparent;border-radius:10px;cursor:pointer;color:var(--muted);font-size:20px}.icon-btn:hover{background:var(--hover);color:var(--blue);border-color:var(--blue-line)}
-.rail-actions{padding:0 12px 14px;display:grid;gap:8px}.rail-btn{height:42px;border:1px solid transparent;background:transparent;border-radius:10px;padding:0 12px;display:flex;align-items:center;gap:10px;cursor:pointer;text-align:left;color:var(--text)}.rail-btn:hover,.rail-btn.active{background:var(--blue-bg);border-color:var(--blue-line);color:var(--blue)}.rail-section{padding:16px 16px 8px;color:var(--muted);font-size:13px;font-weight:800;text-transform:uppercase;letter-spacing:.04em}.ticket-list{padding:0 10px 16px;overflow:auto;display:grid;gap:8px}.ticket{border:1px solid transparent;background:transparent;border-radius:11px;padding:11px 12px;text-align:left;cursor:pointer;color:var(--text)}.ticket:hover,.ticket.selected{background:var(--blue-bg);border-color:var(--blue-line)}.ticket-title{font-size:14px;font-weight:800;line-height:1.4;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.ticket-meta{font-size:12px;color:var(--muted);margin-top:4px;display:flex;align-items:center;gap:6px}.dot{width:7px;height:7px;border-radius:50%;background:var(--muted)}.dot.critical{background:var(--red)}.dot.high{background:var(--amber)}.dot.medium{background:var(--blue)}
-.main{min-width:0;height:100vh;display:flex;flex-direction:column}.topbar{height:64px;background:rgba(255,255,255,.96);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 28px;backdrop-filter:saturate(160%) blur(8px)}.brand{display:flex;align-items:center;gap:8px;font-size:20px;font-weight:850}.brand small{font-size:13px;color:var(--muted);font-weight:600}.text-btn{height:38px;border:1px solid var(--border);background:#fff;color:var(--muted);border-radius:9px;padding:0 14px;cursor:pointer}.text-btn:hover{background:var(--blue-bg);border-color:var(--blue-line);color:var(--blue)}
-.content{flex:1;overflow:auto;padding:0 24px 18px}.center{max-width:980px;margin:0 auto;min-height:100%;display:flex;flex-direction:column}.welcome{margin:auto 0 28px;text-align:center}.welcome h1{font-size:32px;line-height:1.25;font-weight:850;letter-spacing:0;margin-bottom:18px}.composer-shell{position:sticky;bottom:0;background:linear-gradient(180deg,rgba(244,246,249,0),var(--bg) 20%);padding:18px 0 16px}.composer{max-width:780px;margin:0 auto;min-height:58px;border:1px solid var(--blue-line);border-radius:18px;background:#fff;box-shadow:0 12px 32px rgba(21,94,239,.10);display:grid;grid-template-columns:44px 1fr 44px;align-items:center;padding:8px 10px}.composer input{border:0;outline:0;font-size:16px;padding:0 8px;min-width:0;color:var(--text)}.composer input::placeholder{color:#7b8798}.send{width:38px;height:38px;border:0;border-radius:10px;background:var(--blue);color:#fff;cursor:pointer;font-weight:900;box-shadow:0 1px 2px rgba(21,94,239,.18)}.send:hover{background:#004eeb}.quick{display:flex;justify-content:center;gap:10px;flex-wrap:wrap;margin:14px auto 0;max-width:780px}.quick button,.chip{height:38px;border:1px solid var(--border);background:#fff;border-radius:999px;padding:0 15px;color:var(--muted);cursor:pointer}.quick button:hover,.chip:hover{background:var(--blue-bg);border-color:var(--blue-line);color:var(--blue)}
-.chat{display:flex;flex-direction:column;gap:18px;padding:18px 0 8px}.msg{display:grid;grid-template-columns:36px minmax(0,1fr);gap:12px;max-width:900px}.msg.user{align-self:flex-end;display:block;max-width:min(680px,86%)}.bubble{background:#fff;border:1px solid var(--border2);border-radius:16px;padding:12px 16px;white-space:pre-wrap;box-shadow:0 1px 2px rgba(16,24,40,.04)}.msg.user .bubble{background:var(--blue);border-color:var(--blue);color:#fff}.msg.agent .bubble{background:transparent;border:0;box-shadow:none;padding:0;white-space:normal}.avatar{width:34px;height:34px;border-radius:50%;background:var(--ink);color:#fff;display:grid;place-items:center;font-size:12px;font-weight:900}.msg h3{font-size:18px;line-height:1.35;margin:0 0 8px;font-weight:850}.muted{color:var(--muted);font-size:13px}.cards{display:grid;gap:10px;margin-top:10px}.chat-card{border:1px solid var(--border);border-radius:12px;background:#fff;padding:16px;box-shadow:0 1px 2px rgba(16,24,40,.04)}.card-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}.card-title{font-weight:850;line-height:1.45}.card-meta{color:var(--muted);font-size:13px;margin-top:3px}.card-desc{margin-top:9px;color:#344054;line-height:1.65}.pills{display:flex;gap:8px;flex-wrap:wrap}.pill{border:1px solid var(--border);border-radius:999px;padding:4px 10px;font-size:12px;color:var(--muted);background:#fff;white-space:nowrap;font-weight:750}.pill.danger{background:var(--red-bg);color:var(--red);border-color:#f4b8b2}.pill.warn{background:var(--amber-bg);color:var(--amber);border-color:#f7d5a8}.pill.ok{background:var(--green-bg);color:var(--green);border-color:#abefc6}.pill.mcp{background:var(--purple-bg);color:var(--purple);border-color:#d9d6fe}.evidence-grid{display:grid;gap:8px;margin-top:10px}.evidence-item{border:1px solid var(--border2);border-radius:10px;background:var(--soft2);padding:11px 12px}.evidence-item strong{font-size:13px}.evidence-item code{font-size:12px;color:#344054}
-.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}.primary{height:38px;border:0;border-radius:999px;background:var(--blue);color:#fff;padding:0 16px;cursor:pointer;box-shadow:0 1px 2px rgba(21,94,239,.18)}.primary:hover{background:#004eeb}.secondary{height:38px;border:1px solid var(--border);border-radius:999px;background:#fff;color:var(--muted);padding:0 15px;cursor:pointer}.secondary:hover{background:var(--blue-bg);border-color:var(--blue-line);color:var(--blue)}.form-grid{display:grid;grid-template-columns:150px minmax(0,1fr);gap:10px 12px;margin-top:12px;align-items:center}.form-grid label{color:var(--muted);font-size:13px;font-weight:700}.form-grid input,.form-grid select{width:100%;height:40px;border:1px solid var(--border);border-radius:9px;background:#fff;padding:0 10px;min-width:0}.memory{margin-top:10px;border:1px solid var(--blue-line);background:var(--blue-bg);border-radius:12px;padding:11px 12px;color:#1e3a8a}.spinner{display:inline-block;width:10px;height:10px;border:2px solid #c7d7fe;border-top-color:var(--blue);border-radius:50%;animation:spin .8s linear infinite;margin-right:8px}@keyframes spin{to{transform:rotate(360deg)}}.plan{display:grid;gap:10px;margin-top:10px}.plan-section{border:1px solid var(--border);border-radius:12px;padding:13px 14px;background:#fff}.plan-section:nth-child(1){background:#fffbf4}.plan-section:nth-child(2){background:#eef4ff}.plan-section:nth-child(3){background:#f6fef9}.plan-section h4{font-size:14px;margin-bottom:6px}.plan-section ul{padding-left:18px}.rca-table{width:100%;border-collapse:separate;border-spacing:0;margin-top:10px;border:1px solid var(--border);border-radius:12px;overflow:hidden}.rca-table th,.rca-table td{padding:12px 14px;text-align:left;vertical-align:top;border-bottom:1px solid var(--border)}.rca-table th{width:150px;background:var(--soft);color:var(--muted);font-weight:800}.rca-table tr:last-child th,.rca-table tr:last-child td{border-bottom:0}.rca-table .cause{background:#fffbf4}.rca-table .evidence{background:#eef4ff}.rca-table .action{background:#f6fef9}.rca-table ul{margin:0;padding-left:18px}.flow{display:grid;gap:10px;margin-top:10px}.step{border:1px solid var(--border2);border-radius:10px;padding:12px;background:var(--soft2)}.step strong{display:block;margin-bottom:3px}.hidden{display:none!important}.empty{color:var(--muted);font-size:13px;padding:12px}.error{color:var(--red)}
-@media(max-width:900px){.app{grid-template-columns:1fr}.rail{display:none}.topbar{padding:0 16px}.content{padding:0 16px 12px}.welcome h1{font-size:28px}.rca-table th{width:112px}.composer-shell{padding-bottom:12px}}
+:root {
+  --bg:#f0f4f9; --rail:#fbfcfe; --panel:#ffffff;
+  --border:#d1d9e8; --border2:#e8edf5;
+  --ink:#0d1728; --muted:#5a6b82;
+  --blue:#1d4ed8; --blue-bg:#eff4ff; --blue-line:#bfcffe;
+  --green:#065f46; --green-bg:#ecfdf5; --green-line:#a7f3d0;
+  --amber:#92400e; --amber-bg:#fffbeb; --amber-line:#fcd34d;
+  --red:#991b1b; --red-bg:#fef2f2; --red-line:#fca5a5;
+  --purple:#5b21b6; --purple-bg:#f5f3ff; --purple-line:#c4b5fd;
+  --shadow:0 2px 8px rgba(13,23,40,.08);
+  --radius:12px;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{background:var(--bg);color:var(--ink);font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans JP",system-ui,sans-serif;font-size:14px;line-height:1.6}
+button,input,select,textarea{font:inherit}
+button{cursor:pointer}
+
+/* ── Layout ─────────────────────────────────── */
+.app{height:100vh;display:grid;grid-template-columns:300px 1fr 360px}
+.rail{background:var(--rail);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden}
+.main{display:flex;flex-direction:column;min-width:0;overflow:hidden}
+.detail{background:var(--rail);border-left:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden}
+
+/* ── Topbar ───────────────────────────────── */
+.topbar{height:60px;background:rgba(255,255,255,.96);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 20px;backdrop-filter:saturate(180%) blur(10px);flex-shrink:0;z-index:10}
+.brand{display:flex;align-items:center;gap:10px}
+.brand-mark{width:32px;height:32px;border-radius:10px;background:linear-gradient(135deg,#0d1728,#1d4ed8);color:#fff;display:grid;place-items:center;font-size:13px;font-weight:900;flex-shrink:0}
+.brand-name{font-size:15px;font-weight:800}
+.brand-sub{font-size:11px;color:var(--muted)}
+.topbar-right{display:flex;align-items:center;gap:10px}
+.mcp-live-pill{display:flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;background:var(--purple-bg);border:1px solid var(--purple-line);color:var(--purple);font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.04em}
+.mcp-live-dot{width:7px;height:7px;border-radius:50%;background:currentColor;animation:pulse 1.5s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+.lang-btn{height:32px;padding:0 12px;border:1px solid var(--border);border-radius:8px;background:var(--panel);color:var(--muted);font-size:13px}
+.lang-btn:hover{background:var(--blue-bg);border-color:var(--blue-line);color:var(--blue)}
+.session-state{font-size:11px;color:#94a3b8}
+
+/* ── Rail ───────────────────────────────────── */
+.rail-top{height:60px;padding:0 14px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border);flex-shrink:0}
+.rail-mark{width:32px;height:32px;border-radius:50%;background:var(--ink);color:#fff;display:grid;place-items:center;font-weight:900;font-size:13px}
+.rail-new-btn{width:30px;height:30px;border:1px solid var(--border);border-radius:8px;background:transparent;color:var(--muted);font-size:16px;display:grid;place-items:center}
+.rail-new-btn:hover{background:var(--blue-bg);border-color:var(--blue-line);color:var(--blue)}
+.rail-actions{padding:10px 10px 0;display:grid;gap:4px;flex-shrink:0}
+.rail-btn{height:38px;border:1px solid transparent;border-radius:9px;background:transparent;padding:0 10px;display:flex;align-items:center;gap:8px;color:var(--ink);font-size:13px;text-align:left;width:100%}
+.rail-btn:hover,.rail-btn.active{background:var(--blue-bg);border-color:var(--blue-line);color:var(--blue)}
+.rail-section{padding:14px 14px 6px;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);flex-shrink:0}
+.ticket-list{flex:1;overflow-y:auto;padding:0 8px 12px;display:flex;flex-direction:column;gap:4px}
+.ticket{border:1px solid transparent;border-radius:9px;padding:10px;text-align:left;background:transparent;color:var(--ink);width:100%}
+.ticket:hover,.ticket.selected{background:var(--blue-bg);border-color:var(--blue-line)}
+.ticket-title{font-size:13px;font-weight:700;line-height:1.35;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ticket-meta{font-size:11px;color:var(--muted);margin-top:3px;display:flex;align-items:center;gap:5px}
+.sev-dot{width:6px;height:6px;border-radius:50%;background:var(--muted);flex-shrink:0}
+.sev-dot.critical{background:#dc2626}.sev-dot.high{background:#d97706}.sev-dot.medium{background:#2563eb}.sev-dot.low{background:#16a34a}
+
+/* ── Chat area ──────────────────────────────── */
+.chat-scroll{flex:1;overflow-y:auto;padding:20px 24px 0}
+.chat-inner{max-width:860px;margin:0 auto;display:flex;flex-direction:column;gap:16px;padding-bottom:20px}
+.welcome{text-align:center;padding:48px 24px 32px}
+.welcome-heading{font-size:26px;font-weight:850;letter-spacing:-.02em;margin-bottom:8px}
+.welcome-sub{color:var(--muted);font-size:14px;margin-bottom:24px}
+.quick-chips{display:flex;flex-wrap:wrap;justify-content:center;gap:8px}
+.quick-chip{height:36px;padding:0 14px;border:1px solid var(--border);border-radius:999px;background:var(--panel);color:var(--muted);font-size:13px}
+.quick-chip:hover{background:var(--blue-bg);border-color:var(--blue-line);color:var(--blue)}
+
+/* ── Chat container ─────────────────────────── */
+#chat{display:flex;flex-direction:column;gap:16px}
+
+/* ── Message rows ───────────────────────────── */
+.msg-row{display:flex;gap:10px;max-width:860px}
+.msg-row.user{align-self:flex-end;flex-direction:row-reverse;max-width:min(72%,680px)}
+.msg-avatar{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;font-size:11px;font-weight:900;flex-shrink:0;margin-top:2px}
+.msg-avatar.assistant{background:var(--ink);color:#fff}
+.msg-avatar.user{background:var(--blue);color:#fff}
+.msg-body{flex:1;min-width:0}
+.msg-row.user .msg-body{display:flex;justify-content:flex-end}
+.user-bubble{background:var(--blue);color:#fff;border-radius:18px 18px 4px 18px;padding:10px 14px;font-size:14px;line-height:1.5;max-width:100%}
+.assistant-content{display:flex;flex-direction:column;gap:10px}
+
+/* ── Chat cards ─────────────────────────────── */
+.chat-card{background:var(--panel);border:1px solid var(--border2);border-radius:var(--radius);padding:14px;box-shadow:var(--shadow)}
+.card-heading{font-size:16px;font-weight:800;margin-bottom:8px;line-height:1.35}
+.card-sub{color:var(--muted);font-size:13px;margin-bottom:10px}
+.card-body{font-size:14px;line-height:1.65;color:#2d3748}
+.chips-row{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
+.chip{display:inline-flex;align-items:center;gap:4px;height:24px;padding:0 8px;border-radius:999px;border:1px solid var(--border);background:var(--panel);color:var(--muted);font-size:11px;font-weight:700;white-space:nowrap}
+.chip.critical{background:var(--red-bg);color:var(--red);border-color:var(--red-line)}
+.chip.high{background:var(--amber-bg);color:var(--amber);border-color:var(--amber-line)}
+.chip.medium{background:var(--blue-bg);color:var(--blue);border-color:var(--blue-line)}
+.chip.ok{background:var(--green-bg);color:var(--green);border-color:var(--green-line)}
+.chip.mcp{background:var(--purple-bg);color:var(--purple);border-color:var(--purple-line)}
+.chip.prometheus{background:#fff7ed;color:#c2410c;border-color:#fed7aa}
+.chip.langfuse{background:#faf5ff;color:#7e22ce;border-color:#e9d5ff}
+.card-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.btn-primary{height:36px;padding:0 14px;border:0;border-radius:999px;background:var(--blue);color:#fff;font-size:13px;font-weight:700;box-shadow:0 1px 3px rgba(29,78,216,.3)}
+.btn-primary:hover{background:#1e40af}
+.btn-secondary{height:36px;padding:0 13px;border:1px solid var(--border);border-radius:999px;background:var(--panel);color:var(--muted);font-size:13px}
+.btn-secondary:hover{background:var(--blue-bg);border-color:var(--blue-line);color:var(--blue)}
+
+/* ── MCP Call Card ──────────────────────────── */
+.mcp-call-card{background:var(--purple-bg);border:1px solid var(--purple-line);border-radius:var(--radius);overflow:hidden}
+.mcp-call-header{display:flex;align-items:center;gap:8px;padding:10px 14px;border-bottom:1px solid var(--purple-line);background:rgba(245,243,255,.8)}
+.mcp-badge-sm{display:inline-flex;align-items:center;height:20px;padding:0 7px;border-radius:5px;background:var(--purple);color:#fff;font-size:10px;font-weight:900;letter-spacing:.05em;text-transform:uppercase}
+.mcp-tool-name{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px;color:var(--purple);font-weight:600}
+.mcp-status-text{margin-left:auto;font-size:11px;color:var(--muted)}
+.mcp-call-body{padding:10px 14px}
+.mcp-params{display:grid;gap:3px;margin-bottom:8px}
+.mcp-param{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11px;color:#4c1d95;background:rgba(139,92,246,.08);padding:3px 8px;border-radius:4px}
+.mcp-result-text{font-size:13px;color:var(--ink);line-height:1.6;margin-bottom:8px}
+.mcp-spinner{display:inline-block;width:8px;height:8px;border:2px solid var(--purple-line);border-top-color:var(--purple);border-radius:50%;animation:spin .7s linear infinite;margin-right:5px}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ── Evidence grid ──────────────────────────── */
+.evidence-grid{display:grid;gap:7px}
+.evidence-item{background:var(--panel);border:1px solid var(--border2);border-radius:10px;padding:9px 11px}
+.evidence-item-head{display:flex;align-items:center;gap:5px;margin-bottom:4px;flex-wrap:wrap}
+.evidence-label{font-size:12px;font-weight:700;color:var(--ink);flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.evidence-value{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11px;color:var(--muted);background:#f1f5f9;padding:2px 5px;border-radius:4px;white-space:nowrap}
+.evidence-summary{font-size:12px;color:var(--muted);line-height:1.5}
+
+/* ── Topology mini ──────────────────────────── */
+.topo-mini{border:1px solid var(--border);border-radius:var(--radius);overflow:hidden}
+.topo-mini-header{padding:8px 12px;background:#f8fafc;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;font-size:11px;font-weight:700;color:var(--muted)}
+.topo-mini-nodes{padding:10px 12px;display:flex;flex-direction:column;gap:0}
+.topo-mini-node{display:flex;align-items:center;justify-content:space-between;padding:7px 10px;border:1px solid var(--border);border-radius:8px;background:var(--panel);cursor:pointer;transition:box-shadow .15s}
+.topo-mini-node:hover{box-shadow:0 2px 8px rgba(0,0,0,.08)}
+.topo-mini-node.error{border-color:var(--red-line);background:var(--red-bg)}
+.topo-mini-node.warn{border-color:var(--amber-line);background:var(--amber-bg)}
+.topo-mini-node.ok{border-color:var(--green-line)}
+.topo-mini-node-left{min-width:0}
+.topo-mini-node-name{font-size:12px;font-weight:700}
+.topo-mini-node-role{font-size:11px;color:var(--muted)}
+.topo-mini-fault-badge{font-size:9px;font-weight:800;padding:2px 6px;border-radius:4px;background:#dc2626;color:#fff;text-transform:uppercase;letter-spacing:.04em;white-space:nowrap;flex-shrink:0;margin-left:8px}
+.topo-mini-arrow{display:flex;justify-content:center;margin:1px 0}
+.topo-mini-arrow-inner{display:flex;flex-direction:column;align-items:center}
+.topo-mini-arrow-line{width:2px;height:14px;background:var(--green)}
+.topo-mini-arrow-line.fault{background:repeating-linear-gradient(to bottom,#dc2626 0,#dc2626 3px,transparent 3px,transparent 6px)}
+.topo-mini-arrow-head{width:0;height:0;border-left:4px solid transparent;border-right:4px solid transparent;border-top:5px solid var(--green)}
+.topo-mini-arrow-head.fault{border-top-color:#dc2626}
+.topo-mini-obs-bar{display:flex;gap:7px;align-items:center;padding:7px 12px;border-top:1px solid var(--border);font-size:11px;background:#f8fafc}
+.topo-mini-fault-path{padding:7px 12px;font-size:11px;color:var(--muted);border-top:1px solid var(--border);background:#fef2f2}
+
+/* ── RCA table ──────────────────────────────── */
+.rca-table{width:100%;border-collapse:separate;border-spacing:0;border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;font-size:13px}
+.rca-table th,.rca-table td{padding:10px 12px;text-align:left;vertical-align:top;border-bottom:1px solid var(--border)}
+.rca-table th{width:140px;background:#f8fafc;color:var(--muted);font-weight:700;font-size:12px}
+.rca-table tr:last-child th,.rca-table tr:last-child td{border-bottom:0}
+.rca-table .cause-row th{background:var(--amber-bg)}
+.rca-table .evidence-row th{background:var(--blue-bg)}
+.rca-table .action-row th{background:var(--green-bg)}
+
+/* ── Remediation steps ──────────────────────── */
+.remed-steps{display:grid;gap:0;padding:6px 0}
+.remed-step{display:flex;gap:12px;padding:0 0 16px;position:relative}
+.remed-step:not(:last-child)::before{content:'';position:absolute;left:14px;top:30px;bottom:0;width:2px;background:var(--border)}
+.remed-step-dot{width:30px;height:30px;border-radius:50%;background:var(--border);border:2px solid var(--panel);display:grid;place-items:center;flex-shrink:0;font-size:12px;font-weight:900;color:var(--muted);z-index:1}
+.remed-step-dot.active{background:var(--blue);color:#fff;border-color:var(--blue-line)}
+.remed-step-dot.done{background:var(--green);color:#fff;border-color:var(--green-line)}
+.remed-step-content{padding-top:4px}
+.remed-step-title{font-size:13px;font-weight:700}
+.remed-step-desc{font-size:12px;color:var(--muted);margin-top:2px}
+
+/* ── Detail panel ───────────────────────────── */
+.detail-top{height:60px;padding:0 14px;display:flex;align-items:center;border-bottom:1px solid var(--border);font-size:13px;font-weight:700;color:var(--muted);gap:8px;flex-shrink:0}
+.detail-scroll{flex:1;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:10px}
+.detail-section{border:1px solid var(--border);border-radius:var(--radius);overflow:hidden}
+.detail-section-head{padding:8px 12px;background:#f8fafc;border-bottom:1px solid var(--border);font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);display:flex;align-items:center;justify-content:space-between}
+.detail-section-body{padding:10px 12px}
+.detail-metric-row{display:flex;align-items:flex-start;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--border2);gap:8px}
+.detail-metric-row:last-child{border-bottom:0}
+.detail-metric-label{font-size:12px;color:var(--muted);flex-shrink:0}
+.detail-metric-value{font-size:12px;font-weight:700;color:var(--ink);text-align:right;max-width:180px;line-height:1.4}
+.detail-metric-value.error{color:#dc2626}
+.detail-metric-value.warn{color:#d97706}
+.detail-metric-value.ok{color:#065f46}
+
+/* ── Forms ──────────────────────────────────── */
+.form-grid{display:grid;grid-template-columns:120px 1fr;gap:7px 10px;align-items:center;margin-top:10px}
+.form-grid label{font-size:12px;color:var(--muted);font-weight:700}
+.form-grid input,.form-grid select{width:100%;height:34px;border:1px solid var(--border);border-radius:7px;background:var(--panel);padding:0 8px;font-size:13px}
+
+/* ── Plan sections ──────────────────────────── */
+.plan-block{display:grid;gap:7px;margin-top:8px}
+.plan-section{border:1px solid var(--border);border-radius:9px;padding:10px 12px;background:var(--panel);font-size:13px}
+.plan-section:nth-child(1){background:var(--amber-bg)}
+.plan-section:nth-child(2){background:var(--blue-bg)}
+.plan-section:nth-child(3){background:var(--green-bg)}
+.plan-section h4{font-size:11px;font-weight:800;margin-bottom:5px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted)}
+.plan-section ul{padding-left:16px}
+.plan-section li{margin-top:3px}
+
+/* ── Composer ───────────────────────────────── */
+.composer-wrap{flex-shrink:0;padding:10px 24px 14px;background:linear-gradient(180deg,rgba(240,244,249,0),var(--bg) 22%)}
+.composer{max-width:860px;margin:0 auto;display:grid;grid-template-columns:38px 1fr 38px;align-items:center;background:var(--panel);border:1.5px solid var(--blue-line);border-radius:16px;padding:7px 9px;box-shadow:0 4px 20px rgba(29,78,216,.09)}
+.composer-attach{width:32px;height:32px;border:1px solid transparent;border-radius:8px;background:transparent;color:var(--muted);font-size:16px;display:grid;place-items:center}
+.composer-attach:hover{background:var(--blue-bg);color:var(--blue)}
+.composer-input{border:0;outline:0;background:transparent;font-size:14px;color:var(--ink);padding:0 8px}
+.composer-input::placeholder{color:#94a3b8}
+.composer-send{width:32px;height:32px;border:0;border-radius:8px;background:var(--blue);color:#fff;font-size:14px;font-weight:900;display:grid;place-items:center;box-shadow:0 2px 6px rgba(29,78,216,.25)}
+.composer-send:hover{background:#1e40af}
+
+/* ── Utilities ──────────────────────────────── */
+.hidden{display:none!important}
+.empty-msg{color:var(--muted);font-size:13px;padding:12px;text-align:center}
+.error-msg{color:#dc2626}
+.spinner-inline{display:inline-block;width:8px;height:8px;border:2px solid #c7d7fe;border-top-color:var(--blue);border-radius:50%;animation:spin .7s linear infinite;margin-right:5px}
+::-webkit-scrollbar{width:4px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+
+/* ── Responsive ─────────────────────────────── */
+@media(max-width:1100px){.app{grid-template-columns:280px 1fr 0}.detail{display:none}}
+@media(max-width:780px){.app{grid-template-columns:0 1fr}.rail{display:none}.chat-scroll{padding:14px 14px 0}.composer-wrap{padding:8px 14px 12px}}
 </style>
 </head>
 <body>
 <div class="app">
+
+  <!-- ── Left Rail ─────────────────────────── -->
   <aside class="rail">
-    <div class="rail-top"><div class="mark" id="rail-mark">助</div><button class="icon-btn" onclick="newChat()" title="新しい相談">+</button></div>
-    <div class="rail-actions">
-      <button class="rail-btn active" onclick="newChat()">新しい相談</button>
-      <button class="rail-btn" onclick="askOpenTickets()">対応が必要なもの</button>
-      <button class="rail-btn" onclick="explainHowToUse()">助手に聞く</button>
+    <div class="rail-top">
+      <div class="rail-mark" id="rail-mark">助</div>
+      <button class="rail-new-btn" onclick="newChat()" title="新しい相談">＋</button>
     </div>
-    <div class="rail-section">最近の問題</div>
-    <div id="ticket-list" class="ticket-list"><div class="empty">読み込み中...</div></div>
+    <div class="rail-actions">
+      <button class="rail-btn" onclick="askOpenTickets()">
+        <span>📋</span><span id="rb-tickets">未対応を見る</span>
+      </button>
+      <button class="rail-btn" onclick="askRCA()">
+        <span>🔍</span><span id="rb-rca">原因を確認</span>
+      </button>
+      <button class="rail-btn" onclick="askRemediation()">
+        <span>🛠</span><span id="rb-remed">対応を進める</span>
+      </button>
+    </div>
+    <div class="rail-section" id="rail-section">最近の問題</div>
+    <div class="ticket-list" id="ticket-list">
+      <div class="empty-msg">読み込み中...</div>
+    </div>
   </aside>
+
+  <!-- ── Main ──────────────────────────────── -->
   <main class="main">
     <header class="topbar">
-      <div class="brand"><span id="assistant-name">助手</span> <small id="session-state">AIOps assistant</small></div>
-      <button class="text-btn" id="lang-toggle" onclick="toggleLanguage()">English</button>
-    </header>
-    <section class="content">
-      <div class="center">
-        <div id="welcome" class="welcome">
-          <h1>こんにちは。助手です。</h1>
-          <div class="muted" style="margin-top:-10px;margin-bottom:16px">未対応の確認、MCPライブ証拠、原因分析、対応案まで一緒に進めます。</div>
-          <div class="quick"><button onclick="askOpenTickets()">未対応を見る</button><button onclick="askRCA()">原因を確認</button><button onclick="askSummary()">やさしく要約</button><button onclick="askRemediation()">対応を進める</button></div>
-        </div>
-        <div id="chat" class="chat"></div>
-        <div class="composer-shell">
-          <div class="composer"><button class="icon-btn" onclick="askOpenTickets()" title="未対応を見る">+</button><input id="chat-input" placeholder="例: open tickets / なぜ起きたの？ / 対応を進めたい" onkeydown="handleComposerKey(event)"><button class="send" onclick="sendComposer()">↑</button></div>
+      <div class="brand">
+        <div class="brand-mark" id="brand-mark">助</div>
+        <div>
+          <div class="brand-name" id="brand-name">助手</div>
+          <div class="brand-sub">AIOps chat · MCP observability</div>
         </div>
       </div>
-    </section>
+      <div class="topbar-right">
+        <div class="mcp-live-pill hidden" id="mcp-pill">
+          <span class="mcp-live-dot"></span>
+          <span>MCP</span>
+        </div>
+        <span class="session-state" id="session-state"></span>
+        <button class="lang-btn" id="lang-btn" onclick="toggleLanguage()">English</button>
+      </div>
+    </header>
+
+    <div class="chat-scroll" id="chat-scroll">
+      <div class="chat-inner">
+        <div id="welcome" class="welcome">
+          <div class="welcome-heading" id="w-heading">こんにちは。助手です。</div>
+          <div class="welcome-sub" id="w-sub">未対応の確認、MCPライブ証拠、原因分析、対応案まで一緒に進めます。</div>
+          <div class="quick-chips">
+            <button class="quick-chip" onclick="askOpenTickets()">📋 未対応を見る</button>
+            <button class="quick-chip" onclick="askRCA()">🔍 原因を確認</button>
+            <button class="quick-chip" onclick="askSummary()">📝 やさしく要約</button>
+            <button class="quick-chip" onclick="askRemediation()">🛠 対応を進める</button>
+          </div>
+        </div>
+        <div id="chat" class="hidden"></div>
+      </div>
+    </div>
+
+    <div class="composer-wrap">
+      <div class="composer">
+        <button class="composer-attach" onclick="askOpenTickets()" title="問題一覧">📋</button>
+        <input class="composer-input" id="chat-input"
+          placeholder="例: なぜ起きたの？ / 対応を進めたい / show open issues"
+          onkeydown="handleKey(event)">
+        <button class="composer-send" onclick="send()">↑</button>
+      </div>
+    </div>
   </main>
+
+  <!-- ── Detail Panel ───────────────────────── -->
+  <aside class="detail">
+    <div class="detail-top">
+      <span>📌</span>
+      <span id="detail-heading">問題の詳細</span>
+    </div>
+    <div class="detail-scroll" id="detail-scroll">
+      <div class="empty-msg" id="detail-empty">左から問題を選ぶか、チャットで問題を指定してください。</div>
+    </div>
+  </aside>
+
 </div>
 <script>
-const severityRank={critical:4,high:3,medium:2,low:1};
-const sevLabel={critical:'重大',high:'高',medium:'中',low:'低'};
-const statusLabel={OPEN:'未対応',ACKNOWLEDGED:'確認中',ESCALATED:'エスカレーション',RESOLVED:'解決済み'};
-const statusJa={PROJECT_REVIEW_PENDING:'プロジェクト確認待ち',PROJECT_APPROVED:'対応準備完了',PLAN_DRAFTING:'対応案を作成中',PLAN_RUNNING:'対応案を作成中',PLAN_DRAFTED:'対応案ができました',PLAN_REVISED:'対応案を更新しました',PLAN_REVISION_RUNNING:'対応案を修正中',PLAN_APPROVED:'実装準備完了',IMPLEMENTATION_RUNNING:'実装中',IMPLEMENTATION_READY:'実装確認待ち',REVIEW_PENDING:'レビュー待ち',REVIEW_APPROVED:'レビュー承認済み',PR_CREATING:'PR作成中',PR_CREATED:'PR作成済み',syncing:'準備中',approved:'承認済み'};
-const initialParams=new URLSearchParams(location.search);
-let currentIssue=null,currentAnalysis=null,currentTopology=null,currentLang=(initialParams.get('lang')||'ja').startsWith('en')?'en':'ja',ticketsCache=[],remediationStarted=false,chatMemory={project:{}},activeProgressNode=null;
+'use strict';
+
+/* ── Constants ──────────────────────────────── */
+const SEV_RANK={critical:4,high:3,medium:2,low:1};
+const SEV_JA={critical:'重大',high:'高',medium:'中',low:'低'};
+const SEV_EN={critical:'Critical',high:'High',medium:'Medium',low:'Low'};
+const ST_JA={OPEN:'未対応',ACKNOWLEDGED:'確認中',ESCALATED:'エスカレーション',RESOLVED:'解決済み'};
+const ST_EN={OPEN:'Open',ACKNOWLEDGED:'Acknowledged',ESCALATED:'Escalated',RESOLVED:'Resolved'};
+const RST_JA={
+  PROJECT_REVIEW_PENDING:'対象確認待ち',PROJECT_APPROVED:'対応準備完了',
+  PLAN_DRAFTING:'対応案作成中',PLAN_RUNNING:'対応案作成中',PLAN_DRAFTED:'対応案完成',
+  PLAN_REVISED:'対応案更新',PLAN_REVISION_RUNNING:'対応案修正中',
+  PLAN_APPROVED:'実装準備完了',IMPLEMENTATION_RUNNING:'実装中',
+  IMPLEMENTATION_READY:'実装確認待ち',REVIEW_PENDING:'レビュー待ち',
+  REVIEW_APPROVED:'レビュー承認済み',PR_CREATING:'PR作成中',PR_CREATED:'PR作成済み',FAILED:'失敗'
+};
+const RST_EN={
+  PROJECT_REVIEW_PENDING:'Target review needed',PROJECT_APPROVED:'Target approved',
+  PLAN_DRAFTING:'Creating plan',PLAN_RUNNING:'Creating plan',PLAN_DRAFTED:'Plan ready',
+  PLAN_REVISED:'Plan updated',PLAN_REVISION_RUNNING:'Revising plan',
+  PLAN_APPROVED:'Plan approved',IMPLEMENTATION_RUNNING:'Implementing',
+  IMPLEMENTATION_READY:'Review ready',REVIEW_PENDING:'Review pending',
+  REVIEW_APPROVED:'Review approved',PR_CREATING:'Creating PR',PR_CREATED:'PR created',FAILED:'Failed'
+};
+
+/* ── State ──────────────────────────────────── */
+const P=new URLSearchParams(location.search);
+let lang=(P.get('lang')||'ja').startsWith('en')?'en':'ja';
+let currentIssue=null,currentAnalysis=null,currentTopology=null;
+let ticketsCache=[],remediationStarted=false,chatProject={};
+
+/* ── Helpers ────────────────────────────────── */
 function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 async function api(url,opt={}){const r=await fetch(url,{headers:{'Content-Type':'application/json'},...opt});if(!r.ok){let m=await r.text();try{m=JSON.parse(m).detail||m}catch{}throw new Error(m)}return r.json();}
-function assistantName(){return currentLang==='ja'?'助手':'AIOPS'}
-function assistantMark(){return currentLang==='ja'?'助':'A'}
-function setState(t){document.getElementById('session-state').textContent=t}
-function hideWelcome(){document.getElementById('welcome').classList.add('hidden')}
-function retireOldActions(){document.querySelectorAll('#chat .msg.agent .actions').forEach(el=>el.classList.add('hidden'))}
-function addMsg(kind,html){hideWelcome();if(kind==='agent')retireOldActions();const el=document.createElement('div');el.className=`msg ${kind}`;el.innerHTML=kind==='user'?`<div class="bubble">${html}</div>`:`<div class="avatar">${assistantMark()}</div><div class="bubble">${html}</div>`;document.getElementById('chat').appendChild(el);el.scrollIntoView({block:'nearest'});return el.querySelector('.bubble')}
-function newChat(){currentIssue=null;currentAnalysis=null;currentTopology=null;remediationStarted=false;chatMemory={project:{}};document.getElementById('chat').innerHTML='';document.getElementById('welcome').classList.remove('hidden');document.querySelectorAll('.ticket').forEach(el=>el.classList.remove('selected'));setState(currentLang==='ja'?'待機中':'Idle')}
-function prioritySort(a,b){return(severityRank[b.severity]||0)-(severityRank[a.severity]||0)||new Date(b.created_at||0)-new Date(a.created_at||0)}
-function cleanDisplayText(value,depth=0){
-  if(value==null||depth>6)return'';
-  const preferredKeys=['analysis_summary','full_summary','likely_cause','reason','error_summary','summary','message','recommended_action','root_cause_chain','description','error_message'];
-  const skipKeys=new Set(['trace_id','timestamp','confidence','processing_time_ms','raw_log_count','occurrence_count','total_logs_analyzed','data_sources','analysis_target','service','component']);
-  const skipString=text=>/^[a-f0-9]{24,}$/i.test(text)||/^[a-f0-9-]{30,}$/i.test(text);
-  if(Array.isArray(value)){
-    for(const item of value){const next=cleanDisplayText(item,depth+1);if(next)return next}
+function t(ja,en){return lang==='ja'?ja:en}
+function sevText(s){return lang==='ja'?(SEV_JA[s]||s):(SEV_EN[s]||s)}
+function statusText(s){return lang==='ja'?(ST_JA[s]||s):(ST_EN[s]||s)}
+function rStatusText(s){const raw=String(s||'').toUpperCase();return lang==='ja'?(RST_JA[raw]||s):(RST_EN[raw]||s)}
+function sevClass(s){return s==='critical'?'critical':s==='high'?'high':s==='medium'?'medium':''}
+
+function setMcp(on){const p=document.getElementById('mcp-pill');if(p)p.classList.toggle('hidden',!on)}
+function setState(txt){const e=document.getElementById('session-state');if(e)e.textContent=txt}
+
+function cleanText(v,d=0){
+  if(v==null||d>5)return'';
+  const pref=['analysis_summary','full_summary','likely_cause','reason','error_summary','summary','message','recommended_action','root_cause_chain','description','error_message'];
+  const skip=new Set(['trace_id','timestamp','confidence','processing_time_ms','raw_log_count','occurrence_count','total_logs_analyzed','data_sources','analysis_target','service','component']);
+  const skipS=s=>/^[a-f0-9]{24,}$/i.test(s)||/^[a-f0-9-]{30,}$/i.test(s);
+  if(Array.isArray(v)){for(const i of v){const n=cleanText(i,d+1);if(n)return n}return''}
+  if(typeof v==='object'){
+    for(const k of pref){const n=cleanText(v[k],d+1);if(n)return n}
+    for(const[k,i]of Object.entries(v)){if(skip.has(k)||k.endsWith('_id')||k.includes('timestamp'))continue;const n=cleanText(i,d+1);if(n)return n}
     return'';
   }
-  if(typeof value==='object'){
-    for(const key of preferredKeys){const next=cleanDisplayText(value[key],depth+1);if(next)return next}
-    if(Array.isArray(value.errors)&&value.errors.length){const next=cleanDisplayText(value.errors,depth+1);if(next)return next}
-    if(Array.isArray(value.peer_components)&&value.peer_components.length){const next=cleanDisplayText(value.peer_components,depth+1);if(next)return next}
-    for(const [key,item] of Object.entries(value)){
-      if(skipKeys.has(key)||key.endsWith('_id')||key.endsWith('_ids')||key.includes('timestamp'))continue;
-      const next=cleanDisplayText(item,depth+1);
-      if(next)return next;
-    }
-    return'';
-  }
-  const raw=String(value).trim();
-  if(!raw||skipString(raw))return'';
-  if(raw.startsWith('{')||raw.startsWith('[')){
-    try{return cleanDisplayText(JSON.parse(raw),depth+1)}catch{return''}
-  }
+  const raw=String(v).trim();
+  if(!raw||skipS(raw))return'';
+  if(raw.startsWith('{')||raw.startsWith('[')){try{return cleanText(JSON.parse(raw),d+1)}catch{return''}}
   return raw.replace(/\s+/g,' ').trim();
 }
-function issueTitle(i){return cleanDisplayText(i?.title)||`#${i?.id||''}`.trim()}
-function issueDesc(i){return cleanDisplayText(i?.description)|| (currentLang==='ja'?'説明はありません。':'No description is available.')}
-function issueApp(i){return cleanDisplayText(i?.app_display_name||i?.app_name)|| (currentLang==='ja'?'対象サービス':'Service')}
-function analysisCause(a){return cleanDisplayText(a?.likely_cause)}
-function analysisAction(a){return cleanDisplayText(a?.recommended_action)}
-function uiText(ja,en){return currentLang==='ja'?ja:en}
-function detectMessageLang(text){
-  const raw=String(text||'').trim();
-  if(!raw)return currentLang;
-  if(/[\u3040-\u30ff\u3400-\u9fff]/.test(raw))return'ja';
-  const englishHints=(raw.match(/[A-Za-z]/g)||[]).length;
-  if(englishHints>=4)return'en';
-  return currentLang;
-}
-async function adoptConversationLang(nextLang,{refreshIssue=false,announce=false}={}){
-  const normalized=(nextLang||'').startsWith('en')?'en':'ja';
-  if(normalized===currentLang)return;
-  currentLang=normalized;
-  document.documentElement.lang=currentLang;
-  document.getElementById('lang-toggle').textContent=currentLang==='ja'?'English':'日本語';
-  document.getElementById('assistant-name').textContent=assistantName();
-  document.getElementById('rail-mark').textContent=assistantMark();
-  document.getElementById('chat-input').placeholder=currentLang==='ja'
-    ? '例: open tickets / なぜ起きたの？ / 対応を進めたい'
-    : 'Example: open tickets / why did this happen? / proceed with remediation';
-  await loadTickets({silent:true});
-  if(refreshIssue&&currentIssue){
-    currentIssue=await api(`/api/issues/${currentIssue.id}?lang=${currentLang}`);
-    await loadTopology(currentIssue.id);
-    if(currentAnalysis){
-      try{currentAnalysis=await api(`/api/analysis/issues/${currentIssue.id}?lang=${currentLang}&summary=true`)}catch{}
-    }
+
+function issueTitle(i){return cleanText(i?.title)||`#${i?.id||''}`}
+function issueDesc(i){return cleanText(i?.description)||t('説明はありません。','No description available.')}
+function issueApp(i){return cleanText(i?.app_display_name||i?.app_name)||t('対象サービス','Service')}
+function analysisCause(a){return cleanText(a?.likely_cause)||cleanText(a?.likely_cause_ja)||''}
+function analysisAction(a){return cleanText(a?.recommended_action)||cleanText(a?.recommended_action_ja)||''}
+function prioritySort(a,b){return(SEV_RANK[b.severity]||0)-(SEV_RANK[a.severity]||0)||new Date(b.created_at||0)-new Date(a.created_at||0)}
+function detectLang(text){if(!text)return lang;if(/[぀-ヿ㐀-鿿]/.test(text))return'ja';if((text.match(/[A-Za-z]/g)||[]).length>=4)return'en';return lang}
+
+/* ── Chat ───────────────────────────────────── */
+function hideWelcome(){document.getElementById('welcome').classList.add('hidden');document.getElementById('chat').classList.remove('hidden')}
+function retireActions(){document.querySelectorAll('#chat .card-actions').forEach(el=>el.classList.add('hidden'))}
+function scrollBottom(){const s=document.getElementById('chat-scroll');requestAnimationFrame(()=>{if(s)s.scrollTop=s.scrollHeight})}
+
+function addMsg(kind,html){
+  hideWelcome();
+  if(kind==='agent')retireActions();
+  const row=document.createElement('div');
+  row.className='msg-row '+kind;
+  const mark=lang==='ja'?'助':'A';
+  if(kind==='user'){
+    row.innerHTML=`<div class="msg-avatar user">${mark}</div><div class="msg-body"><div class="user-bubble">${html}</div></div>`;
+  }else{
+    row.innerHTML=`<div class="msg-avatar assistant">${mark}</div><div class="msg-body"><div class="assistant-content">${html}</div></div>`;
   }
-  if(announce)addMsg('agent',uiText(`日本語で続けます。現在の問題は #${currentIssue?.id||''} です。`,`I’ll continue in English. Current issue: #${currentIssue?.id||''}.`));
+  document.getElementById('chat').appendChild(row);
+  scrollBottom();
+  return row.querySelector(kind==='user'?'.user-bubble':'.assistant-content');
 }
-async function syncLanguageToMessage(text,{refreshIssue=false}={}){await adoptConversationLang(detectMessageLang(text),{refreshIssue});}
-async function loadTopology(issueId){try{currentTopology=await api(`/api/topology/issues/${issueId}?lang=${currentLang}`)}catch{currentTopology=null}}
-function topologyNodes(){return currentTopology?.topology?.nodes||[]}
-function primaryImpactNode(){const nodes=topologyNodes();const top=currentTopology?.topology||{};return nodes.find(n=>n.id===top.default_component_id)||nodes.find(n=>n.status==='error')||nodes.find(n=>n.status==='warn')||nodes[0]||null}
-function firstNodeByZone(zone){const nodes=topologyNodes().filter(n=>String(n.zone||'').toLowerCase()===zone);return nodes.find(n=>n.status==='error')||nodes.find(n=>n.status==='warn')||nodes[0]||null}
-function scenarioContext(issue=currentIssue,analysis=currentAnalysis){
-  const sourceNode=firstNodeByZone('platform')||primaryImpactNode();
-  const runtimeNode=topologyNodes().find(n=>n.id==='ai-agent')||firstNodeByZone('runtime')||primaryImpactNode();
-  const signalNodes=topologyNodes().filter(n=>String(n.zone||'').toLowerCase()==='observability').slice(0,2);
-  return {
-    title: issueTitle(issue),
-    description: issueDesc(issue),
-    app: issueApp(issue),
-    source: cleanDisplayText(sourceNode?.name)|| (currentLang==='ja'?'発生元を確認中':'Source pending'),
-    sourceNote: cleanDisplayText(sourceNode?.summary||sourceNode?.error_message)||analysisCause(analysis)||issueDesc(issue),
-    runtime: cleanDisplayText(runtimeNode?.name)||issueApp(issue),
-    runtimeNote: issueDesc(issue),
-    signals: signalNodes.length?signalNodes.map(n=>cleanDisplayText(n.name)).filter(Boolean).join(' / '):(currentLang==='ja'?'可観測性シグナルを確認中':'Observability signals pending'),
-    action: analysisAction(analysis)||cleanDisplayText(currentTopology?.topology?.recommended_action)||(currentLang==='ja'?'次の安全な対応を確認します。':'Review the safest next response.'),
-  };
+
+function newChat(){
+  currentIssue=null;currentAnalysis=null;currentTopology=null;
+  remediationStarted=false;chatProject={};
+  document.getElementById('chat').innerHTML='';
+  document.getElementById('chat').classList.add('hidden');
+  document.getElementById('welcome').classList.remove('hidden');
+  document.querySelectorAll('.ticket').forEach(el=>el.classList.remove('selected'));
+  renderDetailPanel(null,null,null);
+  setState(t('待機中','Idle'));
 }
-function scenarioFlowHtml(ctx){
-  const labels=currentLang==='ja'
-    ? {source:'発生元',runtime:'実行経路',signals:'確認シグナル',next:'次の対応'}
-    : {source:'Source',runtime:'Runtime path',signals:'Signals',next:'Next action'};
-  return `<div class="plan">
-    <div class="plan-section"><h4>${labels.source}</h4><p><strong>${esc(ctx.source)}</strong></p><p style="margin-top:6px">${esc(ctx.sourceNote)}</p></div>
-    <div class="plan-section"><h4>${labels.runtime}</h4><p><strong>${esc(ctx.runtime)}</strong></p><p style="margin-top:6px">${esc(ctx.runtimeNote)}</p></div>
-    <div class="plan-section"><h4>${labels.signals}</h4><p>${esc(ctx.signals)}</p><p style="margin-top:6px">${esc(ctx.action)}</p></div>
+
+/* ── Chips ──────────────────────────────────── */
+function sevChip(i){return`<span class="chip ${sevClass(i.severity)}">${esc(sevText(i.severity))}</span>`}
+function statusChip(i){const c=i.status==='RESOLVED'?'ok':i.status==='ESCALATED'?'critical':'';return`<span class="chip ${c}">${esc(statusText(i.status))}</span>`}
+
+/* ── Ticket list ────────────────────────────── */
+async function loadTickets(silent=true){
+  setState(t('確認中','Checking'));
+  document.getElementById('ticket-list').innerHTML=`<div class="empty-msg">${t('読み込み中...','Loading...')}</div>`;
+  try{
+    const data=await api(`/api/issues?limit=200&lang=${lang}`);
+    ticketsCache=(data.issues||[]).filter(i=>i.status!=='RESOLVED').sort(prioritySort);
+    renderSidebarTickets();
+    setState(ticketsCache.length?`${ticketsCache.length}${t('件',' issues')}`:t('問題なし','No issues'));
+    if(!silent)showOpenTickets();
+  }catch(e){
+    document.getElementById('ticket-list').innerHTML=`<div class="empty-msg error-msg">${esc(e.message)}</div>`;
+    setState(t('取得失敗','Failed'));
+  }
+}
+
+function renderSidebarTickets(){
+  const list=document.getElementById('ticket-list');
+  if(!ticketsCache.length){list.innerHTML=`<div class="empty-msg">${t('未対応の問題はありません。','No open issues.')}</div>`;return}
+  list.innerHTML=ticketsCache.slice(0,15).map(i=>`
+    <button class="ticket" id="ticket-${i.id}" onclick="selectIssue(${i.id},{fromSidebar:true})">
+      <div class="ticket-title">${esc(issueTitle(i))}</div>
+      <div class="ticket-meta"><span class="sev-dot ${esc(i.severity)}"></span>${esc(sevText(i.severity))} · ${esc(issueApp(i))}</div>
+    </button>`).join('');
+}
+
+/* ── Issue cards ────────────────────────────── */
+function issueCard(i){
+  return`<div class="chat-card">
+    <div class="chips-row">${sevChip(i)}${statusChip(i)}</div>
+    <div class="card-heading">${esc(issueTitle(i))}</div>
+    <div class="card-sub">${esc(issueApp(i))} · #${i.id}</div>
+    <div class="card-body">${esc(issueDesc(i))}</div>
+    <div class="card-actions">
+      <button class="btn-primary" onclick="selectIssue(${i.id})">${t('この問題を開く','Open issue')}</button>
+      <button class="btn-secondary" onclick="selectIssue(${i.id}).then(()=>askRCA())">${t('原因を見る','See RCA')}</button>
+      <button class="btn-secondary" onclick="selectIssue(${i.id}).then(()=>askRemediation())">${t('対応へ進む','Remediate')}</button>
+    </div>
   </div>`;
 }
-async function loadTickets(options={}){const silent=options.silent!==false;setState(uiText('確認中','Checking'));document.getElementById('ticket-list').innerHTML=`<div class="empty">${uiText('読み込み中...','Loading...')}</div>`;try{const data=await api(`/api/issues?limit=200&lang=${currentLang}`);ticketsCache=(data.issues||[]).filter(i=>i.status!=='RESOLVED').sort(prioritySort);renderSidebarTickets();setState(ticketsCache.length?uiText(`${ticketsCache.length}件`,`${ticketsCache.length} issues`):uiText('問題なし','No active issues'));if(!silent)showOpenTickets()}catch(e){document.getElementById('ticket-list').innerHTML=`<div class="empty error">${esc(e.message)}</div>`;if(!silent)addMsg('agent',uiText(`問題一覧を取得できませんでした: ${esc(e.message)}`,`Could not load the issue list: ${esc(e.message)}`));setState(uiText('取得失敗','Load failed'))}}
-function renderSidebarTickets(){const list=document.getElementById('ticket-list');if(!ticketsCache.length){list.innerHTML=`<div class="empty">${uiText('未対応の問題はありません。','There are no unresolved issues.')}</div>`;return}list.innerHTML=ticketsCache.slice(0,12).map(i=>`<button class="ticket" id="ticket-${i.id}" onclick="selectIssue(${i.id},{fromSidebar:true})"><div class="ticket-title">${esc(issueTitle(i))}</div><div class="ticket-meta"><span class="dot ${esc(i.severity)}"></span>${esc(sevLabel[i.severity]||i.severity)} · ${esc(issueApp(i))}</div></button>`).join('')}
-function sevPill(i){const cls=i.severity==='critical'?'danger':i.severity==='high'?'warn':'';return `<span class="pill ${cls}">${esc(sevLabel[i.severity]||i.severity)}</span>`}
-function statusPill(i){const ok=i.status==='RESOLVED'?'ok':'';return `<span class="pill ${ok}">${esc(statusLabel[i.status]||i.status)}</span>`}
-function ticketCard(i){return `<div class="chat-card"><div class="card-head"><div><div class="card-title">${esc(issueTitle(i))}</div><div class="card-meta">${esc(issueApp(i))} · #${i.id}</div></div><div class="pills">${sevPill(i)}${statusPill(i)}</div></div><div class="card-desc">${esc(issueDesc(i))}</div><div class="actions"><button class="primary" onclick="selectIssue(${i.id})">${uiText('この問題を確認','Open this issue')}</button><button class="secondary" onclick="selectIssue(${i.id}).then(()=>askRCA())">${uiText('原因を見る','See RCA')}</button><button class="secondary" onclick="selectIssue(${i.id}).then(()=>askRemediation())">${uiText('対応へ進む','Proceed to remediation')}</button></div></div>`}
-function showOpenTickets(){if(!ticketsCache.length){addMsg('agent',uiText('現在、対応が必要な問題はありません。監視は続けています。','There are no unresolved issues right now. Monitoring continues.'));return}const shown=ticketsCache.slice(0,6);addMsg('agent',`<h3>${uiText('未対応の問題','Open issues')}</h3><div class="muted">${uiText(`${ticketsCache.length}件あります。優先度が高い順に表示します。`,`There are ${ticketsCache.length} open issues, shown in priority order.`)}</div><div class="cards">${shown.map(ticketCard).join('')}</div>${ticketsCache.length>shown.length?`<div class="muted" style="margin-top:8px">${uiText(`ほかに${ticketsCache.length-shown.length}件あります。「重大な問題を見せて」と入力できます。`,`There are ${ticketsCache.length-shown.length} more. You can ask for the most critical issue.`)}</div>`:''}`)}
-function askOpenTickets(){addMsg('user',uiText('未対応の問題を見せて','Show me open issues'));if(ticketsCache.length)showOpenTickets();else loadTickets({silent:false})}
-async function selectIssue(id,opts={}){setState(`#${id}`);document.querySelectorAll('.ticket').forEach(el=>el.classList.remove('selected'));const card=document.getElementById(`ticket-${id}`);if(card)card.classList.add('selected');try{currentIssue=await api(`/api/issues/${id}?lang=${currentLang}`);currentAnalysis=null;currentTopology=null;await loadTopology(id);remediationStarted=false;chatMemory={project:{}};if(opts.fromSidebar)addMsg('user',uiText(`#${id} を確認します。`,`I want to inspect issue #${id}.`));addMsg('agent',selectedIssueMessage(currentIssue));setState(uiText(`#${id} 選択中`,`Issue #${id}`));return currentIssue}catch(e){addMsg('agent',uiText(`問題の詳細を取得できませんでした: ${esc(e.message)}`,`Could not load the issue details: ${esc(e.message)}`))}}
-function selectedIssueMessage(i){const ctx=scenarioContext(i,currentAnalysis);return `<h3>${uiText('この問題を開きました','Opened this issue')}</h3>${ticketCard(i)}${scenarioFlowHtml(ctx)}<div class="actions"><button class="chip" onclick="askSummary()">${uiText('短く要約','Summarize')}</button><button class="chip" onclick="askRCA()">${uiText('なぜ起きた？','Why did this happen?')}</button><button class="chip" onclick="askRemediation()">${uiText('対応を進める','Proceed with remediation')}</button></div>`}
-function askSummary(){addMsg('user',uiText('やさしく要約して','Give me a simple summary'));if(!currentIssue){addMsg('agent',uiText('まず確認したい問題を選んでください。「未対応を見る」と入力すると一覧を出します。','Select an issue first. You can type "open issues" to list them.'));return}const i=currentIssue;const ctx=scenarioContext(i,currentAnalysis);addMsg('agent',`<h3>${uiText('短い要約','Short summary')}</h3><div class="chat-card"><p>${esc(issueTitle(i))}</p><p style="margin-top:8px">${esc(issueDesc(i))}</p><div class="pills" style="margin-top:10px">${sevPill(i)}${statusPill(i)}${i.recurrence_count?`<span class="pill">${uiText(`${i.recurrence_count}回目の類似問題`,`${i.recurrence_count}th similar issue`)}</span>`:''}</div></div>${scenarioFlowHtml(ctx)}<div class="actions"><button class="primary" onclick="askRCA()">${uiText('原因を確認','Check RCA')}</button><button class="secondary" onclick="askRemediation()">${uiText('対応を進める','Proceed to remediation')}</button><button class="secondary" onclick="refreshRemediation()">${uiText('進捗を見る','See progress')}</button></div>`)}
-async function getRCA(){if(!currentIssue){addMsg('agent',uiText('まず問題を選んでください。','Please select an issue first.'));return null}try{currentAnalysis=await api(`/api/analysis/issues/${currentIssue.id}?lang=${currentLang}&summary=true`)}catch{addMsg('agent',uiText('保存済みRCAがまだ無いので、分析を開始します。完了まで少し待ちます。','No stored RCA is ready yet, so I’m starting the analysis now. Please wait a moment.'));await api(`/api/analysis/issues/${currentIssue.id}`,{method:'POST'});currentAnalysis=await pollRCA(currentIssue.id)}return currentAnalysis}
-async function askRCA(userPrompt=''){const prompt=userPrompt||uiText('なぜ起きたの？','Why did this happen?');if(!userPrompt)addMsg('user',prompt);if(!currentIssue){addMsg('agent',uiText('まず問題を選んでください。「未対応を見る」と入力すると一覧を出します。','Select an issue first. You can type "open issues" to list them.'));return}const progress=addMsg('agent',`<div class="chat-card"><div class="pills"><span class="pill mcp">MCP Live</span></div><div style="margin-top:8px"><span class="spinner"></span>${uiText(`${assistantName()}がPrometheusとLangfuseの証拠を確認しています。`,`${assistantName()} is checking Prometheus and Langfuse evidence.`)}</div></div>`);try{const live=await getLiveMcpRCA(prompt);const stored=await getRCA();progress.innerHTML=renderMcpRca(live,stored);return}catch(e){progress.innerHTML=`<div class="chat-card"><div class="pills"><span class="pill warn">MCP unavailable</span></div><div style="margin-top:8px">${uiText(`MCPライブ確認に失敗しました: ${esc(e.message)}<br>保存済みRCAに切り替えます。`,`MCP live RCA failed: ${esc(e.message)}<br>Falling back to stored RCA.`)}</div></div>`}const a=await getRCA();if(!a)return;addMsg('agent',renderRcaReport(a))}
-async function getLiveMcpRCA(message=''){const body={issue_id:currentIssue.id,message:message||uiText('なぜ起きたの？','Why did this happen?'),service:currentIssue.app_name,lang:currentLang,window_minutes:10};return api('/api/chat/rca/live',{method:'POST',body:JSON.stringify(body)})}
-function renderMcpRca(data,storedAnalysis=null){const hazardous=(data.evidence||[]).some(e=>['warning','error','critical'].includes(e.severity));const liveState=data.confidence==='low'&&!hazardous?uiText('ライブ障害なし','No live hazard'):uiText('ライブ確認','Live check');const ev=(data.evidence||[]).map(e=>`<div class="evidence-item"><div class="pills"><span class="pill">${esc(e.source||'source')}</span><span class="pill ${e.severity==='error'?'danger':e.severity==='warning'?'warn':''}">${esc(e.severity||'info')}</span></div><strong>${esc(e.query_name||e.kind||'evidence')}</strong><div class="muted">${esc(e.service||'unknown')} · ${esc(e.timestamp||'')}</div><div style="margin-top:5px">${esc(e.summary||'')}</div>${e.value!=null?`<code>value=${esc(e.value)}</code>`:''}</div>`).join('')||`<div class="muted">${uiText('証拠は見つかりませんでした。','No evidence was found in the live window.')}</div>`;const kb=(data.knowledge_matches||[]).map(k=>`<div class="evidence-item"><div class="pills"><span class="pill">${esc(k.source||'knowledge')}</span><span class="pill">${esc(k.remediation_type||'')}</span></div><strong>${esc(k.title||'Knowledge match')}</strong><div class="muted">${esc(k.reason||'')}</div><div style="margin-top:5px">${esc(k.recommended_action||'')}</div></div>`).join('');const storedBlock=storedAnalysis?`<div class="chat-card" style="margin-top:12px"><h3>${uiText('保存済みRCAの要点','Stored RCA summary')}</h3><p style="margin-top:8px">${esc(analysisCause(storedAnalysis)||'')}</p><div class="muted" style="margin-top:8px">${esc(analysisAction(storedAnalysis)||'')}</div></div>`:'';return `<h3>${uiText(`${assistantName()}のRCA`,`RCA from ${assistantName()}`)}</h3><div class="chat-card"><div class="pills"><span class="pill mcp">MCP Live</span><span class="pill ${hazardous?'warn':'ok'}">${esc(liveState)}</span><span class="pill">${esc(data.confidence||'unknown')}</span></div><p style="margin-top:10px">${esc(data.answer||'')}</p><div class="muted" style="margin-top:8px">${esc(data.suggested_next_action||'')}</div><div class="actions"><button class="primary" onclick="askRCA()">${uiText('MCPで再確認','Re-check with MCP')}</button><button class="secondary" onclick="askRemediation()">${uiText('対応へ進む','Proceed to remediation')}</button></div></div>${storedBlock}${kb?`<h3 style="margin-top:14px">${uiText('ナレッジベース','Knowledge base')}</h3><div class="evidence-grid">${kb}</div>`:''}<h3 style="margin-top:14px">${uiText('ライブ証拠','Live evidence')}</h3><div class="evidence-grid">${ev}</div>`}
-function normalizeEvidenceLine(text){return String(text||'').toLowerCase().replace(/^rca results?:\s*/,'').replace(/[^\p{L}\p{N}]+/gu,' ').trim()}
-function evidenceItems(text,cause=''){
-  const causeNorm=normalizeEvidenceLine(cause);
-  const seen=new Set();
-  return (text||'').split('\n')
-    .map(x=>x.trim().replace(/^[-・•*]\s*/,'').trim())
-    .filter(Boolean)
-    .filter(x=>{
-      const norm=normalizeEvidenceLine(x);
-      if(!norm||seen.has(norm)||norm===causeNorm)return false;
-      if(causeNorm&&Math.abs(norm.length-causeNorm.length)<20&&(norm.includes(causeNorm)||causeNorm.includes(norm)))return false;
-      seen.add(norm);
-      return true;
-    })
-    .slice(0,4);
+
+function showOpenTickets(){
+  if(!ticketsCache.length){addMsg('agent',`<div class="chat-card"><div class="card-body">${t('現在、対応が必要な問題はありません。','No open issues right now.')}</div></div>`);return}
+  const shown=ticketsCache.slice(0,6);
+  addMsg('agent',`
+    <div class="card-heading">${t('未対応の問題','Open issues')}</div>
+    <div class="card-sub">${t(`${ticketsCache.length}件。優先度順。`,`${ticketsCache.length} issues, priority order.`)}</div>
+    ${shown.map(issueCard).join('')}
+  `);
 }
-function renderRcaReport(a){const evidence=evidenceItems(a.evidence,a.likely_cause);return `<h3>${uiText('原因分析レポート','RCA report')}</h3><table class="rca-table"><tr><th class="cause">${uiText('原因候補','Likely cause')}</th><td>${esc(a.likely_cause||uiText('未取得','Not available'))}</td></tr><tr><th class="evidence">${uiText('確認した根拠','Evidence reviewed')}</th><td>${evidence.length?`<ul>${evidence.map(x=>`<li>${esc(x)}</li>`).join('')}</ul>`:uiText('保存済みRCAには、原因候補とは別の根拠行がありません。MCPライブ証拠を確認してください。','The stored RCA does not include separate evidence lines. Check live MCP evidence for current signals.')}</td></tr><tr><th class="action">${uiText('おすすめ対応','Recommended action')}</th><td>${esc(a.recommended_action||uiText('未取得','Not available'))}</td></tr></table><div class="actions"><button class="primary" onclick="askRemediation()">${uiText('この内容で対応を進める','Proceed with remediation')}</button><button class="secondary" onclick="askSummary()">${uiText('もう少し短く説明','Make it shorter')}</button></div>`}
-async function pollRCA(id){for(let i=0;i<24;i++){await new Promise(r=>setTimeout(r,2500));try{const a=await api(`/api/analysis/issues/${id}?lang=${currentLang}&summary=true`);if(a.status!=='pending'&&a.status!=='running')return a}catch{}}throw new Error('RCAが時間内に完了しませんでした。')}
-async function askRemediation(){addMsg('user',uiText('対応を進めたい','I want to proceed with remediation'));if(!currentIssue){addMsg('agent',uiText('まず対応したい問題を選んでください。「未対応を見る」と入力すると一覧を出します。','Select the issue you want to remediate first. You can type "open issues" to list them.'));return}if(!currentAnalysis){try{await getRCA()}catch{}}addMsg('agent',`<h3>${uiText('対応の進め方','How the response flow works')}</h3><div class="flow"><div class="step"><strong>1. ${uiText('対応準備','Prepare')}</strong>${uiText('問題情報とRCAをもとに対応ワークフローを開始します。','Start the remediation workflow using the issue context and RCA.')}</div><div class="step"><strong>2. ${uiText('対応案の確認','Review the plan')}</strong>${uiText('変更内容を確認してから実装へ進みます。','Review the proposed changes before implementation begins.')}</div><div class="step"><strong>3. ${uiText('実装とPR','Implementation and PR')}</strong>${uiText('実装後、Pull Requestを作成します。','After implementation, create the pull request.')}</div></div><div class="actions"><button class="primary" onclick="startRemediation()">${uiText('対応を開始','Start remediation')}</button><button class="secondary" onclick="refreshRemediation()">${uiText('今の進捗を見る','See current progress')}</button></div>`)}
-function acceptanceList(){return ['利用者影響が解消していること','ヘルスチェックが成功すること','変更理由が記録されていること']}
-async function startRemediation(){if(!currentIssue)return;setState(uiText('対応開始','Starting response'));try{const body={requested_by:currentLang==='ja'?'support-engineer-ja':'support-engineer-en'};const data=await api(`/api/remediation/issues/${currentIssue.id}/start`,{method:'POST',body:JSON.stringify(body)});remediationStarted=true;rememberProjectFromPayload(data);addMsg('agent',renderRemediation(data,uiText('対応ワークフローを開始しました。','Started the remediation workflow.')));await showProjectSelection();setState(uiText('対応中','In progress'))}catch(e){addMsg('agent',uiText(`対応開始に失敗しました: ${esc(e.message)}`,`Failed to start remediation: ${esc(e.message)}`));setState(uiText('対応失敗','Failed'))}}
-async function refreshRemediation(){if(!currentIssue)return;try{const data=await api(`/api/remediation/issues/${currentIssue.id}/status`);addMsg('agent',renderRemediation(data,uiText('現在の進捗です。','Here is the current progress.')))}catch(e){addMsg('agent',uiText(`進捗を取得できませんでした: ${esc(e.message)}${remediationStarted?'':'<br><br>まだ開始していない場合は「対応を開始」を押してください。'}`,`Could not fetch progress: ${esc(e.message)}${remediationStarted?'':'<br><br>If remediation has not started yet, use "Start remediation".'}`))}}
-function addProgress(text){activeProgressNode=addMsg('agent',`<div class="chat-card"><span class="spinner"></span>${esc(text)}<div class="muted" style="margin-top:8px">準備が終わったら、この会話にそのまま表示します。</div></div>`);return activeProgressNode}
-function updateProgress(node,text,extra=''){if(node)node.innerHTML=`<div class="chat-card"><span class="spinner"></span>${esc(text)}${extra?`<div class="muted" style="margin-top:8px">${friendlyStatus(extra)}</div>`:''}</div>`}
-function finishProgress(node,text){if(node)node.innerHTML=`<div class="chat-card"><div class="pills"><span class="pill ok">完了</span></div><div style="margin-top:8px">${esc(text)}</div></div>`}
-function isBusyRemediation(data,kind){const status=normalizedStatus(data).toUpperCase();const phase=String(data.job_phase||data.summary_phase||'').toLowerCase();if(status==='FAILED'||status==='PR_CREATED'||status==='REVIEW_PENDING'||status==='IMPLEMENTATION_READY')return false;if(kind==='project')return !(data.resolution_status==='approved'||status==='PROJECT_APPROVED');if(kind==='plan')return ['PLAN_RUNNING','PLAN_DRAFTING','PLAN_REVISION_RUNNING','PROJECT_APPROVED'].includes(status)||['starting','preparing'].includes(phase);if(kind==='implementation')return status==='IMPLEMENTATION_RUNNING'||status==='PLAN_APPROVED'||['starting','preparing','running'].includes(phase);if(kind==='pr')return status==='PR_CREATING'||phase==='pushing'||phase==='pr';return ['PLAN_RUNNING','PLAN_DRAFTING','PLAN_REVISION_RUNNING','IMPLEMENTATION_RUNNING','PR_CREATING'].includes(status)||['starting','preparing','running','pushing','pr'].includes(phase)}
-async function pollRemediation(kind='status',node=null){const progress=node||activeProgressNode||addProgress(kind==='implementation'?'実装の進捗を確認しています。':kind==='project'?'リポジトリ準備を確認しています。':'進捗を確認しています。');for(let i=0;i<60;i++){await new Promise(r=>setTimeout(r,2500));try{const data=await api(`/api/remediation/issues/${currentIssue.id}/status`);const status=normalizedStatus(data);progress.innerHTML=renderRemediation(data,isBusyRemediation(data,kind)?'進行中です。':'完了または確認待ちです。');progress.scrollIntoView({block:'nearest'});if(!isBusyRemediation(data,kind))return data}catch(e){updateProgress(progress,'進捗確認を続けています。',e.message)}}updateProgress(progress,'まだ処理中です。','少し時間をおいて「進捗を見る」と入力してください。')}
-async function pollPlan(progress){for(let i=0;i<40;i++){await new Promise(r=>setTimeout(r,3000));try{const data=await api(`/api/remediation/issues/${currentIssue.id}/plan`);const status=data.status||'';const phase=data.job_phase||data.active_job||'';if(isPlanBusy(data)){updateProgress(progress,'対応案を作成しています。',phase||status);continue}finishProgress(progress,'対応案ができました。確認してください。');showPlan(data);return data}catch(e){const msg=String(e.message||'');if(msg.includes('still being generated')||msg.includes('not found')){updateProgress(progress,'対応案を作成しています。','少し時間がかかっています。');continue}updateProgress(progress,'対応案の確認中です。',msg)}}updateProgress(progress,'対応案はまだ作成中です。','少し時間をおいて「対応案を見る」と入力してください。')}
-function normalizedStatus(data){return String(data.status||data.resolution_status||'').trim()||String(data.message||'確認中').trim()}
-function statusText(status){if(currentLang==='ja')return statusJa[status]||friendlyStatus(status);const en={PROJECT_REVIEW_PENDING:'Target review needed',PROJECT_APPROVED:'Target approved',PLAN_DRAFTING:'Creating response plan',PLAN_RUNNING:'Creating response plan',PLAN_DRAFTED:'Response plan ready',PLAN_REVISED:'Response plan updated',PLAN_APPROVED:'Plan approved',IMPLEMENTATION_RUNNING:'Implementation running',IMPLEMENTATION_READY:'Implementation ready for review',REVIEW_PENDING:'Review pending',REVIEW_APPROVED:'Review approved',PR_CREATING:'Creating pull request',PR_CREATED:'Pull request created',FAILED:'Failed'};return en[status]||friendlyStatus(status)}
-function phaseText(phase){if(!phase)return'';const ja={starting:'開始中',preparing:'準備中',running:'実行中',completed:'完了',failed:'失敗',pushing:'PR準備中',pr:'PR作成中',normalizing:'対象情報を整理中',idle:'待機中'};const en={starting:'starting',preparing:'preparing',running:'running',completed:'completed',failed:'failed',pushing:'preparing PR',pr:'creating PR',normalizing:'normalizing target',idle:'idle'};return (currentLang==='ja'?ja:en)[phase]||phase}
-function logPreview(data){const raw=data.implementation_logs||data.plan_logs||data.pr_logs||data.progress_log||'';const lines=String(raw).split('\n').map(x=>x.trim()).filter(Boolean).slice(-3);if(!lines.length)return'';return `<div class="flow" style="margin-top:12px">${lines.map(x=>`<div class="step">${esc(x)}</div>`).join('')}</div>`}
-function renderRemediation(data,intro){rememberProjectFromPayload(data);const status=normalizedStatus(data);const phase=phaseText(data.job_phase||data.summary_phase||'');const pr=data.pr_url?`<p style="margin-top:8px"><a href="${esc(data.pr_url)}" target="_blank" rel="noreferrer">${uiText('Pull Requestを開く','Open pull request')}</a></p>`:'';const needsProject=status==='PROJECT_REVIEW_PENDING'||String(data.message||'').includes('resolution');const err=data.job_error?`<div class="error" style="margin-top:10px">${esc(data.job_error)}</div>`:'';const phasePill=phase?`<span class="pill">${esc(phase)}</span>`:'';return `<h3>${esc(intro)}</h3><div class="chat-card"><div class="pills"><span class="pill">${esc(statusText(status))}</span>${phasePill}${needsProject?`<span class="pill warn">${uiText('確認が必要','Needs confirmation')}</span>`:''}</div>${pr}${err}${memorySummary()}${logPreview(data)}${remediationActions(status,data)}</div>`}
-function remediationActions(status,data={}){const raw=String(status).toUpperCase();if(['PLAN_RUNNING','PLAN_DRAFTING','PLAN_REVISION_RUNNING'].includes(raw))return `<div class="muted" style="margin-top:12px"><span class="spinner"></span>${uiText('対応案を作成しています。この会話に完了結果を表示します。','The response plan is being created. I’ll post the result in this conversation.')}</div><div class="actions"><button class="secondary" onclick="refreshRemediation()">${uiText('進捗を見る','See progress')}</button></div>`;if(raw==='PROJECT_REVIEW_PENDING')return `<div class="actions"><button class="primary" onclick="showProjectSelection()">${uiText('対象とリポジトリを確認','Review target and repository')}</button><button class="secondary" onclick="refreshRemediation()">${uiText('進捗を見る','See progress')}</button></div>`;if(raw==='PROJECT_APPROVED')return `<div class="actions"><button class="primary" onclick="startPlan()">${uiText('対応案を作成','Create response plan')}</button><button class="secondary" onclick="refreshRemediation()">${uiText('進捗を見る','See progress')}</button></div>`;if(raw==='PLAN_DRAFTED'||raw==='PLAN_REVISED')return `<div class="actions"><button class="primary" onclick="getPlan()">${uiText('対応案を確認','Review response plan')}</button><button class="secondary" onclick="approvePlan()">${uiText('この案で実装へ進む','Approve and implement')}</button></div>`;if(raw==='IMPLEMENTATION_READY'||raw==='REVIEW_PENDING')return `<div class="actions"><button class="primary" onclick="checkImplementationResults()">${uiText('実装結果を確認','Review implementation results')}</button><button class="secondary" onclick="createPR()">${uiText('PR作成へ進む','Proceed to PR creation')}</button></div>`;if(raw==='IMPLEMENTATION_RUNNING'||raw==='PLAN_APPROVED'||raw.includes('IMPLEMENT'))return `<div class="muted" style="margin-top:12px"><span class="spinner"></span>${uiText('実装がバックグラウンドで進行中です。ログとフェーズを更新して確認します。','Implementation is running in the background. Refresh to see logs and phase updates.')}</div><div class="actions"><button class="primary" onclick="refreshRemediation()">${uiText('進捗を更新','Refresh progress')}</button></div>`;if(raw==='REVIEW_APPROVED')return `<div class="actions"><button class="primary" onclick="createPR()">${uiText('PRを作成','Create PR')}</button><button class="secondary" onclick="refreshRemediation()">${uiText('進捗を見る','See progress')}</button></div>`;if(raw==='PR_CREATING')return `<div class="muted" style="margin-top:12px"><span class="spinner"></span>${uiText('PRを作成しています。','Creating the pull request.')}</div><div class="actions"><button class="primary" onclick="refreshRemediation()">${uiText('進捗を更新','Refresh progress')}</button></div>`;if(raw==='PR_CREATED')return `<div class="actions"><button class="secondary" onclick="refreshRemediation()">${uiText('進捗を見る','See progress')}</button></div>`;if(raw==='FAILED')return `<div class="actions"><button class="secondary" onclick="refreshRemediation()">${uiText('詳細を再確認','Re-check details')}</button></div>`;return `<div class="actions"><button class="primary" onclick="showProjectSelection()">${uiText('対象を確認','Review target')}</button><button class="secondary" onclick="startPlan()">${uiText('対応案を作成','Create response plan')}</button><button class="secondary" onclick="refreshRemediation()">${uiText('進捗を見る','See progress')}</button></div>`}
-function projectValue(key,fallback=''){return esc(chatMemory.project?.[key]||fallback)}
-function memorySummary(){const p=chatMemory.project||{};if(!p.project_name&&!p.repo_root&&!p.allowed_folder)return '';return `<div class="memory"><strong>${uiText('この会話で覚えている対象','Remembered target in this conversation')}</strong><br>${esc(p.project_name||uiText('未選択','Not selected'))}<br><span class="muted">Repo:</span> ${esc(p.repo_root||p.github_repo||uiText('未設定','Not set'))}<br><span class="muted">Allowed folder:</span> ${esc(p.allowed_folder||uiText('未設定','Not set'))}</div>`}
-function rememberProjectFromPayload(data){const issue=data?.issue||data?.selected_project||data?.recommended_resolution||{};const cand=(data?.resolution_candidates||[])[0]||{};chatMemory.project={...chatMemory.project,...cand,...issue};}
-function readProjectForm(){const projectInput=document.getElementById('project-name');if(!projectInput)return chatMemory.project||{};chatMemory.project={...chatMemory.project,project_name:projectInput.value.trim(),repo_root:document.getElementById('repo-root')?.value.trim()||'',allowed_folder:document.getElementById('allowed-folder')?.value.trim()||'',github_repo:document.getElementById('github-repo')?.value.trim()||'',base_branch:document.getElementById('base-branch')?.value.trim()||'',validation_command:document.getElementById('validation-command')?.value.trim()||''};return chatMemory.project}
-async function showProjectSelection(){if(!currentIssue)return;try{const data=await api(`/api/remediation/issues/${currentIssue.id}/resolution`);rememberProjectFromPayload(data)}catch{}addMsg('agent',`<h3>${uiText('対象システムの確認','Review target system')}</h3><div class="chat-card">${uiText('この内容をこの会話の中で覚えて、以降の対応に使います。必要ならここで修正してください。','I’ll remember this target information in the conversation and use it for the remaining remediation steps. Update it here if needed.')}<div class="form-grid"><label>${uiText('プロジェクト','Project')}</label><input id="project-name" value="${projectValue('project_name',currentIssue?.app_name||'')}"><label>Repo root</label><input id="repo-root" value="${projectValue('repo_root')}"><label>Allowed folder</label><input id="allowed-folder" value="${projectValue('allowed_folder')}"><label>GitHub repo</label><input id="github-repo" value="${projectValue('github_repo')}"><label>Base branch</label><input id="base-branch" value="${projectValue('base_branch','main')}"><label>${uiText('検証コマンド','Validation command')}</label><input id="validation-command" value="${projectValue('validation_command')}"></div><div class="actions"><button class="primary" onclick="approveProject()">${uiText('この内容で承認','Approve this target')}</button><button class="secondary" onclick="rememberProjectOnly()">${uiText('会話に覚えさせる','Remember in chat')}</button></div></div>`)}
-function rememberProjectOnly(){readProjectForm();addMsg('agent',`${memorySummary()}<div class="muted" style="margin-top:8px">${uiText('保存しました。この会話の中では、この対象情報を使って続けます。','Saved. I’ll keep using this target information in the conversation.')}</div>`)}
-async function approveProject(){const payload=readProjectForm();const data=await remediationAction('project/approve',uiText('対象システムを承認しました。リポジトリ準備の進捗を確認します。','Approved the target system. I’m checking repository preparation progress.'),payload);if(data){rememberProjectFromPayload(data);pollRemediation('project')}}
-async function startPlan(){try{const progress=addProgress(uiText('対応案を作成しています。','Creating the response plan.'));await api(`/api/remediation/issues/${currentIssue.id}/plan/start`,{method:'POST',body:'{}'});updateProgress(progress,uiText('対応案の作成を開始しました。','Started creating the response plan.'));pollPlan(progress)}catch(e){const msg=String(e.message||'');if(msg.includes('Project resolution approval is required')){addMsg('agent',`<h3>${uiText('先に確認が必要です','Confirmation required first')}</h3><div class="chat-card">${uiText('対応案を作る前に、対象システムとリポジトリの確認承認が必要です。','Before creating the response plan, the target system and repository must be approved.')}<div class="actions"><button class="primary" onclick="showProjectSelection()">${uiText('対象とリポジトリを確認','Review target and repository')}</button><button class="secondary" onclick="refreshRemediation()">${uiText('進捗を見る','See progress')}</button></div></div>`);return}addMsg('agent',uiText(`操作に失敗しました: ${esc(e.message)}`,`Action failed: ${esc(e.message)}`))}}
-async function approvePlan(){try{retireOldActions();const progress=addProgress(uiText('実装を開始しています。','Starting implementation.'));const data=await api(`/api/remediation/issues/${currentIssue.id}/plan/approve`,{method:'POST',body:'{}'});progress.innerHTML=renderRemediation(data,uiText('実装を開始しました。','Implementation has started.'));pollRemediation('implementation',progress)}catch(e){addMsg('agent',uiText(`操作に失敗しました: ${esc(e.message)}`,`Action failed: ${esc(e.message)}`))}}async function createPR(){const data=await remediationAction('pr',uiText('PR作成を開始しました。','Started pull request creation.'));if(data)pollRemediation('pr')}
-async function remediationAction(path,msg,payload={}){try{const d=await api(`/api/remediation/issues/${currentIssue.id}/${path}`,{method:'POST',body:JSON.stringify(payload)});addMsg('agent',renderRemediation(d,msg));return d}catch(e){addMsg('agent',uiText(`操作に失敗しました: ${esc(e.message)}`,`Action failed: ${esc(e.message)}`));return null}}
-async function getPlan(){try{const d=await api(`/api/remediation/issues/${currentIssue.id}/plan`);if(isPlanBusy(d)){const progress=addProgress(uiText('対応案はまだ作成中です。','The response plan is still being created.'));pollPlan(progress);return}showPlan(d)}catch(e){addMsg('agent',uiText(`対応案を取得できません: ${esc(e.message)}`,`Could not fetch the response plan: ${esc(e.message)}`))}}
-function isPlanBusy(d){const status=d?.status||'';return ['PLAN_RUNNING','PLAN_DRAFTING','PROJECT_APPROVED'].includes(status)||d?.active_job==='plan'||d?.job_phase==='starting'}
-function planText(d){let body=d?.plan_text||d?.plan||d?.content||d?.markdown||d?.summary||'';if(!body&&typeof d==='object'){body=JSON.stringify(d,null,2)}if(typeof body==='string'&&body.trim().startsWith('{')){try{const parsed=JSON.parse(body);body=parsed.plan_text||parsed.plan||parsed.content||parsed.markdown||parsed.summary||body}catch{}}return String(body||'')}
-function cleanPlanLine(line){return line.replace(/^#+\s*/,'').replace(/^[-*]\s*/,'').replace(/`/g,'').trim()}
-function formatPlan(d){const text=planText(d);const lines=text.split('\n').map(cleanPlanLine).filter(Boolean);const summary=lines.find(x=>/issue summary|概要|summary/i.test(x))||lines[0]||'対象の問題を解消するための対応案です。';const repo=lines.filter(x=>/repository|repo|component|impact|対象|health|validation|検証/i.test(x)).slice(0,4);const steps=lines.filter(x=>/threshold|restart|confirm|change|更新|設定|確認|再起動|検証/i.test(x)).slice(0,5);return `<div class="plan"><div class="plan-section"><h4>概要</h4><p>${esc(summary)}</p></div><div class="plan-section"><h4>確認する場所</h4>${repo.length?`<ul>${repo.map(x=>`<li>${esc(x)}</li>`).join('')}</ul>`:'<p>対象リポジトリと変更範囲を確認します。</p>'}</div><div class="plan-section"><h4>進め方</h4>${steps.length?`<ul>${steps.map(x=>`<li>${esc(x)}</li>`).join('')}</ul>`:'<p>設定を確認し、必要な変更を行い、ヘルスチェックで確認します。</p>'}</div></div>`}
-function showPlan(d){addMsg('agent',`<h3>${uiText('対応案ができました','Response plan is ready')}</h3><div class="muted">${uiText('内容を確認して、問題なければ実装へ進めます。','Review the plan, then continue to implementation if it looks good.')}</div>${formatPlan(d)}<div class="actions"><button class="primary" onclick="approvePlan()">${uiText('この案で実装へ進む','Approve and implement')}</button><button class="secondary" onclick="refreshRemediation()">${uiText('進捗を見る','See progress')}</button></div>`)}
-async function checkImplementationResults(){if(!currentIssue)return;const progress=addMsg('agent',`<div class="chat-card"><span class="spinner"></span>${currentLang==='ja'?'実装結果を取得しています。':'Checking implementation results.'}</div>`);try{const summary=await api(`/api/remediation/issues/${currentIssue.id}/implementation/summary`);let artifacts={artifacts:[]};try{artifacts=await api(`/api/remediation/issues/${currentIssue.id}/artifacts`)}catch{}progress.innerHTML=renderImplementationResults(summary,artifacts)}catch(e){progress.innerHTML=`<div class="chat-card"><div class="pills"><span class="pill warn">${currentLang==='ja'?'まだ準備中':'Not ready yet'}</span></div><div style="margin-top:8px">${esc(e.message)}</div><div class="actions"><button class="secondary" onclick="refreshRemediation()">${currentLang==='ja'?'進捗を見る':'See progress'}</button></div></div>`}}
-function valueFrom(data,keys){for(const key of keys){if(data&&data[key]!=null&&data[key]!=='')return data[key]}return''}
-function arrayFrom(value){if(Array.isArray(value))return value;if(!value)return[];if(typeof value==='string')return value.split('\n').map(x=>x.trim()).filter(Boolean);return[]}
-function renderImplementationResults(summary,artifacts){const status=normalizedStatus(summary);const phase=phaseText(summary.job_phase||summary.summary_phase||'');let impl={};try{impl=typeof summary.implementation_result==='string'?JSON.parse(summary.implementation_result):summary.implementation_result||{}}catch{}const change=summary.change_summary||impl.change_summary||{};const changed=arrayFrom(valueFrom(change,['files_changed','changed_files','modified_files','files'])).concat(arrayFrom(valueFrom(summary,['changed_files','files_changed','modified_files','files'])));const tests=arrayFrom(valueFrom(change,['relevant_test_cases','test_results','validation_results'])).concat(arrayFrom(valueFrom(summary,['validation_results','test_results','checks','validation_output'])));const rawLog=valueFrom(summary,['implementation_logs','logs','progress_log','summary_log'])||impl.codex_final_message||'';const logs=arrayFrom(rawLog).slice(-8);const body=valueFrom(change,['human_summary','summary'])||valueFrom(summary,['summary','implementation_summary','result','message','details'])||impl.human_summary||impl.delivery_blocked_reason||'';const pr=summary.pr_url||impl.pr_url;const prLink=pr?`<p style="margin-top:8px"><a href="${esc(pr)}" target="_blank" rel="noreferrer">${currentLang==='ja'?'Pull Requestを開く':'Open pull request'}</a></p>`:'';const artifactItems=(artifacts.artifacts||[]).map(a=>`<li><a href="${esc(a.view_url||a.download_url||'#')}" target="_blank" rel="noreferrer">${esc(a.name||a.path||'artifact')}</a></li>`).join('');const uniqueChanged=[...new Set(changed.filter(Boolean))];return `<h3>${currentLang==='ja'?'実装結果':'Implementation results'}</h3><div class="chat-card"><div class="pills"><span class="pill">${esc(statusText(status))}</span>${phase?`<span class="pill">${esc(phase)}</span>`:''}</div>${body?`<p style="margin-top:10px">${esc(body)}</p>`:''}${prLink}${uniqueChanged.length?`<div class="plan-section" style="margin-top:12px"><h4>${currentLang==='ja'?'変更ファイル':'Changed files'}</h4><ul>${uniqueChanged.map(x=>`<li>${esc(x)}</li>`).join('')}</ul></div>`:''}${tests.length?`<div class="plan-section" style="margin-top:12px"><h4>${currentLang==='ja'?'検証結果':'Validation'}</h4><ul>${tests.slice(0,6).map(x=>`<li>${esc(typeof x==='string'?x:JSON.stringify(x))}</li>`).join('')}</ul></div>`:''}${logs.length?`<div class="flow" style="margin-top:12px">${logs.map(x=>`<div class="step">${esc(x).slice(0,700)}</div>`).join('')}</div>`:''}${artifactItems?`<div class="plan-section" style="margin-top:12px"><h4>${currentLang==='ja'?'成果物':'Artifacts'}</h4><ul>${artifactItems}</ul></div>`:''}<div class="actions"><button class="primary" onclick="createPR()">${currentLang==='ja'?'PR作成へ進む':'Proceed to PR creation'}</button><button class="secondary" onclick="refreshRemediation()">${currentLang==='ja'?'進捗を見る':'See progress'}</button></div></div>`}
-function friendlyStatus(text){const raw=String(text||'');const low=raw.toLowerCase();if(low.includes('plan started')||low.includes('response plan'))return uiText('対応案を作成しています。','Creating the response plan.');if(low.includes('project resolution approved'))return uiText('対象確認が完了し、リポジトリ準備を進めています。','Target approval is complete and repository preparation is in progress.');return raw}
-function explainHowToUse(){addMsg('user',uiText('使い方を教えて','Show me how to use this'));addMsg('agent',uiText(`${assistantName()}に自然に入力してください。たとえば「open tickets」「重大な問題を見せて」「なぜ起きたの？」「対応を進めたい」で、同じ会話の中で続けて操作できます。日本語で入力すれば日本語で、英語で入力すれば英語で続けます。`,`Talk to ${assistantName()} naturally. For example: "open tickets", "show me the most critical issue", "why did this happen?", or "proceed with remediation". If you type in Japanese, I’ll continue in Japanese. If you type in English, I’ll continue in English.`))}
-function handleComposerKey(e){if(e.key==='Enter'){e.preventDefault();sendComposer()}}
-async function sendComposer(){const input=document.getElementById('chat-input');const text=input.value.trim();if(!text)return;input.value='';await syncLanguageToMessage(text,{refreshIssue:!!currentIssue});addMsg('user',esc(text));await handleIntent(text)}
-async function handleIntent(text){const low=text.toLowerCase();if(/open|ticket|issue|未対応|一覧|問題/.test(low)||text.includes('チケット')){if(text.includes('重大')||low.includes('critical')||/most critical|highest priority/.test(low)){const first=ticketsCache.find(t=>t.severity==='critical')||ticketsCache[0];if(first)await selectIssue(first.id);else await loadTickets({silent:false});return}if(ticketsCache.length)showOpenTickets();else await loadTickets({silent:false});return}if(/why|cause|rca|原因|なぜ|どうして|理由/.test(low)){await askRCA(text);return}if(/summary|summarize|要約|簡単|やさしく/.test(low)){askSummary();return}if(/remediate|fix|response plan|対応|修復|直す|進め/.test(low)){await askRemediation();return}if(/implementation result|check implementation|実装結果/.test(low)){await checkImplementationResults();return}if(/plan|proposal|案/.test(low)){await getPlan();return}if(/status|progress|進捗|状態/.test(low)){await refreshRemediation();return}if(currentIssue){await askRCA(text);return}addMsg('agent',uiText('できます。未対応の確認、原因分析、対応開始、進捗確認をこの会話の中で進められます。まずは「未対応を見る」と入力するか、左から問題を選んでください。','I can help with open issues, RCA, remediation, and progress updates in this same conversation. Start with "open issues" or select an issue on the left.'))}
-async function toggleLanguage(){await adoptConversationLang(currentLang==='ja'?'en':'ja',{refreshIssue:!!currentIssue,announce:true})}
-async function bootFromContext(){
-  document.getElementById('lang-toggle').textContent=currentLang==='ja'?'English':'日本語';
-  document.getElementById('assistant-name').textContent=assistantName();
-  document.getElementById('rail-mark').textContent=assistantMark();
-  await loadTickets({silent:true});
-  const issueId=Number(initialParams.get('issue_id')||0);
-  if(issueId){
-    await selectIssue(issueId);
-    if(initialParams.get('mode')==='remediation')askRemediation();
+
+/* ── Issue selection ────────────────────────── */
+async function selectIssue(id,opts={}){
+  setState(`#${id}`);
+  document.querySelectorAll('.ticket').forEach(el=>el.classList.remove('selected'));
+  const card=document.getElementById(`ticket-${id}`);
+  if(card)card.classList.add('selected');
+  try{
+    currentIssue=await api(`/api/issues/${id}?lang=${lang}`);
+    currentAnalysis=null;currentTopology=null;
+    await loadTopology(id);
+    remediationStarted=false;chatProject={};
+    if(opts.fromSidebar)addMsg('user',t(`#${id} を確認します`,`Inspecting issue #${id}`));
+    addMsg('agent',selectedIssueHtml(currentIssue));
+    renderDetailPanel(currentIssue,currentTopology,currentAnalysis);
+    setState(`#${id}`);
+    return currentIssue;
+  }catch(e){addMsg('agent',`<div class="chat-card"><div class="card-body error-msg">${esc(e.message)}</div></div>`)}
+}
+
+function selectedIssueHtml(i){
+  const topo=currentTopology?.topology||{};
+  const cause=cleanText(topo.root_cause_chain)||issueDesc(i);
+  const action=cleanText(topo.recommended_action)||'';
+  return`
+    <div class="card-heading">${t('問題を開きました','Issue opened')}</div>
+    ${issueCard(i)}
+    ${cause?`<div class="chat-card"><div class="card-body"><strong>${t('推定原因:','Likely cause:')}</strong> ${esc(cause)}</div>${action?`<div class="card-body" style="margin-top:6px"><strong>${t('推奨対応:','Recommended action:')}</strong> ${esc(action)}</div>`:''}</div>`:''}
+    <div class="card-actions">
+      <button class="btn-secondary" onclick="askSummary()">${t('要約','Summary')}</button>
+      <button class="btn-secondary" onclick="askRCA()">${t('原因は？','Why?')}</button>
+      <button class="btn-secondary" onclick="askRemediation()">${t('対応する','Remediate')}</button>
+    </div>`;
+}
+
+/* ── Topology ───────────────────────────────── */
+async function loadTopology(issueId){
+  try{currentTopology=await api(`/api/topology/issues/${issueId}?lang=${lang}`)}
+  catch{currentTopology=null}
+}
+
+function renderTopoMini(topology,issue){
+  if(!topology||!Array.isArray(topology.nodes)||!topology.nodes.length)return'';
+  const allNodes=topology.nodes;
+  const pathIds=new Set(topology.projection?.path_component_ids||[]);
+  const rootId=topology.projection?.root_component_id||'';
+  const display=allNodes
+    .filter(n=>!['prometheus','langfuse'].includes(n.id))
+    .filter(n=>pathIds.size===0?(n.status!=='ok'):pathIds.has(n.id)||n.status==='error')
+    .slice(0,5);
+  if(!display.length)return'';
+
+  const nodesHtml=display.map((node,i)=>{
+    const isRoot=node.id===rootId;
+    const prevFault=i>0&&(pathIds.has(display[i-1].id)||display[i-1].id===rootId);
+    const metric=(node.metrics||[]).slice(0,1).map(m=>`<span style="font-size:10px;color:var(--muted)">${esc(m.label||'')} ${esc(m.value||'')}</span>`).join('');
+    const arrow=i>0?`<div class="topo-mini-arrow"><div class="topo-mini-arrow-inner"><div class="topo-mini-arrow-line${prevFault?' fault':''}"></div><div class="topo-mini-arrow-head${prevFault?' fault':''}"></div></div></div>`:'';
+    const statusLabel=isRoot?`<span class="topo-mini-fault-badge">${t('障害起点','Fault origin')}</span>`:`<span class="chip ${node.status||'ok'}" style="height:20px;font-size:10px">${esc(node.status==='error'?t('異常','Error'):node.status==='warn'?t('警告','Warn'):t('正常','OK'))}</span>`;
+    return`${arrow}<div class="topo-mini-node ${esc(node.status||'ok')}"><div class="topo-mini-node-left"><div class="topo-mini-node-name">${esc(node.name||node.id)}</div><div class="topo-mini-node-role">${esc((node.role||'').slice(0,50))}</div>${metric}</div>${statusLabel}</div>`;
+  }).join('');
+
+  const hc=topology.health_counts||{};
+  const obsStatus=hc.error>0?`<span style="color:#dc2626;font-size:11px;margin-left:auto">${hc.error} ${t('異常','err')}${hc.warn>0?` · ${hc.warn} ${t('警告','warn')}`:''}</span>`:`<span style="color:#065f46;font-size:11px;margin-left:auto">${t('全正常','All clear')}</span>`;
+  const faultPath=topology.root_cause_chain||'';
+
+  return`<div class="topo-mini">
+    <div class="topo-mini-header"><span>${t('コンポーネントトポロジー','Component topology')}</span><span>${esc(issueApp(issue))}</span></div>
+    <div class="topo-mini-nodes">${nodesHtml}</div>
+    ${faultPath?`<div class="topo-mini-fault-path"><strong style="color:#991b1b">${t('障害経路: ','Fault path: ')}</strong>${esc(faultPath.slice(0,120))}</div>`:''}
+    <div class="topo-mini-obs-bar">
+      <span class="chip prometheus" style="height:20px;font-size:10px">Prometheus</span>
+      <span class="chip langfuse" style="height:20px;font-size:10px">Langfuse</span>
+      ${obsStatus}
+    </div>
+  </div>`;
+}
+
+/* ── Detail panel ───────────────────────────── */
+function renderDetailPanel(issue,topology,analysis){
+  const scroll=document.getElementById('detail-scroll');
+  const heading=document.getElementById('detail-heading');
+  if(!issue){
+    scroll.innerHTML=`<div class="empty-msg">${t('左から問題を選ぶか、チャットで問題を指定してください。','Select an issue from the left or mention one in chat.')}</div>`;
+    if(heading)heading.textContent=t('問題の詳細','Issue detail');
+    return;
+  }
+  if(heading)heading.textContent=`#${issue.id} ${issueTitle(issue).slice(0,36)}`;
+  const topo=topology?.topology||{};
+  const topoHtml=renderTopoMini(topo,issue);
+  const metrics=topo.metrics||[];
+  const cause=analysis?analysisCause(analysis):cleanText(topo.root_cause_chain)||'';
+  const action=analysis?analysisAction(analysis):cleanText(topo.recommended_action)||'';
+
+  const metricsSec=metrics.length?`<div class="detail-section">
+    <div class="detail-section-head"><span>${t('主要メトリクス','Key metrics')}</span><span class="chip prometheus" style="height:18px;font-size:10px">Prometheus</span></div>
+    <div class="detail-section-body">${metrics.map(m=>`<div class="detail-metric-row"><span class="detail-metric-label">${esc(m.label)}</span><span class="detail-metric-value ${m.tone||''}">${esc(m.value)}</span></div>`).join('')}</div>
+  </div>`:'';
+
+  const rcaSec=(cause||action)?`<div class="detail-section">
+    <div class="detail-section-head"><span>RCA</span><span class="chip langfuse" style="height:18px;font-size:10px">Langfuse</span></div>
+    <div class="detail-section-body">
+      ${cause?`<div class="detail-metric-row"><span class="detail-metric-label">${t('原因','Cause')}</span><span class="detail-metric-value" style="font-size:12px;font-weight:500;line-height:1.4">${esc(cause.slice(0,160))}</span></div>`:''}
+      ${action?`<div class="detail-metric-row"><span class="detail-metric-label">${t('対応','Action')}</span><span class="detail-metric-value" style="font-size:12px;font-weight:500;line-height:1.4">${esc(action.slice(0,160))}</span></div>`:''}
+    </div>
+  </div>`:'';
+
+  const metaSec=`<div class="detail-section">
+    <div class="detail-section-head"><span>${t('問題情報','Issue info')}</span></div>
+    <div class="detail-section-body">
+      <div class="detail-metric-row"><span class="detail-metric-label">${t('重大度','Severity')}</span><span class="chip ${sevClass(issue.severity)}" style="height:20px">${esc(sevText(issue.severity))}</span></div>
+      <div class="detail-metric-row"><span class="detail-metric-label">${t('状態','Status')}</span><span class="detail-metric-value">${esc(statusText(issue.status))}</span></div>
+      <div class="detail-metric-row"><span class="detail-metric-label">${t('サービス','Service')}</span><span class="detail-metric-value">${esc(issueApp(issue))}</span></div>
+    </div>
+  </div>`;
+
+  scroll.innerHTML=`
+    ${metaSec}
+    ${topoHtml?`<div class="detail-section" style="overflow:hidden">${topoHtml}</div>`:''}
+    ${metricsSec}${rcaSec}
+    <button class="btn-primary" style="width:100%" onclick="askRCA()">🔍 ${t('原因を確認','Check RCA')}</button>
+    <button class="btn-secondary" style="width:100%;margin-top:6px" onclick="askRemediation()">🛠 ${t('対応を進める','Remediate')}</button>
+  `;
+}
+
+/* ── MCP RCA ────────────────────────────────── */
+function mcpCallCardHtml(toolName,params,result,confidence){
+  const statusLabel=result?`${esc(confidence||'')} · ${t('完了','Done')}`:`<span class="mcp-spinner"></span>${t('実行中...','Running...')}`;
+  const paramsHtml=Object.entries(params||{}).map(([k,v])=>`<div class="mcp-param">${esc(k)}: <strong>${esc(String(v))}</strong></div>`).join('');
+  const evidenceHtml=result?(result.evidence||[]).slice(0,5).map(ev=>`
+    <div class="evidence-item">
+      <div class="evidence-item-head">
+        <span class="chip ${ev.source==='prometheus'?'prometheus':ev.source==='langfuse'?'langfuse':''}" style="height:18px;font-size:10px">${esc(ev.source||'source')}</span>
+        <span class="chip ${ev.severity==='error'?'critical':ev.severity==='warning'?'high':''}" style="height:18px;font-size:10px">${esc(ev.severity||'info')}</span>
+        <span class="evidence-label">${esc(ev.query_name||ev.kind||'signal')}</span>
+        ${ev.value!=null?`<code class="evidence-value">${esc(ev.value)}</code>`:''}
+      </div>
+      <div class="evidence-summary">${esc(ev.summary||'')}</div>
+    </div>`).join(''):`<div style="padding:6px 0;color:var(--muted);font-size:12px"><span class="mcp-spinner"></span>${t('証拠を取得中...','Fetching evidence...')}</div>`;
+
+  return`<div class="mcp-call-card">
+    <div class="mcp-call-header">
+      <span class="mcp-badge-sm">MCP</span>
+      <span class="mcp-tool-name">${esc(toolName)}</span>
+      <span class="mcp-status-text">${statusLabel}</span>
+    </div>
+    <div class="mcp-call-body">
+      <div class="mcp-params">${paramsHtml}</div>
+      ${result?.answer?`<div class="mcp-result-text">${esc(result.answer)}</div>`:''}
+      <div class="evidence-grid">${evidenceHtml}</div>
+    </div>
+  </div>`;
+}
+
+function mcpRcaResponseHtml(live,stored){
+  const hazardous=(live.evidence||[]).some(e=>['warning','error','critical'].includes(e.severity));
+  const kb=(live.knowledge_matches||[]).slice(0,2).map(k=>`
+    <div class="evidence-item" style="border-left:2px solid var(--blue)">
+      <div class="evidence-item-head">
+        <span class="chip" style="height:18px;font-size:10px">${esc(k.source||'KB')}</span>
+        <span class="chip" style="height:18px;font-size:10px">${esc(k.remediation_type||'')}</span>
+        <span class="evidence-label">${esc(k.title||t('ナレッジ','Knowledge'))}</span>
+      </div>
+      <div class="evidence-summary">${esc(k.recommended_action||k.reason||'')}</div>
+    </div>`).join('');
+
+  const storedHtml=stored?`<div class="chat-card" style="margin-top:2px">
+    <div class="chips-row"><span class="chip">${t('保存済み RCA','Stored RCA')}</span><span class="chip langfuse" style="height:20px;font-size:10px">Langfuse</span></div>
+    <div class="card-body">${esc(analysisCause(stored)||t('原因不明','Unknown'))}</div>
+    ${analysisAction(stored)?`<div class="card-sub" style="margin-top:5px">${esc(analysisAction(stored))}</div>`:''}
+  </div>`:'';
+
+  return`
+    <div class="card-heading">${t('RCA 結果','RCA result')}</div>
+    ${mcpCallCardHtml('correlate_cross_service_incident',{root_candidate_service:currentIssue?.app_name||'service',affected_service:live.affected_service||currentIssue?.app_name||'service',window_minutes:10},live,live.confidence)}
+    ${storedHtml}
+    ${kb?`<div class="card-heading" style="font-size:13px;margin-top:4px">${t('ナレッジベース','Knowledge base')}</div><div class="evidence-grid">${kb}</div>`:''}
+    <div class="card-actions">
+      <button class="btn-primary" onclick="askRCA()">${t('MCPで再確認','Re-check via MCP')}</button>
+      <button class="btn-secondary" onclick="askRemediation()">${t('対応へ進む','Remediate')}</button>
+    </div>`;
+}
+
+/* ── RCA ────────────────────────────────────── */
+async function getRCA(){
+  if(!currentIssue)return null;
+  try{currentAnalysis=await api(`/api/analysis/issues/${currentIssue.id}?lang=${lang}&summary=true`)}
+  catch{
+    try{
+      await api(`/api/analysis/issues/${currentIssue.id}`,{method:'POST'});
+      currentAnalysis=await pollRCA(currentIssue.id);
+    }catch{return null}
+  }
+  return currentAnalysis;
+}
+
+async function pollRCA(id){
+  for(let i=0;i<24;i++){
+    await new Promise(r=>setTimeout(r,2500));
+    try{const a=await api(`/api/analysis/issues/${id}?lang=${lang}&summary=true`);if(!['pending','running'].includes(a.status))return a}catch{}
+  }
+  throw new Error(t('RCAが時間内に完了しませんでした','RCA timed out'));
+}
+
+async function askRCA(userPrompt=''){
+  const prompt=userPrompt||t('なぜ起きたの？','Why did this happen?');
+  if(!userPrompt)addMsg('user',esc(prompt));
+  if(!currentIssue){addMsg('agent',`<div class="chat-card"><div class="card-body">${t('まず問題を選んでください。','Please select an issue first.')}</div></div>`);return}
+  setMcp(true);
+  const progressEl=addMsg('agent',mcpCallCardHtml('correlate_cross_service_incident',{root_candidate_service:currentIssue.app_name,affected_service:currentIssue.app_name,window_minutes:10},null,null));
+  try{
+    const [liveRes,storedRes]=await Promise.allSettled([
+      api('/api/chat/rca/live',{method:'POST',body:JSON.stringify({issue_id:currentIssue.id,message:prompt,service:currentIssue.app_name,lang,window_minutes:10})}),
+      getRCA()
+    ]);
+    const live=liveRes.status==='fulfilled'?liveRes.value:null;
+    const stored=storedRes.status==='fulfilled'?storedRes.value:null;
+    if(live){
+      progressEl.innerHTML=mcpRcaResponseHtml(live,stored);
+      if(currentIssue)renderDetailPanel(currentIssue,currentTopology,stored||currentAnalysis);
+    }else if(stored){
+      progressEl.innerHTML=storedRcaHtml(stored);
+    }else{
+      progressEl.innerHTML=`<div class="chat-card"><div class="card-body error-msg">${t('RCAを取得できませんでした','Could not fetch RCA')}</div></div>`;
+    }
+  }finally{setMcp(false);scrollBottom()}
+}
+
+function storedRcaHtml(a){
+  const ev=(a.evidence||'').split('\n').map(x=>x.trim().replace(/^[-•*]\s*/,'')).filter(Boolean).slice(0,4);
+  return`
+    <div class="card-heading">${t('原因分析レポート','RCA Report')}</div>
+    <table class="rca-table">
+      <tr class="cause-row"><th>${t('推定原因','Likely cause')}</th><td>${esc(analysisCause(a)||t('未取得','Not available'))}</td></tr>
+      <tr class="evidence-row"><th>${t('根拠','Evidence')}</th><td>${ev.length?`<ul>${ev.map(x=>`<li>${esc(x)}</li>`).join('')}</ul>`:t('なし','None')}</td></tr>
+      <tr class="action-row"><th>${t('推奨対応','Action')}</th><td>${esc(analysisAction(a)||t('未取得','Not available'))}</td></tr>
+    </table>
+    <div class="card-actions"><button class="btn-primary" onclick="askRemediation()">${t('対応へ進む','Proceed to remediation')}</button></div>`;
+}
+
+/* ── Summary ────────────────────────────────── */
+function askSummary(){
+  addMsg('user',t('やさしく要約して','Give me a simple summary'));
+  if(!currentIssue){addMsg('agent',`<div class="chat-card"><div class="card-body">${t('まず問題を選んでください。','Select an issue first.')}</div></div>`);return}
+  const topo=currentTopology?.topology||{};
+  const cause=cleanText(topo.root_cause_chain)||issueDesc(currentIssue);
+  const action=cleanText(topo.recommended_action)||analysisAction(currentAnalysis)||'';
+  addMsg('agent',`
+    <div class="card-heading">${t('短い要約','Summary')}</div>
+    <div class="chat-card">
+      <div class="chips-row">${sevChip(currentIssue)}${statusChip(currentIssue)}</div>
+      <div class="card-heading">${esc(issueTitle(currentIssue))}</div>
+      <div class="card-body">${esc(cause)}</div>
+      ${action?`<div class="card-body" style="margin-top:6px;color:var(--muted)">${esc(action)}</div>`:''}
+    </div>
+    <div class="card-actions">
+      <button class="btn-primary" onclick="askRCA()">${t('原因を確認','Check RCA')}</button>
+      <button class="btn-secondary" onclick="askRemediation()">${t('対応を進める','Remediate')}</button>
+    </div>`);
+}
+
+/* ── Remediation ────────────────────────────── */
+async function askRemediation(){
+  addMsg('user',t('対応を進めたい','I want to remediate this'));
+  if(!currentIssue){addMsg('agent',`<div class="chat-card"><div class="card-body">${t('まず問題を選んでください。','Select an issue first.')}</div></div>`);return}
+  if(!currentAnalysis){try{await getRCA()}catch{}}
+  addMsg('agent',`
+    <div class="card-heading">${t('対応の進め方','Remediation flow')}</div>
+    <div class="remed-steps">
+      <div class="remed-step"><div class="remed-step-dot active">1</div><div class="remed-step-content"><div class="remed-step-title">${t('対象確認','Confirm target')}</div><div class="remed-step-desc">${t('リポジトリと変更対象を確認します','Confirm the target repository and scope')}</div></div></div>
+      <div class="remed-step"><div class="remed-step-dot">2</div><div class="remed-step-content"><div class="remed-step-title">${t('対応案の確認','Review plan')}</div><div class="remed-step-desc">${t('変更内容を確認してから実装へ','Review changes before implementing')}</div></div></div>
+      <div class="remed-step"><div class="remed-step-dot">3</div><div class="remed-step-content"><div class="remed-step-title">${t('実装と PR','Implement & PR')}</div><div class="remed-step-desc">${t('実装後 Pull Request を作成','Implement and create a pull request')}</div></div></div>
+    </div>
+    <div class="card-actions">
+      <button class="btn-primary" onclick="startRemediation()">${t('対応を開始','Start remediation')}</button>
+      <button class="btn-secondary" onclick="refreshRemediation()">${t('進捗を見る','Check progress')}</button>
+    </div>`);
+}
+
+async function startRemediation(){
+  if(!currentIssue)return;
+  setState(t('対応開始','Starting'));
+  const prog=addMsg('agent',`<div class="chat-card"><span class="spinner-inline"></span>${t('対応ワークフローを開始しています。','Starting remediation workflow.')}</div>`);
+  try{
+    const body={requested_by:lang==='ja'?'support-engineer-ja':'support-engineer-en'};
+    const data=await api(`/api/remediation/issues/${currentIssue.id}/start`,{method:'POST',body:JSON.stringify(body)});
+    remediationStarted=true;rememberProject(data);
+    prog.innerHTML=remedStatusHtml(data,t('対応ワークフローを開始しました。','Remediation started.'));
+    await showProjectSelect();
+    setState(t('対応中','In progress'));
+  }catch(e){prog.innerHTML=`<div class="chat-card"><div class="card-body error-msg">${esc(e.message)}</div></div>`;setState(t('失敗','Failed'))}
+}
+
+async function refreshRemediation(){
+  if(!currentIssue)return;
+  try{const data=await api(`/api/remediation/issues/${currentIssue.id}/status`);addMsg('agent',remedStatusHtml(data,t('現在の進捗です。','Current progress.')))}
+  catch(e){addMsg('agent',`<div class="chat-card"><div class="card-body error-msg">${esc(e.message)}</div></div>`)}
+}
+
+function rememberProject(data){const c=(data?.resolution_candidates||[])[0]||{};const i=data?.issue||data?.selected_project||{};chatProject={...chatProject,...c,...i}}
+
+function remedStatusHtml(data,intro){
+  rememberProject(data);
+  const raw=String(data?.status||data?.resolution_status||'').toUpperCase();
+  const phase=data?.job_phase||'';
+  const pr=data?.pr_url?`<p style="margin-top:8px"><a href="${esc(data.pr_url)}" target="_blank" rel="noreferrer">${t('Pull Request を開く','Open PR')}</a></p>`:'';
+  return`<div class="card-heading">${esc(intro)}</div><div class="chat-card"><div class="chips-row"><span class="chip">${esc(rStatusText(raw))}</span>${phase?`<span class="chip">${esc(phase)}</span>`:''}</div>${pr}${remedActions(raw)}</div>`;
+}
+
+function remedActions(raw){
+  if(['PLAN_RUNNING','PLAN_DRAFTING'].includes(raw))return`<div class="card-body"><span class="spinner-inline"></span>${t('対応案を作成中...','Creating plan...')}</div>`;
+  if(raw==='PROJECT_REVIEW_PENDING')return`<div class="card-actions"><button class="btn-primary" onclick="showProjectSelect()">${t('対象を確認','Review target')}</button></div>`;
+  if(raw==='PROJECT_APPROVED')return`<div class="card-actions"><button class="btn-primary" onclick="startPlan()">${t('対応案を作成','Create plan')}</button></div>`;
+  if(['PLAN_DRAFTED','PLAN_REVISED'].includes(raw))return`<div class="card-actions"><button class="btn-primary" onclick="getPlan()">${t('対応案を確認','Review plan')}</button><button class="btn-secondary" onclick="approvePlan()">${t('実装へ進む','Implement')}</button></div>`;
+  if(['IMPLEMENTATION_READY','REVIEW_PENDING'].includes(raw))return`<div class="card-actions"><button class="btn-primary" onclick="checkImplResults()">${t('実装結果を確認','Review results')}</button></div>`;
+  if(raw==='IMPLEMENTATION_RUNNING'||raw==='PLAN_APPROVED')return`<div class="card-body"><span class="spinner-inline"></span>${t('実装中...','Implementing...')}</div><div class="card-actions"><button class="btn-secondary" onclick="refreshRemediation()">${t('進捗を更新','Refresh')}</button></div>`;
+  if(raw==='PR_CREATED')return`<div class="card-body" style="color:var(--green)">${t('PRが作成されました。','PR created successfully.')}</div>`;
+  return`<div class="card-actions"><button class="btn-secondary" onclick="showProjectSelect()">${t('対象を確認','Review target')}</button><button class="btn-secondary" onclick="startPlan()">${t('対応案を作成','Create plan')}</button><button class="btn-secondary" onclick="refreshRemediation()">${t('進捗を見る','Progress')}</button></div>`;
+}
+
+async function showProjectSelect(){
+  if(!currentIssue)return;
+  try{const d=await api(`/api/remediation/issues/${currentIssue.id}/resolution`);rememberProject(d)}catch{}
+  const p=chatProject;const pv=(k,fb='')=>esc(p[k]||fb);
+  addMsg('agent',`<div class="card-heading">${t('対象システムの確認','Review target system')}</div><div class="chat-card">
+    <div class="card-body">${t('必要に応じて修正してください。','Update as needed.')}</div>
+    <div class="form-grid">
+      <label>${t('プロジェクト','Project')}</label><input id="r-proj" value="${pv('project_name',currentIssue?.app_name||'')}">
+      <label>Repo root</label><input id="r-repo" value="${pv('repo_root')}">
+      <label>Allowed folder</label><input id="r-folder" value="${pv('allowed_folder')}">
+      <label>GitHub repo</label><input id="r-github" value="${pv('github_repo')}">
+      <label>Base branch</label><input id="r-branch" value="${pv('base_branch','main')}">
+    </div>
+    <div class="card-actions"><button class="btn-primary" onclick="approveProject()">${t('承認','Approve')}</button></div>
+  </div>`);
+}
+
+function readProjectForm(){chatProject={...chatProject,project_name:document.getElementById('r-proj')?.value?.trim()||'',repo_root:document.getElementById('r-repo')?.value?.trim()||'',allowed_folder:document.getElementById('r-folder')?.value?.trim()||'',github_repo:document.getElementById('r-github')?.value?.trim()||'',base_branch:document.getElementById('r-branch')?.value?.trim()||'main'};return chatProject}
+
+async function approveProject(){
+  const payload=readProjectForm();
+  try{const d=await api(`/api/remediation/issues/${currentIssue.id}/project/approve`,{method:'POST',body:JSON.stringify(payload)});rememberProject(d);addMsg('agent',remedStatusHtml(d,t('対象を承認しました。','Target approved.')));pollRemediation('project')}
+  catch(e){addMsg('agent',`<div class="chat-card"><div class="card-body error-msg">${esc(e.message)}</div></div>`)}
+}
+
+async function startPlan(){
+  const prog=addMsg('agent',`<div class="chat-card"><span class="spinner-inline"></span>${t('対応案を作成しています。','Creating plan.')}</div>`);
+  try{await api(`/api/remediation/issues/${currentIssue.id}/plan/start`,{method:'POST',body:'{}'});pollPlan(prog)}
+  catch(e){prog.innerHTML=`<div class="chat-card"><div class="card-body error-msg">${esc(e.message)}</div></div>`}
+}
+
+async function pollPlan(progEl){
+  for(let i=0;i<40;i++){
+    await new Promise(r=>setTimeout(r,3000));
+    try{
+      const d=await api(`/api/remediation/issues/${currentIssue.id}/plan`);
+      const s=d?.status||'';
+      if(!['PLAN_RUNNING','PLAN_DRAFTING','PROJECT_APPROVED'].includes(s)&&d?.active_job!=='plan'){progEl.innerHTML='';showPlan(d);return d}
+      progEl.innerHTML=`<div class="chat-card"><span class="spinner-inline"></span>${t('対応案を作成中...','Creating plan...')} (${i+1})</div>`;
+    }catch{}
+  }
+  progEl.innerHTML=`<div class="chat-card"><div class="card-body">${t('まだ処理中です。「対応案を見る」と入力してください。','Still processing. Ask to see the plan when ready.')}</div></div>`;
+}
+
+async function getPlan(){
+  try{const d=await api(`/api/remediation/issues/${currentIssue.id}/plan`);
+    if(['PLAN_RUNNING','PLAN_DRAFTING'].includes(d?.status||'')){const p=addMsg('agent',`<div class="chat-card"><span class="spinner-inline"></span>${t('対応案はまだ作成中です。','Plan still being created.')}</div>`);pollPlan(p);return}
+    showPlan(d);
+  }catch(e){addMsg('agent',`<div class="chat-card"><div class="card-body error-msg">${esc(e.message)}</div></div>`)}
+}
+
+function planText(d){let b=d?.plan_text||d?.plan||d?.content||d?.markdown||d?.summary||'';if(typeof b==='string'&&b.trim().startsWith('{')){try{const p=JSON.parse(b);b=p.plan_text||p.plan||p.content||b}catch{}}return String(b||'')}
+
+function showPlan(d){
+  const text=planText(d);
+  const lines=text.split('\n').map(l=>l.replace(/^#+\s*/,'').replace(/^[-*]\s*/,'').replace(/`/g,'').trim()).filter(Boolean);
+  const summary=lines[0]||t('対応案です。','Response plan.');
+  const steps=lines.slice(1).filter(l=>/change|update|restart|confirm|設定|更新|確認|再起動/.test(l)).slice(0,5);
+  addMsg('agent',`
+    <div class="card-heading">${t('対応案ができました','Plan ready')}</div>
+    <div class="plan-block">
+      <div class="plan-section"><h4>${t('概要','Summary')}</h4><p>${esc(summary)}</p></div>
+      ${steps.length?`<div class="plan-section"><h4>${t('主な手順','Steps')}</h4><ul>${steps.map(s=>`<li>${esc(s)}</li>`).join('')}</ul></div>`:''}
+    </div>
+    <div class="card-actions"><button class="btn-primary" onclick="approvePlan()">${t('この案で実装へ進む','Approve & implement')}</button></div>`);
+}
+
+async function approvePlan(){
+  const prog=addMsg('agent',`<div class="chat-card"><span class="spinner-inline"></span>${t('実装を開始しています。','Starting implementation.')}</div>`);
+  try{const d=await api(`/api/remediation/issues/${currentIssue.id}/plan/approve`,{method:'POST',body:'{}'});prog.innerHTML=remedStatusHtml(d,t('実装を開始しました。','Implementation started.'));pollRemediation('implementation',prog)}
+  catch(e){prog.innerHTML=`<div class="chat-card"><div class="card-body error-msg">${esc(e.message)}</div></div>`}
+}
+
+async function pollRemediation(kind='status',progEl=null){
+  const node=progEl||addMsg('agent',`<div class="chat-card"><span class="spinner-inline"></span>${t('進捗を確認中...','Checking progress...')}</div>`);
+  const busy={project:s=>!['PROJECT_APPROVED','PLAN_DRAFTED','PLAN_REVISED','PR_CREATED','FAILED'].includes(s),implementation:s=>['IMPLEMENTATION_RUNNING','PLAN_APPROVED'].includes(s),status:s=>['PLAN_RUNNING','PLAN_DRAFTING','PLAN_REVISION_RUNNING','IMPLEMENTATION_RUNNING','PR_CREATING'].includes(s)};
+  const isBusy=busy[kind]||busy.status;
+  for(let i=0;i<60;i++){
+    await new Promise(r=>setTimeout(r,2500));
+    try{const d=await api(`/api/remediation/issues/${currentIssue.id}/status`);const raw=String(d?.status||d?.resolution_status||'').toUpperCase();node.innerHTML=remedStatusHtml(d,t('進捗を更新しました。','Progress updated.'));if(!isBusy(raw))return d}catch{}
   }
 }
-bootFromContext();
+
+async function checkImplResults(){
+  const prog=addMsg('agent',`<div class="chat-card"><span class="spinner-inline"></span>${t('実装結果を確認しています。','Checking results.')}</div>`);
+  try{
+    const summary=await api(`/api/remediation/issues/${currentIssue.id}/implementation/summary`);
+    let artifacts={artifacts:[]};try{artifacts=await api(`/api/remediation/issues/${currentIssue.id}/artifacts`)}catch{}
+    const raw=String(summary?.status||'').toUpperCase();
+    const pr=summary?.pr_url?`<p style="margin-top:8px"><a href="${esc(summary.pr_url)}" target="_blank" rel="noreferrer">${t('Pull Request を開く','Open PR')}</a></p>`:'';
+    const artList=(artifacts.artifacts||[]).map(a=>`<li><a href="${esc(a.view_url||a.download_url||'#')}" target="_blank" rel="noreferrer">${esc(a.name||a.path||'artifact')}</a></li>`).join('');
+    prog.innerHTML=`
+      <div class="card-heading">${t('実装結果','Implementation results')}</div>
+      <div class="chat-card"><div class="chips-row"><span class="chip">${esc(rStatusText(raw))}</span></div>
+      ${pr}${summary?.change_summary?.human_summary?`<div class="card-body">${esc(summary.change_summary.human_summary)}</div>`:''}
+      ${artList?`<ul style="margin:8px 0 0 16px;font-size:13px">${artList}</ul>`:''}
+      <div class="card-actions"><button class="btn-primary" onclick="createPR()">${t('PR を作成','Create PR')}</button></div></div>`;
+  }catch(e){prog.innerHTML=`<div class="chat-card"><div class="card-body error-msg">${esc(e.message)}</div></div>`}
+}
+
+async function createPR(){
+  try{const d=await api(`/api/remediation/issues/${currentIssue.id}/pr`,{method:'POST',body:'{}'});addMsg('agent',remedStatusHtml(d,t('PR作成を開始しました。','PR creation started.')));pollRemediation('pr')}
+  catch(e){addMsg('agent',`<div class="chat-card"><div class="card-body error-msg">${esc(e.message)}</div></div>`)}
+}
+
+/* ── Intent handling ────────────────────────── */
+async function handleIntent(text){
+  const low=text.toLowerCase();
+  if(/open|ticket|issue|未対応|一覧|問題|tickets?/.test(low)&&!/why|cause|原因/.test(low)){
+    if(/重大|critical|most critical|highest/.test(low)){const f=ticketsCache.find(t=>t.severity==='critical')||ticketsCache[0];if(f){await selectIssue(f.id);return}}
+    ticketsCache.length?showOpenTickets():await loadTickets(false);return;
+  }
+  if(/why|cause|rca|原因|なぜ|どうして|理由/.test(low)){await askRCA(text);return}
+  if(/summary|summarize|要約|簡単|やさしく/.test(low)){askSummary();return}
+  if(/remediat|fix|対応|修復|進め/.test(low)){await askRemediation();return}
+  if(/impl.*result|実装結果/.test(low)){await checkImplResults();return}
+  if(/plan|proposal|案/.test(low)){await getPlan();return}
+  if(/status|progress|進捗|状態/.test(low)){await refreshRemediation();return}
+  if(currentIssue){await askRCA(text);return}
+  addMsg('agent',`<div class="chat-card"><div class="card-body">${t('未対応の確認、原因分析、対応開始、進捗確認ができます。まずは「未対応を見る」と入力するか、左から問題を選んでください。','I can help with open issues, RCA, remediation, and progress. Type "open issues" or select one from the left.')}</div></div>`);
+}
+
+function handleKey(e){if(e.key==='Enter'){e.preventDefault();send()}}
+
+async function send(){
+  const input=document.getElementById('chat-input');
+  const text=(input.value||'').trim();
+  if(!text)return;
+  input.value='';
+  const detected=detectLang(text);
+  if(detected!==lang){lang=detected;updateUiLang();await loadTickets(true)}
+  addMsg('user',esc(text));
+  await handleIntent(text);
+}
+
+/* ── Language ────────────────────────────────── */
+function updateUiLang(){
+  document.documentElement.lang=lang;
+  document.getElementById('lang-btn').textContent=lang==='ja'?'English':'日本語';
+  document.getElementById('rail-mark').textContent=lang==='ja'?'助':'A';
+  document.getElementById('brand-mark').textContent=lang==='ja'?'助':'A';
+  document.getElementById('brand-name').textContent=lang==='ja'?'助手':'AIOPS';
+  document.getElementById('w-heading').textContent=lang==='ja'?'こんにちは。助手です。':"Hello. I'm your AIOps assistant.";
+  document.getElementById('w-sub').textContent=lang==='ja'?'未対応の確認、MCPライブ証拠、原因分析、対応案まで一緒に進めます。':'Open issues, MCP live evidence, RCA, and remediation — all in one conversation.';
+  document.getElementById('rb-tickets').textContent=lang==='ja'?'未対応を見る':'Open issues';
+  document.getElementById('rb-rca').textContent=lang==='ja'?'原因を確認':'Check RCA';
+  document.getElementById('rb-remed').textContent=lang==='ja'?'対応を進める':'Remediate';
+  document.getElementById('rail-section').textContent=lang==='ja'?'最近の問題':'Recent issues';
+  document.getElementById('detail-heading').textContent=lang==='ja'?'問題の詳細':'Issue detail';
+  document.getElementById('chat-input').placeholder=lang==='ja'?'例: なぜ起きたの？ / 対応を進めたい / show open issues':'e.g. why did this happen? / remediate / 未対応を見る';
+}
+
+async function toggleLanguage(){
+  lang=lang==='ja'?'en':'ja';
+  updateUiLang();
+  await loadTickets(true);
+  if(currentIssue){await loadTopology(currentIssue.id);renderDetailPanel(currentIssue,currentTopology,currentAnalysis)}
+  addMsg('agent',lang==='ja'?'日本語で続けます。':'Continuing in English.');
+}
+
+function askOpenTickets(){addMsg('user',t('未対応の問題を見せて','Show me open issues'));ticketsCache.length?showOpenTickets():loadTickets(false)}
+
+/* ── Boot ───────────────────────────────────── */
+async function boot(){
+  updateUiLang();
+  await loadTickets(true);
+  const issueId=Number(P.get('issue_id')||0);
+  if(issueId){await selectIssue(issueId);if(P.get('mode')==='remediation')askRemediation()}
+}
+boot();
 </script>
 </body>
 </html>

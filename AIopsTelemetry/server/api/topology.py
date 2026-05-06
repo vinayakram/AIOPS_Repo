@@ -689,8 +689,14 @@ def _component_logs(
                 )
             )
 
+    observability_requested = component_id in {"prometheus", "langfuse"} or any(
+        str(source.get("id") or "") in {"prometheus", "langfuse"}
+        for source in node.get("evidence_sources") or []
+        if isinstance(source, dict)
+    )
+
     if not rows:
-        rows = _fallback_issue_logs(issue, None)
+        rows = [] if observability_requested else _fallback_issue_logs(issue, None)
 
     deduped: dict[tuple[str, str, str, str], dict[str, str]] = {}
     for row in rows:
