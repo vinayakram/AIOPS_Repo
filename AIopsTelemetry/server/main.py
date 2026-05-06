@@ -16,6 +16,7 @@ from server.api import incidents as incidents_api
 from server.api import remediation as remediation_api
 from server.api import chat as chat_api
 from server.api import knowledge as knowledge_api
+from server.api import topology as topology_api
 
 _escalation_task = None
 
@@ -83,6 +84,7 @@ app.include_router(incidents_api.router, prefix="/api")
 app.include_router(remediation_api.router, prefix="/api")
 app.include_router(chat_api.router, prefix="/api")
 app.include_router(knowledge_api.router, prefix="/api")
+app.include_router(topology_api.router, prefix="/api")
 
 # ── Dashboard SPA ─────────────────────────────────────────────────────────────
 _DASHBOARD_DIR = os.path.join(os.path.dirname(__file__), "dashboard")
@@ -93,19 +95,28 @@ if os.path.isdir(_DASHBOARD_DIR):
 @app.get("/")
 @app.get("/dashboard")
 async def serve_dashboard():
-    index = os.path.join(_DASHBOARD_DIR, "index.html")
-    if os.path.isfile(index):
-        return FileResponse(index)
+    page = os.path.join(_DASHBOARD_DIR, "ops_dashboard.html")
+    if os.path.isfile(page):
+        return FileResponse(page)
     return {"message": "AIops Telemetry Server", "docs": "/docs"}
 
 
 @app.get("/ja")
 @app.get("/dashboard/ja")
 async def serve_japanese_dashboard():
+    page = os.path.join(_DASHBOARD_DIR, "ops_dashboard.html")
+    if os.path.isfile(page):
+        return FileResponse(page)
+    return {"message": "AIops Telemetry Server", "docs": "/docs"}
+
+
+@app.get("/technical")
+@app.get("/dashboard/technical")
+async def serve_technical_dashboard():
     index = os.path.join(_DASHBOARD_DIR, "index.html")
     if os.path.isfile(index):
         return FileResponse(index)
-    return {"message": "AIops Telemetry Server", "docs": "/docs"}
+    return {"message": "Technical dashboard not found"}
 
 
 @app.get("/light")

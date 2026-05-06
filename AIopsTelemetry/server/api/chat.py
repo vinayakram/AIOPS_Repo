@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import re
 from datetime import datetime, timedelta, timezone
 from typing import Any, Optional
 
@@ -12,6 +13,7 @@ from sqlalchemy.orm import Session
 from server.database.engine import get_db
 from server.database.models import Issue, IssueAnalysis, Trace
 from server.engine import mcp_observability
+from server.engine.bilingual import app_display_name_ja, issue_description_ja, normalize_lang
 from server.engine.knowledge_base import find_matches_for_issue
 
 
@@ -35,53 +37,72 @@ class RCADiagramRequest(BaseModel):
 
 @router.post("/rca/live")
 def live_rca(payload: LiveRCARequest, db: Session = Depends(get_db)):
+    lang = _message_lang(payload.message, payload.lang)
     issue = None
+    analysis = None
     if payload.issue_id:
         issue = db.query(Issue).filter(Issue.id == payload.issue_id).first()
         if not issue:
             raise HTTPException(404, "Issue not found")
+        analysis = (
+            db.query(IssueAnalysis)
+            .filter(IssueAnalysis.issue_id == payload.issue_id)
+            .first()
+        )
 
-    affected_service = payload.service or (issue.app_name if issue else None) or "service"
-    root_candidate = payload.root_candidate_service or _infer_root_candidate(payload.message, affected_service)
+    affected_service_raw = payload.service or (issue.app_name if issue else None) or "service"
+    root_candidate_raw = payload.root_candidate_service or _infer_root_candidate(payload.message, affected_service_raw)
+    affected_service = _service_label(affected_service_raw, lang)
+    root_candidate = _service_label(root_candidate_raw, lang)
     timestamp = payload.timestamp or _live_timestamp()
     window = max(1, min(payload.window_minutes or 10, 60))
 
     steps = [
-        {"type": "status", "message": _t(payload.lang, "stored")},
-        {"type": "tool_call", "tool": "correlate_cross_service_incident", "message": _t(payload.lang, "mcp")},
+        {"type": "status", "message": _t(lang, "stored")},
+        {"type": "tool_call", "tool": "correlate_cross_service_incident", "message": _t(lang, "mcp")},
     ]
     try:
         result = mcp_observability.call_tool(
             "correlate_cross_service_incident",
             {
-                "root_candidate_service": root_candidate,
-                "affected_service": affected_service,
+                "root_candidate_service": root_candidate_raw,
+                "affected_service": affected_service_raw,
                 "timestamp": timestamp,
                 "window_minutes": window,
             },
         )
     except Exception as exc:
         return {
-            "assistant": _assistant_name(payload.lang),
+            "assistant": _assistant_name(lang),
             "mode": "mcp_live_rca",
             "status": "mcp_unavailable",
-            "answer": _t(payload.lang, "mcp_failed", error=str(exc)),
+            "answer": _t(lang, "mcp_failed", error=str(exc)),
             "confidence": "unknown",
             "steps": steps + [{"type": "error", "message": str(exc)}],
             "evidence": [],
-            "suggested_next_action": _t(payload.lang, "fallback"),
+            "suggested_next_action": _t(lang, "fallback"),
         }
 
     evidence = _top_evidence(result.get("evidence") or [])
     kb_matches = find_matches_for_issue(db, issue, limit=3) if issue is not None else []
     confidence = result.get("confidence") or "unknown"
-    answer = _answer(payload.lang, root_candidate, affected_service, confidence, evidence, kb_matches)
+    answer = _answer_for_question(
+        lang=lang,
+        message=payload.message,
+        issue=issue,
+        analysis=analysis,
+        root=root_candidate,
+        affected=affected_service,
+        confidence=confidence,
+        evidence=evidence,
+        kb_matches=kb_matches,
+    )
     steps.extend([
-        {"type": "evidence", "message": _t(payload.lang, "evidence", count=len(evidence))},
+        {"type": "evidence", "message": _t(lang, "evidence", count=len(evidence))},
         {"type": "answer", "message": answer},
     ])
     return {
-        "assistant": _assistant_name(payload.lang),
+        "assistant": _assistant_name(lang),
         "mode": "mcp_live_rca",
         "status": "ok",
         "answer": answer,
@@ -93,19 +114,10 @@ def live_rca(payload: LiveRCARequest, db: Session = Depends(get_db)):
         "steps": steps,
         "evidence": evidence,
         "knowledge_matches": [
-            {
-                "source": item.source,
-                "title": item.title,
-                "remediation_type": item.remediation_type,
-                "confidence": item.confidence,
-                "reason": item.reason,
-                "recommended_action": item.recommended_action,
-                "validation_steps": item.validation_steps,
-                "prior_outcome": item.prior_outcome,
-            }
+            _serialize_knowledge_match(item, lang=lang, issue=issue)
             for item in kb_matches
         ],
-        "suggested_next_action": _next_action(payload.lang, confidence),
+        "suggested_next_action": _next_action(lang, confidence),
         "raw_summary": result.get("summary"),
     }
 
@@ -133,6 +145,15 @@ def rca_diagram(payload: RCADiagramRequest, db: Session = Depends(get_db)):
 def _infer_root_candidate(message: str, affected_service: str) -> str:
     text = (message or "").strip()
     return text or affected_service
+
+
+def _message_lang(message: str | None, requested_lang: str | None) -> str:
+    text = str(message or "").strip()
+    if re.search(r"[\u3040-\u30ff\u3400-\u9fff]", text):
+        return "ja"
+    if len(re.findall(r"[A-Za-z]", text)) >= 4:
+        return "en"
+    return normalize_lang(requested_lang)
 
 
 def _analysis_json(analysis: IssueAnalysis | None) -> dict[str, Any]:
@@ -388,6 +409,147 @@ def _top_evidence(items: list[dict[str, Any]]) -> list[dict[str, Any]]:
     return cleaned[:8]
 
 
+def _service_label(name: str | None, lang: str) -> str:
+    if normalize_lang(lang) == "ja":
+        return app_display_name_ja(name)
+    return (name or "service").strip() or "service"
+
+
+def _localized_remediation_type(value: str | None, lang: str) -> str:
+    key = str(value or "").strip().lower()
+    if normalize_lang(lang) != "ja":
+        return key or "unknown"
+    labels = {
+        "infra_change": "インフラ対応",
+        "config_change": "設定変更",
+        "code_change": "コード修正",
+        "runbook_change": "運用手順変更",
+        "investigation_only": "追加調査",
+        "human_handoff": "担当引き継ぎ",
+        "unknown": "未分類",
+    }
+    return labels.get(key, "追加調査")
+
+
+def _localized_kb_title(title: str | None, lang: str) -> str:
+    text = (title or "").strip()
+    if normalize_lang(lang) != "ja":
+        return text
+    lowered = text.lower()
+    mappings = {
+        "scale container capacity before tuning thresholds": "しきい値調整の前にコンテナ容量を確保する",
+        "stabilize the upstream and protect the downstream": "上流を安定化し、下流を保護する",
+        "throttle, queue, and configure provider capacity": "スロットリング、キュー制御、プロバイダー容量設定を行う",
+        "normalize inputs and preserve valid user intent": "入力を正規化し、正しい利用者意図を保つ",
+        "restore memory headroom and check for leaks": "メモリ余力を回復し、リークを確認する",
+        "free space, expand volume, and stop uncontrolled growth": "空き容量を回復し、ボリュームを拡張して異常増加を止める",
+        "tune pool limits and close leaked connections": "プール上限を調整し、解放漏れ接続をなくす",
+        "restore dns path and dependency discovery": "DNS経路と依存先解決を復旧する",
+        "rotate credentials and validate reload behavior": "認証情報を更新し、再読み込み動作を確認する",
+        "rollback first when blast radius is active": "影響拡大中はまずロールバックする",
+        "scale consumers and control producer rate": "コンシューマを増やし、投入レートを制御する",
+        "restore cache health and reduce miss storms": "キャッシュ状態を回復し、ミス集中を抑える",
+        "isolate noisy neighbors and restore reserved capacity": "ノイジーネイバーを隔離し、予約容量を回復する",
+        "fix autoscaling inputs before raising thresholds": "しきい値を上げる前にオートスケール条件を修正する",
+        "increase storage throughput and reduce hot writes": "ストレージ性能を上げ、集中書き込みを緩和する",
+        "increase worker capacity and remove blocking work": "ワーカー能力を上げ、ブロッキング処理を除く",
+    }
+    for source, translated in mappings.items():
+        if source in lowered:
+            return translated
+    return text or "関連ナレッジ"
+
+
+def _localized_kb_reason(reason: str | None, lang: str) -> str:
+    text = (reason or "").strip()
+    if normalize_lang(lang) != "ja":
+        return text
+    lowered = text.lower()
+    if "matched industry pattern" in lowered:
+        return "業界パターンに一致するため、参考対応を提示します。"
+    if "similar past incident resolved successfully" in lowered:
+        return "過去の類似事象で解決実績があるため、再利用候補です。"
+    if "similar past incident found" in lowered:
+        return "過去の類似事象が見つかりましたが、解決結果は限定的です。"
+    return text or "関連ナレッジに一致しました。"
+
+
+def _localized_kb_action(action: str | None, lang: str, issue: Issue | None) -> str:
+    text = (action or "").strip()
+    if normalize_lang(lang) != "ja":
+        return text
+    translated = issue_description_ja(text, app_name=issue.app_name if issue else None, rule_id=issue.rule_id if issue else None)
+    if translated and translated != text:
+        return translated
+    lowered = text.lower()
+    action_map = {
+        "increase cpu/memory allocation": "CPUやメモリ割り当てを増やし、同じ負荷で再確認してください。",
+        "restore upstream health first": "まず上流サービスを復旧し、その後に下流保護設定を確認してください。",
+        "apply request shaping": "リクエスト量を整形し、バックオフとキュー制御を有効にしてください。",
+        "fix validation and normalization rules": "入力検証と正規化ルールを修正し、再発防止テストを追加してください。",
+        "restore free disk/inode capacity immediately": "ディスクまたは inode の空きを回復し、必要なら容量を拡張してください。",
+        "check dns resolver health": "DNS リゾルバ、サービスディスカバリ、ネットワーク設定を確認してください。",
+        "rotate or restore the expired credential": "期限切れ認証情報を更新し、アプリが再読み込みできているか確認してください。",
+        "roll back or disable the change first": "影響が継続している間は、まず変更を戻すか無効化してください。",
+        "scale worker/consumer capacity": "ワーカーやコンシューマの処理能力を引き上げてください。",
+        "move the affected workload": "影響中のワークロードを分離し、重要サービスの予約容量を確保してください。",
+    }
+    for source, translated_text in action_map.items():
+        if source in lowered:
+            return translated_text
+    return text or "推奨対応を確認してください。"
+
+
+def _localized_validation_steps(steps: list[str], lang: str) -> list[str]:
+    if normalize_lang(lang) != "ja":
+        return steps
+    if not steps:
+        return []
+    translated: list[str] = []
+    for step in steps:
+        text = (step or "").strip()
+        lowered = text.lower()
+        if not text:
+            continue
+        if "cpu and memory headroom" in lowered:
+            translated.append("同じ負荷条件で CPU とメモリの余力を確認してください。")
+        elif "health checks remain ok" in lowered:
+            translated.append("ヘルスチェックが正常に戻り、HTTP 503 が止まったことを確認してください。")
+        elif "threshold breach" in lowered:
+            translated.append("検証時間枠で同じしきい値超過が再発していないことを確認してください。")
+        elif "error rate and latency recover" in lowered:
+            translated.append("上流のエラー率と遅延が回復したことを確認してください。")
+        else:
+            translated.append(text)
+    return translated
+
+
+def _localized_prior_outcome(value: str | None, lang: str) -> str:
+    text = (value or "").strip()
+    if normalize_lang(lang) != "ja":
+        return text
+    labels = {
+        "succeeded": "成功",
+        "failed": "失敗",
+        "unknown": "不明",
+        "partial": "一部成功",
+    }
+    return labels.get(text.lower(), text or "不明")
+
+
+def _serialize_knowledge_match(item: Any, *, lang: str, issue: Issue | None) -> dict[str, Any]:
+    return {
+        "source": item.source,
+        "title": _localized_kb_title(item.title, lang),
+        "remediation_type": _localized_remediation_type(item.remediation_type, lang),
+        "confidence": item.confidence,
+        "reason": _localized_kb_reason(item.reason, lang),
+        "recommended_action": _localized_kb_action(item.recommended_action, lang, issue),
+        "validation_steps": _localized_validation_steps(item.validation_steps, lang),
+        "prior_outcome": _localized_prior_outcome(item.prior_outcome, lang),
+    }
+
+
 def _answer(
     lang: str,
     root: str,
@@ -432,35 +594,218 @@ def _answer(
     if kb:
         return (
             f"リアルタイムMCP証拠では、{affected} の障害に上流の {root} が関与している可能性があります。"
-            f"ナレッジベースでは「{kb.title}」に一致し、推奨対応タイプは {kb.remediation_type} です。"
+            f"ナレッジベースでは「{_localized_kb_title(kb.title, lang)}」に一致し、推奨対応タイプは {_localized_remediation_type(kb.remediation_type, lang)} です。"
         )
     if confidence in {"high", "medium"}:
         return f"リアルタイムMCP証拠では、{affected} の障害原因は上流の {root} である可能性が高いです。"
     return f"助手 は {root} が {affected} を障害させた証拠を十分には確認できませんでした。"
 
 
+def _answer_for_question(
+    lang: str,
+    message: str,
+    issue: Issue | None,
+    analysis: IssueAnalysis | None,
+    root: str,
+    affected: str,
+    confidence: str,
+    evidence: list[dict[str, Any]],
+    kb_matches: list[Any],
+) -> str:
+    text = (message or "").strip().lower()
+    has_hazard = any((ev.get("severity") in {"warning", "error", "critical"}) for ev in evidence)
+    preferred_cause = ""
+    preferred_action = ""
+    preferred_summary = ""
+    if analysis:
+        if normalize_lang(lang) == "en":
+            preferred_cause = analysis.likely_cause_en or ""
+            preferred_action = analysis.recommended_action_en or ""
+            preferred_summary = analysis.full_summary_en or ""
+        else:
+            preferred_cause = analysis.likely_cause_ja or ""
+            preferred_action = analysis.recommended_action_ja or ""
+            preferred_summary = analysis.full_summary_ja or ""
+    cause = _analysis_text(
+        preferred_cause,
+        analysis.likely_cause if analysis else None,
+    )
+    action = _analysis_text(
+        preferred_action,
+        analysis.recommended_action if analysis else None,
+    )
+    summary = _analysis_text(
+        preferred_summary,
+        analysis.full_summary if analysis else None,
+    )
+    kb = kb_matches[0] if kb_matches else None
+
+    if _asks_for_status(text):
+        return _status_answer(lang, issue, affected, confidence, has_hazard, evidence)
+    if _asks_for_service(text):
+        return _service_answer(lang, issue, root, affected, confidence)
+    if _asks_for_evidence(text):
+        return _evidence_answer(lang, evidence, confidence)
+    if _asks_for_action(text):
+        if action:
+            return action
+        if kb and kb.recommended_action:
+            return str(kb.recommended_action)
+        return _next_action(lang, confidence)
+    if _asks_for_cause(text):
+        if cause:
+            return cause
+        if summary:
+            return summary
+        return _answer(lang, root, affected, confidence, evidence, kb_matches)
+    if issue and _asks_for_ticket_details(text):
+        return _ticket_answer(lang, issue)
+
+    parts = []
+    if issue:
+        parts.append(_ticket_answer(lang, issue))
+    if cause:
+        parts.append(cause)
+    elif summary:
+        parts.append(summary)
+    else:
+        parts.append(_answer(lang, root, affected, confidence, evidence, kb_matches))
+    if action:
+        parts.append(action)
+    elif kb and kb.recommended_action:
+        parts.append(str(kb.recommended_action))
+    elif evidence:
+        parts.append(_evidence_answer(lang, evidence, confidence))
+    return " ".join(part for part in parts if part)
+
+
+def _analysis_text(preferred: str | None, fallback: str | None) -> str:
+    for value in (preferred, fallback):
+        if value and str(value).strip():
+            return str(value).strip()
+    return ""
+
+
+def _asks_for_cause(text: str) -> bool:
+    return any(token in text for token in ["why", "cause", "root cause", "reason", "what happened", "failure", "issue", "problem", "原因", "なぜ", "理由"])
+
+
+def _asks_for_action(text: str) -> bool:
+    return any(token in text for token in ["next step", "action", "fix", "remed", "mitigat", "resolve", "what should", "対応", "次", "修正", "対処"])
+
+
+def _asks_for_status(text: str) -> bool:
+    return any(token in text for token in ["status", "current", "now", "active", "live", "ongoing", "resolved", "still", "happening", "状態", "現在", "進行", "ライブ"])
+
+
+def _asks_for_service(text: str) -> bool:
+    return any(token in text for token in ["which service", "what service", "service", "app", "affected", "impact", "component", "どの", "サービス", "影響"])
+
+
+def _asks_for_evidence(text: str) -> bool:
+    return any(token in text for token in ["evidence", "metric", "metrics", "log", "logs", "prometheus", "proof", "signal", "trace", "証拠", "ログ", "メトリクス"])
+
+
+def _asks_for_ticket_details(text: str) -> bool:
+    return any(token in text for token in ["severity", "priority", "ticket", "issue id", "id", "status of issue", "重大度", "チケット", "番号"])
+
+
+def _ticket_answer(lang: str, issue: Issue) -> str:
+    if normalize_lang(lang) == "en":
+        return (
+            f"Issue #{issue.id} is {issue.status} with {issue.severity} severity for {issue.app_name}. "
+            f"{issue.title_en or issue.title}"
+        )
+    return (
+        f"問題 #{issue.id} は {issue.app_name} の {issue.severity} 重大度で、状態は {issue.status} です。"
+        f"{issue.title_ja or issue.title}"
+    )
+
+
+def _status_answer(
+    lang: str,
+    issue: Issue | None,
+    affected: str,
+    confidence: str,
+    has_hazard: bool,
+    evidence: list[dict[str, Any]],
+) -> str:
+    if normalize_lang(lang) == "en":
+        prefix = (
+            f"Issue #{issue.id} is {issue.status} with {issue.severity} severity. "
+            if issue else ""
+        )
+        if has_hazard:
+            return prefix + f"Live evidence still shows an active warning/error signal affecting {affected}."
+        if evidence:
+            return prefix + f"Live evidence is present, but it is informational or healthy for {affected}."
+        return prefix + f"No live evidence was returned for {affected} in the selected window."
+    prefix = (
+        f"問題 #{issue.id} は状態 {issue.status}、重大度 {issue.severity} です。"
+        if issue else ""
+    )
+    if has_hazard:
+        return prefix + f"{affected} に対して、現在も警告またはエラーのライブ証拠があります。"
+    if evidence:
+        return prefix + f"{affected} に関するライブ証拠はありますが、内容は正常または参考情報です。"
+    return prefix + f"{affected} について、選択した時間枠ではライブ証拠が返っていません。"
+
+
+def _service_answer(lang: str, issue: Issue | None, root: str, affected: str, confidence: str) -> str:
+    if normalize_lang(lang) == "en":
+        if confidence in {"high", "medium"}:
+            return f"The affected service is {affected}. Live evidence points to {root} as the likely upstream contributor."
+        return f"The affected service is {affected}. The live window does not strongly prove an upstream contributor."
+    if confidence in {"high", "medium"}:
+        return f"影響を受けているサービスは {affected} です。ライブ証拠では、上流要因として {root} が有力です。"
+    return f"影響を受けているサービスは {affected} です。選択したライブ時間枠では上流要因を強く特定できていません。"
+
+
+def _evidence_answer(lang: str, evidence: list[dict[str, Any]], confidence: str) -> str:
+    if not evidence:
+        return (
+            "No live evidence was returned for this issue in the selected window."
+            if normalize_lang(lang) == "en"
+            else "選択した時間枠では、この問題に対するライブ証拠は返っていません。"
+        )
+    top = evidence[:3]
+    snippets = []
+    for item in top:
+        label = item.get("query_name") or item.get("kind") or item.get("source") or "evidence"
+        summary = item.get("summary") or ""
+        value = item.get("value")
+        piece = f"{label}: {summary}".strip(": ")
+        if value is not None:
+            piece = f"{piece} (value={value})"
+        snippets.append(piece)
+    joined = "; ".join(snippets)
+    if normalize_lang(lang) == "en":
+        return f"Live evidence ({confidence} confidence): {joined}"
+    return f"ライブ証拠（信頼度 {confidence}）: {joined}"
+
+
 def _assistant_name(lang: str) -> str:
-    return "AIOPS" if lang.startswith("en") else "助手"
+    return "AIOPS" if normalize_lang(lang) == "en" else "助手"
 
 
 def _next_action(lang: str, confidence: str) -> str:
-    if lang.startswith("en"):
+    if normalize_lang(lang) == "en":
         if confidence == "low":
             return "Next: run the cascade/load scenario or pick a currently failing issue, then ask why again so MCP can capture warning/error evidence."
         return "Check the root service threshold and recent deploy/config changes, then re-run the MCP RCA after mitigation."
     if confidence == "low":
         return "次に、カスケード負荷シナリオを実行するか、現在発生中の問題を選んでから、もう一度「なぜ起きたの？」と聞いてください。"
-    return "上流サービスのしきい値、直近の設定変更、503発生状況を確認し、対応後にMCP RCAを再実行してください。"
+    return "上流サービスのしきい値、直近の設定変更、503 発生状況を確認し、対応後に MCP RCA を再実行してください。"
 
 
 def _t(lang: str, key: str, **kwargs) -> str:
-    en = lang.startswith("en")
+    en = normalize_lang(lang) == "en"
     table = {
         "stored": ("Checking issue context...", "問題コンテキストを確認しています..."),
-        "mcp": ("Calling MCP observability tools...", "MCP observability tool を呼び出しています..."),
+        "mcp": ("Calling MCP observability tools...", "MCP 可観測性ツールを呼び出しています..."),
         "evidence": (f"Found {kwargs.get('count', 0)} evidence item(s).", f"証拠を{kwargs.get('count', 0)}件確認しました。"),
-        "mcp_failed": (f"MCP live RCA is unavailable: {kwargs.get('error')}", f"MCPライブRCAを利用できません: {kwargs.get('error')}"),
-        "fallback": ("Use stored RCA while MCP is unavailable.", "MCPが復旧するまでは保存済みRCAを利用してください。"),
+        "mcp_failed": (f"MCP live RCA is unavailable: {kwargs.get('error')}", f"MCP ライブ RCA を利用できません: {kwargs.get('error')}"),
+        "fallback": ("Use stored RCA while MCP is unavailable.", "MCP が復旧するまでは保存済み RCA を利用してください。"),
     }
     left, right = table[key]
     return left if en else right

@@ -1,22 +1,93 @@
-# AIOPS_Repo
+# AIOPS Repo
 
-AIOPS_Repo is a local proof-of-concept workspace for an agentic AIOps flow:
-detect an operational issue, run root-cause analysis, recommend a remediation,
-gate sensitive action behind human approval, and track the result.
+This repository is a working demo of an AI-assisted operations flow.
 
-For the product narrative, see [PRODUCT.md](PRODUCT.md).
+In simple terms, it shows how a system can:
 
-## Repository Map
+1. notice that an application has a problem,
+2. investigate what likely caused it,
+3. suggest a safe fix,
+4. wait for human approval,
+5. prepare a code change and pull request,
+6. keep the evidence and status visible end to end.
 
-- `AIopsTelemetry/` - telemetry ingestion, issue detection, escalation rules, dashboards, and incident APIs.
-- `Invastigate_flow_with_Poller/` - RCA and correlation service that polls incidents and runs the investigation agent flow.
-- `AIOPS/` - remediation service that turns approved plans into code changes and pull requests.
-- `MedicalAgent/` - sample RAG application used as the monitored workload.
-- `MCPObservability/` - stdio MCP server exposing bounded Prometheus and Langfuse evidence tools.
-- `SampleAgent_GitHub/` - GitHub-facing copy of the sample app used by remediation workflows.
-- `demo/` - local demo launcher, preview page, presenter scripts, and shared demo helpers.
+The workspace is built as a group of small services that run together locally.
 
-## Quick Start
+## What A Non-Technical User Should Know
+
+You can think of this project as an "incident-to-action" demo.
+
+- `MedicalAgent` creates a realistic application that can fail under load.
+- `AIopsTelemetry` notices problems and opens incidents.
+- `Invastigate_flow_with_Poller` investigates those incidents and explains the likely cause.
+- `AIOPS` prepares a remediation workflow with approval steps before code is changed.
+- `SampleAgent_GitHub` acts as the target repository for the remediation flow.
+
+If you only want to see the demo, start the stack and open the preview page. If you want technical setup details for a specific module, use that module's own README.
+
+## Architecture Diagram
+
+```mermaid
+flowchart LR
+    U[Operator or Demo User]
+    P[Preview Page and Dashboards]
+    M[MedicalAgent demo apps<br/>sample-agent and triage-agent]
+    T[AIopsTelemetry<br/>telemetry, issue detection, dashboard]
+    R[Invastigate_flow_with_Poller<br/>RCA poller and 5-step investigation]
+    O[MCPObservability<br/>Prometheus and Langfuse evidence tools]
+    A[AIOPS remediation service<br/>project review, plan, implementation, PR]
+    G[SampleAgent_GitHub or mapped repo]
+
+    U --> P
+    P --> T
+    P --> A
+    M -->|traces, failures, health signals| T
+    T -->|recent incidents| R
+    R -->|root cause and recommendation| T
+    R --- O
+    T -->|approved remediation request with RCA context| A
+    A -->|branch, artifacts, PR handoff| G
+    A -->|status and artifacts| T
+```
+
+## End-To-End Flow Diagram
+
+```mermaid
+flowchart TD
+    S1[1. Demo workload runs] --> S2[2. A problem is triggered in sample-agent or triage-agent]
+    S2 --> S3[3. AIopsTelemetry collects traces and creates an issue]
+    S3 --> S4[4. RCA service picks up the issue through the incident poller]
+    S4 --> S5[5. Investigation pipeline runs<br/>Normalization -> Correlation -> Error analysis -> RCA -> Recommendation]
+    S5 --> S6[6. Results are stored back with evidence and recommended action]
+    S6 --> A1{7. Human wants remediation?}
+    A1 -->|No| S7[Stop at investigation and review the findings]
+    A1 -->|Yes| S8[8. AIOPS starts a remediation run]
+    S8 --> A2{9. Approve target project?}
+    A2 -->|No| S9[Choose a different target or stop]
+    A2 -->|Yes| S10[10. Service drafts a remediation plan]
+    S10 --> A3{11. Approve plan?}
+    A3 -->|No| S11[Revise or reject the plan]
+    A3 -->|Yes| S12[12. Codex prepares implementation artifacts]
+    S12 --> A4{13. Approve final review?}
+    A4 -->|No| S13[Request changes or hand off manually]
+    A4 -->|Yes| S14[14. Create PR or handoff package]
+```
+
+## Main Parts Of The Workspace
+
+| Folder | Plain-English purpose |
+|---|---|
+| `AIopsTelemetry/` | The main operations hub. It receives telemetry, detects issues, shows dashboards, stores issue history, and starts remediation handoffs. |
+| `Invastigate_flow_with_Poller/` | The investigation service. It polls incidents from telemetry and runs the multi-step RCA pipeline. |
+| `AIOPS/` | The remediation engine. It resolves the target repo, drafts a plan, waits for approvals, prepares code changes, and can open a PR. |
+| `MedicalAgent/` | The demo application that is intentionally easy to observe and stress. It also includes the dependent `triage-agent` service used in the cascade demo. |
+| `SampleAgent_GitHub/` | A GitHub-facing copy of the sample app used as a remediation target. |
+| `MCPObservability/` | A small observability helper that gives RCA agents bounded access to Prometheus and Langfuse evidence. |
+| `demo/` | One-command local demo launcher, preview page, and helper scripts. |
+
+Note: the folder name `Invastigate_flow_with_Poller` is spelled that way in the repository and is the service actually used by the demo.
+
+## Fastest Way To Run The Demo
 
 From the repository root:
 
@@ -24,17 +95,16 @@ From the repository root:
 ./demo/start.sh
 ```
 
-This starts the local demo stack:
+When it finishes, open:
 
-- Sample Agent on `http://localhost:8002`
-- Triage Agent dependent workload on `http://localhost:8010`
-- AIopsTelemetry on `http://localhost:7000`
-- Japanese conversational workbench on `http://localhost:7000/conversation_j`
-- RCA service on `http://localhost:8000`
-- Remediation service on `http://localhost:8005`
-- Monitor UI on `http://localhost:5173`
-- Demo preview page on `http://localhost:8088/aiops_preview.html`
-- Preview launcher health on `http://localhost:8765/health`
+- Preview page: `http://127.0.0.1:8088/aiops_preview.html`
+- AIopsTelemetry dashboard: `http://localhost:7000`
+- Operations dashboard (Japanese): `http://localhost:7000/ops_j`
+- Conversational workbench: `http://localhost:7000/conversation_j`
+- RCA service: `http://localhost:8000`
+- Remediation service: `http://localhost:8005`
+- Sample app: `http://localhost:8002`
+- Dependent triage app: `http://localhost:8010`
 
 To stop everything:
 
@@ -42,83 +112,91 @@ To stop everything:
 ./demo/stop.sh
 ```
 
-## Useful Commands
-
-Start faster without rebuilding the sample Docker image:
+Runtime logs are written under:
 
 ```bash
-REBUILD_MEDICAL=0 ./demo/start.sh
+.runtime/logs
 ```
 
-Start with steady background load:
+## What Starts In The Demo
 
-```bash
-STEADY_LOAD_ENABLED=1 ./demo/start.sh
-```
+`./demo/start.sh` launches the full local story:
 
-Run the pod-pressure scenario directly:
+- `MedicalAgent` in Docker, including `sample-agent` and the dependent `triage-agent`
+- `AIopsTelemetry` on port `7000`
+- `Invastigate_flow_with_Poller` on port `8000`
+- `AIOPS` remediation service on port `8005`
+- the optional monitor UI on port `5173` if its frontend dependencies are already installed
+- the demo preview page on port `8088`
+
+## Key User-Facing Screens
+
+- `/` on port `7000`: the main AIopsTelemetry dashboard for issues, telemetry, and general status.
+- `/ops_j` on port `7000`: the Japanese operations dashboard for incident handling. It is the best screen for walking an operator through an active problem step by step.
+- `/conversation_j` on port `7000`: the conversational workbench for a chat-style AIOps experience.
+
+The operations dashboard at `/ops_j` is especially important in this repo because it combines several views in one place:
+
+- an incident queue
+- issue severity and business-impact context
+- VM and component topology
+- component diagnostics and related logs
+- visual RCA journey
+- an inline assistant for short summary, detailed report, and 5 Whys style explanation
+
+## Typical Demo Story
+
+The clearest demo path is:
+
+1. Start the platform with `./demo/start.sh`.
+2. Open the preview page and the telemetry dashboard.
+3. Trigger a failure scenario so the sample system starts misbehaving.
+4. Watch `AIopsTelemetry` create an issue.
+5. Let the RCA service investigate and return a likely cause plus recommendation.
+6. Start remediation only if a human reviewer agrees that action is needed.
+7. Approve the proposed plan, review the generated artifacts, and then create the PR or handoff.
+
+Useful scenario commands:
 
 ```bash
 ./demo/sample_agent_pod_pressure.sh
 ```
-
-Run the cross-service cascade scenario, where `triage-agent` fails because its
-upstream `sample-agent` is returning threshold-guard failures:
 
 ```bash
 cd MedicalAgent
 ./scripts/run_cascade_threshold_scenario.sh
 ```
 
-Run the observability MCP server for RCA agents:
+If you want low background activity running during the demo:
 
 ```bash
-python3 MCPObservability/server.py
+STEADY_LOAD_ENABLED=1 ./demo/start.sh
 ```
 
-Start the optional PostgreSQL + pgvector RCA knowledge store:
+If you want a faster restart without rebuilding the Docker image:
 
 ```bash
-docker compose -f docker-compose.rca-kb.yml up -d
+REBUILD_MEDICAL=0 ./demo/start.sh
 ```
 
-Then point AIopsTelemetry at it:
+## Where Human Approval Happens
 
-```env
-AIOPS_DATABASE_URL=postgresql+psycopg://aiops:aiops@localhost:5432/aiops
-```
+This platform is not designed to silently change production code.
 
-Check the main services:
+The approval points are built into the remediation flow:
 
-```bash
-curl -fsS http://localhost:7000/health
-curl -fsS http://localhost:8000/health
-curl -fsS http://localhost:8005/
-curl -fsS http://localhost:8002/api/health
-curl -fsS http://localhost:8010/api/health
-```
+1. confirm the correct target project or repository,
+2. approve the remediation plan,
+3. review the generated implementation artifacts,
+4. only then create the pull request or final handoff.
 
-Open the conversational AIOps flow:
+That makes the system easier to explain to business users, demo audiences, and engineering reviewers because the AI helps, but a person remains in control of risky actions.
 
-```bash
-http://localhost:7000/conversation_j
-```
+## If You Are Setting This Up For The First Time
 
-If the telemetry service has not been restarted after a code change, the static fallback is:
+The demo start script assumes the local environments for the individual modules have already been prepared.
 
-```bash
-http://localhost:7000/static/conversation_j.html
-```
-
-Logs are written under:
-
-```bash
-.runtime/logs
-```
-
-## Configuration
-
-Copy each module's example environment file before local development:
+For first-time setup, a technical user should usually:
 
 ```bash
 cp AIopsTelemetry/.env.example AIopsTelemetry/.env
@@ -127,45 +205,16 @@ cp SampleAgent_GitHub/.env.example SampleAgent_GitHub/.env
 cp Invastigate_flow_with_Poller/.env.example Invastigate_flow_with_Poller/.env
 ```
 
-Important settings:
+Important settings are the LLM keys and any local path overrides:
 
-- `OPENAI_API_KEY` / `OPENAI_MODEL` for sample-agent LLM calls.
-- `AIOPS_OPENAI_API_KEY` for telemetry analysis/remediation support.
-- `WEB_SEARCH_AGENT_DIR` and `SAMPLE_AGENT_DIR` when agent code is outside this repo.
-- `CORS_ORIGINS` for service CORS policy; `*` is intended only for local development.
+- `OPENAI_API_KEY` and related model settings for the sample applications
+- `AIOPS_OPENAI_API_KEY` for telemetry and remediation support
+- `WEB_SEARCH_AGENT_DIR` and `SAMPLE_AGENT_DIR` if agent code lives outside this workspace
 
-## Development Checks
+For deep technical setup, troubleshooting, or module-specific development, read:
 
-Useful lightweight checks before committing:
-
-```bash
-python3 -m py_compile \
-  AIopsTelemetry/server/main.py \
-  AIopsTelemetry/server/engine/autofix_agent.py \
-  MedicalAgent/backend/main.py \
-  SampleAgent_GitHub/backend/main.py \
-  Invastigate_flow_with_Poller/app/main.py
-
-bash -n demo/start.sh demo/stop.sh demo/scripts/demo_lib.sh
-```
-
-Run module tests where environments are available:
-
-```bash
-python3 -m pytest AIopsTelemetry/tests
-python3 -m pytest Invastigate_flow_with_Poller/tests
-python3 -m pytest AIOPS/tests
-```
-
-## Git Hygiene
-
-The repo intentionally ignores runtime and machine-local artifacts:
-
-- `.env` files and credentials
-- virtual environments
-- sqlite databases
-- logs and runtime output
-- generated diagram renders
-- managed remediation worktrees
-
-Keep product docs in `PRODUCT.md` and operational setup in this README.
+- [PRODUCT.md](PRODUCT.md)
+- [AIopsTelemetry/README.md](AIopsTelemetry/README.md)
+- [AIOPS/README.md](AIOPS/README.md)
+- [MedicalAgent/README.md](MedicalAgent/README.md)
+- [SampleAgent_GitHub/README.md](SampleAgent_GitHub/README.md)

@@ -1,0 +1,105 @@
+{
+  "version": 1,
+  "title": "Enterprise VM Service Topology",
+  "description": "Canonical VM topology used by the incident workspace to render connected components and overlay issue-specific health.",
+  "zones": [
+    {
+      "id": "platform",
+      "label": "Host / Platform",
+      "description": "Underlying VM, operating system, and host-side workloads"
+    },
+    {
+      "id": "runtime",
+      "label": "Runtime / Application",
+      "description": "Container runtime and primary application services"
+    },
+    {
+      "id": "observability",
+      "label": "Observability / Data",
+      "description": "Monitoring, tracing, and stateful dependencies"
+    }
+  ],
+  "nodes": [
+    {
+      "id": "vm-host",
+      "name": "VM Host",
+      "zone": "platform",
+      "role": "Compute, OS scheduler, and network stack",
+      "default_status": "ok",
+      "aliases": ["host", "vm", "platform", "node", "instance"],
+      "layout": {"x": 15, "y": 22}
+    },
+    {
+      "id": "host-background-job",
+      "name": "Background Job",
+      "zone": "platform",
+      "role": "Host-side workload / scheduled batch activity",
+      "default_status": "ok",
+      "aliases": ["background", "job", "worker", "batch", "cron"],
+      "layout": {"x": 15, "y": 60}
+    },
+    {
+      "id": "docker-runtime",
+      "name": "Docker Runtime",
+      "zone": "runtime",
+      "role": "Container boundary, CPU sharing, and service isolation",
+      "default_status": "ok",
+      "aliases": ["docker", "runtime", "container", "pod"],
+      "layout": {"x": 43, "y": 40}
+    },
+    {
+      "id": "ai-agent",
+      "name": "AI Agent",
+      "zone": "runtime",
+      "role": "Primary application / inference service",
+      "default_status": "ok",
+      "aliases": [
+        "agent",
+        "ai-agent",
+        "sample-agent",
+        "medical-agent",
+        "triage-agent",
+        "gateway-api",
+        "rca-assistant",
+        "medical-search-api"
+      ],
+      "layout": {"x": 69, "y": 24}
+    },
+    {
+      "id": "prometheus",
+      "name": "Prometheus",
+      "zone": "observability",
+      "role": "Metrics scraping and alert evaluation",
+      "default_status": "ok",
+      "aliases": ["prometheus", "metrics", "scrape", "bridge"],
+      "layout": {"x": 87, "y": 18}
+    },
+    {
+      "id": "langfuse",
+      "name": "Langfuse",
+      "zone": "observability",
+      "role": "Trace capture and LLM observability",
+      "default_status": "ok",
+      "aliases": ["langfuse", "trace", "tracing", "observability-gateway"],
+      "layout": {"x": 87, "y": 44}
+    },
+    {
+      "id": "pgvector",
+      "name": "PGVector DB",
+      "zone": "observability",
+      "role": "Vector store / stateful retrieval dependency",
+      "default_status": "ok",
+      "aliases": ["pgvector", "postgres", "database", "db", "trace-store"],
+      "layout": {"x": 87, "y": 70}
+    }
+  ],
+  "edges": [
+    {"id": "edge-vm-job", "from": "vm-host", "to": "host-background-job", "label": "host scheduling"},
+    {"id": "edge-vm-runtime", "from": "vm-host", "to": "docker-runtime", "label": "resource control"},
+    {"id": "edge-runtime-agent", "from": "docker-runtime", "to": "ai-agent", "label": "service runtime"},
+    {"id": "edge-runtime-prometheus", "from": "docker-runtime", "to": "prometheus", "label": "metrics path"},
+    {"id": "edge-agent-langfuse", "from": "ai-agent", "to": "langfuse", "label": "trace export"},
+    {"id": "edge-agent-pgvector", "from": "ai-agent", "to": "pgvector", "label": "retrieval I/O"},
+    {"id": "edge-prometheus-langfuse", "from": "prometheus", "to": "langfuse", "label": "shared observability context"}
+  ]
+}

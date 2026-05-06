@@ -387,6 +387,134 @@ tr:hover .copy-btn{opacity:.7}
 .rp-spark-wrap{border-top:1px solid var(--border);padding-top:8px;margin-top:4px}
 .rp-spark-lbl{font-size:10px;color:var(--muted);margin-bottom:4px}
 .rp-spark svg{width:100%;height:40px;display:block}
+
+/* Incident workspace */
+.issues-workbench{display:grid;grid-template-columns:minmax(320px,var(--issues-sidebar-width,360px)) 12px minmax(0,1fr);gap:0;min-height:780px}
+.issues-workbench.collapsed{grid-template-columns:0 0 minmax(0,1fr)}
+.issue-sidebar{min-width:0}
+.issue-sidebar-card{height:100%;background:linear-gradient(180deg,#ffffff 0%,#f7fafc 100%);border:1px solid var(--border);border-right:none;border-radius:18px 0 0 18px;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 16px 36px rgba(15,23,42,.06)}
+.issues-workbench.collapsed .issue-sidebar-card{display:none}
+.issue-sidebar-head{padding:18px 18px 14px;border-bottom:1px solid rgba(148,163,184,.18);background:linear-gradient(180deg,rgba(9,105,218,.08) 0%,rgba(255,255,255,.9) 100%)}
+.issue-sidebar-head-top{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px}
+.issue-sidebar-title{font-size:18px;font-weight:700;letter-spacing:-.04em;color:#0f172a}
+.issue-sidebar-subtitle{font-size:12px;color:#64748b}
+.issue-sidebar-controls{display:flex;gap:8px;align-items:center}
+.issue-collapse-btn,.sidebar-restore-btn{background:#fff;border:1px solid rgba(148,163,184,.35);color:#334155;border-radius:999px;padding:7px 12px;font-size:11px;font-weight:700;cursor:pointer;transition:background .2s,border-color .2s,transform .2s}
+.issue-collapse-btn:hover,.sidebar-restore-btn:hover{background:#eff6ff;border-color:rgba(9,105,218,.35);transform:translateY(-1px)}
+.sidebar-restore-btn{display:none;position:absolute;top:22px;right:22px;z-index:3}
+.issues-workbench.collapsed .sidebar-restore-btn{display:inline-flex}
+.issue-filter-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.issue-filter-grid .search-wrap,.issue-filter-grid .filter-full{grid-column:1/-1}
+.issue-filter-grid select,.issue-filter-grid input[type=search]{width:100%}
+.issue-list{padding:16px;display:flex;flex-direction:column;gap:12px;overflow:auto;background:
+  radial-gradient(circle at top left, rgba(148,163,184,.12), transparent 28%),
+  linear-gradient(180deg,rgba(255,255,255,.96),rgba(248,250,252,.96))}
+.issue-list-empty{padding:28px 18px;border:1px dashed rgba(148,163,184,.35);border-radius:16px;background:#fff;color:#64748b;text-align:center}
+.issue-card{background:#fff;border:1px solid rgba(148,163,184,.22);border-radius:18px;padding:16px;cursor:pointer;transition:transform .18s ease,box-shadow .18s ease,border-color .18s ease;background-image:linear-gradient(180deg,rgba(255,255,255,.98),rgba(248,250,252,.98))}
+.issue-card:hover{transform:translateY(-1px);box-shadow:0 16px 30px rgba(15,23,42,.08);border-color:rgba(9,105,218,.25)}
+.issue-card.active{border-color:rgba(9,105,218,.42);box-shadow:0 20px 38px rgba(9,105,218,.12);background-image:linear-gradient(180deg,rgba(239,246,255,.95),rgba(255,255,255,.98))}
+.issue-card-top{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:10px}
+.issue-card-app{font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#475569}
+.issue-card-title{font-size:15px;font-weight:700;line-height:1.35;color:#0f172a;margin-bottom:8px}
+.issue-card-desc{font-size:12px;line-height:1.6;color:#64748b;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden}
+.issue-card-meta{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0 12px}
+.issue-card-foot{display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:11px;color:#64748b}
+.issue-card-actions{display:flex;gap:6px;flex-wrap:wrap}
+.issues-splitter{position:relative;cursor:col-resize;background:linear-gradient(180deg,rgba(148,163,184,.15),rgba(148,163,184,.3),rgba(148,163,184,.15))}
+.issues-splitter::after{content:'';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:4px;height:56px;border-radius:999px;background:rgba(100,116,139,.36)}
+.issues-workbench.collapsed .issues-splitter{display:none}
+.issue-workspace{position:relative;min-width:0}
+.issue-workspace-card{height:100%;background:
+  radial-gradient(circle at top right, rgba(59,130,246,.08), transparent 30%),
+  radial-gradient(circle at bottom left, rgba(16,185,129,.08), transparent 28%),
+  linear-gradient(180deg,#ffffff 0%,#f8fbff 100%);
+  border:1px solid var(--border);border-left:none;border-radius:0 18px 18px 0;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 16px 36px rgba(15,23,42,.06)}
+.workspace-overview{padding:22px 24px 14px;border-bottom:1px solid rgba(148,163,184,.18)}
+.workspace-overview-top{display:flex;align-items:flex-start;justify-content:space-between;gap:18px;margin-bottom:16px}
+.workspace-kicker{font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:#0f766e}
+.workspace-title{font-size:28px;font-weight:800;letter-spacing:-.05em;line-height:1.08;color:#0f172a;max-width:800px}
+.workspace-meta{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.workspace-summary{font-size:13px;line-height:1.75;color:#475569;max-width:950px}
+.workspace-kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-top:18px}
+.workspace-kpi{background:rgba(255,255,255,.82);border:1px solid rgba(148,163,184,.22);border-radius:16px;padding:14px 16px;box-shadow:inset 0 1px 0 rgba(255,255,255,.45)}
+.workspace-kpi-label{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#64748b;margin-bottom:6px}
+.workspace-kpi-value{font-size:24px;font-weight:800;color:#0f172a;line-height:1}
+.workspace-kpi-sub{font-size:11px;color:#64748b;margin-top:6px}
+.workspace-body{padding:18px 24px 24px;display:grid;grid-template-rows:auto 1fr auto;gap:18px;min-height:0;flex:1}
+.workspace-strip{display:flex;gap:10px;flex-wrap:wrap}
+.workspace-pill{display:inline-flex;align-items:center;gap:8px;padding:9px 12px;border-radius:999px;border:1px solid rgba(148,163,184,.24);background:rgba(255,255,255,.86);font-size:12px;color:#334155}
+.workspace-pill strong{color:#0f172a}
+.topology-shell{background:rgba(255,255,255,.72);border:1px solid rgba(148,163,184,.22);border-radius:22px;overflow:hidden;box-shadow:0 24px 44px rgba(15,23,42,.08)}
+.topology-shell-head{padding:18px 20px 14px;border-bottom:1px solid rgba(148,163,184,.16);display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+.topology-shell-title{font-size:18px;font-weight:800;letter-spacing:-.04em;color:#0f172a}
+.topology-shell-subtitle{font-size:12px;line-height:1.7;color:#64748b;margin-top:6px;max-width:760px}
+.topology-health{display:flex;gap:8px;flex-wrap:wrap}
+.topology-health-chip{display:inline-flex;align-items:center;gap:8px;padding:8px 11px;border-radius:999px;font-size:12px;font-weight:700;border:1px solid transparent}
+.topology-health-chip.ok{background:#eaf9ee;color:#166534;border-color:#bde6c4}
+.topology-health-chip.warn{background:#fff7d8;color:#92400e;border-color:#efd89b}
+.topology-health-chip.error{background:#fde9e7;color:#b42318;border-color:#f0b7b0}
+.topology-stage-wrap{padding:18px 20px 22px;background:
+  linear-gradient(180deg,rgba(246,248,250,.9),rgba(255,255,255,.95)),
+  radial-gradient(circle at 12% 0%, rgba(59,130,246,.08), transparent 24%);position:relative}
+.topology-stage{position:relative;height:470px;border-radius:22px;border:1px solid rgba(148,163,184,.22);overflow:hidden;background:
+  linear-gradient(90deg,rgba(241,245,249,.9) 0%,rgba(241,245,249,.9) 33.33%,rgba(248,250,252,.96) 33.33%,rgba(248,250,252,.96) 66.66%,rgba(241,245,249,.92) 66.66%,rgba(241,245,249,.92) 100%)}
+.topology-stage::before{content:'';position:absolute;inset:0;background-image:linear-gradient(rgba(148,163,184,.08) 1px, transparent 1px),linear-gradient(90deg,rgba(148,163,184,.08) 1px, transparent 1px);background-size:100% 88px, 25% 100%;pointer-events:none}
+.topology-zone-labels{position:absolute;inset:0;pointer-events:none}
+.topology-zone-label{position:absolute;top:16px;transform:translateX(-50%);padding:6px 10px;border-radius:999px;background:rgba(255,255,255,.9);border:1px solid rgba(148,163,184,.22);font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#475569}
+.topology-links{position:absolute;inset:0;width:100%;height:100%}
+.topology-link{fill:none;stroke-width:1.6;stroke-linecap:round;stroke-dasharray:5 5;opacity:.9}
+.topology-link.ok{stroke:#8ccf9b}
+.topology-link.warn{stroke:#e8b64d}
+.topology-link.error{stroke:#e38b86}
+.topology-node{position:absolute;transform:translate(-50%,-50%);width:190px;min-height:124px;padding:14px 14px 12px;border-radius:18px;border:1px solid rgba(148,163,184,.22);background:rgba(255,255,255,.92);box-shadow:0 14px 32px rgba(15,23,42,.1);text-align:left;cursor:pointer;transition:transform .18s ease,box-shadow .18s ease,border-color .18s ease,background .18s ease}
+.topology-node:hover{transform:translate(-50%,-52%);box-shadow:0 20px 34px rgba(15,23,42,.12)}
+.topology-node.active{outline:2px solid rgba(9,105,218,.24);border-color:rgba(9,105,218,.4);box-shadow:0 20px 36px rgba(9,105,218,.14)}
+.topology-node.ok{background:#edf9f0;border-color:#b9e2c0}
+.topology-node.warn{background:#fff7d8;border-color:#edd79a}
+.topology-node.error{background:#fde9e7;border-color:#efb6af}
+.topology-node-top{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:10px}
+.topology-node-name{font-size:15px;font-weight:800;line-height:1.2;color:#0f172a}
+.topology-node-role{font-size:11px;line-height:1.55;color:#475569}
+.topology-node-summary{font-size:12px;line-height:1.6;color:#334155;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;margin-top:10px}
+.topology-node-status{display:inline-flex;align-items:center;gap:6px;padding:5px 9px;border-radius:999px;font-size:10px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;border:1px solid transparent}
+.topology-node-status.ok{background:#dff3e4;color:#166534;border-color:#b4dfbe}
+.topology-node-status.warn{background:#ffefbf;color:#92400e;border-color:#e9d27c}
+.topology-node-status.error{background:#fbd3cf;color:#b42318;border-color:#e9aaa2}
+.topology-node-metrics{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
+.topology-metric-pill{display:inline-flex;align-items:center;gap:5px;padding:4px 8px;border-radius:999px;background:rgba(255,255,255,.74);border:1px solid rgba(148,163,184,.22);font-size:10px;color:#475569}
+.topology-metric-pill strong{color:#0f172a}
+.component-stream{background:rgba(255,255,255,.82);border:1px solid rgba(148,163,184,.22);border-radius:22px;overflow:hidden;box-shadow:0 18px 32px rgba(15,23,42,.07)}
+.component-stream-head{padding:16px 20px 12px;border-bottom:1px solid rgba(148,163,184,.14);display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+.component-stream-title{font-size:17px;font-weight:800;letter-spacing:-.03em;color:#0f172a}
+.component-stream-subtitle{font-size:12px;color:#64748b;line-height:1.65;margin-top:4px}
+.component-stream-note{font-size:11px;color:#64748b}
+.component-log-console{padding:0 20px 20px;max-height:270px;overflow:auto;background:linear-gradient(180deg,#09111f 0%,#101826 100%)}
+.component-log-empty{padding:28px 0;color:#94a3b8;text-align:center;font-size:13px}
+.component-log-row{display:grid;grid-template-columns:120px 72px 1fr;gap:12px;padding:12px 0;border-bottom:1px solid rgba(148,163,184,.12);font-family:'SF Mono','Fira Code','Cascadia Code',monospace;font-size:11px}
+.component-log-row:last-child{border-bottom:none}
+.component-log-ts{color:#7dd3fc}
+.component-log-level{font-weight:800;letter-spacing:.08em}
+.component-log-msg{color:#e2e8f0;line-height:1.7;word-break:break-word}
+.component-log-level.info{color:#4ade80}
+.component-log-level.warn,.component-log-level.warning{color:#facc15}
+.component-log-level.error,.component-log-level.critical{color:#f87171}
+.component-log-level.debug{color:#c4b5fd}
+@media(max-width:1280px){
+  .workspace-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .topology-stage{height:520px}
+}
+@media(max-width:1120px){
+  .issues-workbench,.issues-workbench.collapsed{grid-template-columns:1fr}
+  .issues-splitter,.sidebar-restore-btn{display:none!important}
+  .issue-sidebar-card{border-right:1px solid var(--border);border-radius:18px}
+  .issue-workspace-card{border-left:1px solid var(--border);border-radius:18px;margin-top:16px}
+}
+@media(max-width:900px){
+  .workspace-overview-top{flex-direction:column}
+  .workspace-kpis{grid-template-columns:1fr}
+  .component-log-row{grid-template-columns:1fr}
+  .topology-node{width:164px}
+}
 </style>
 </head>
 <body>
@@ -528,27 +656,112 @@ tr:hover .copy-btn{opacity:.7}
     </div>
   </div>
 
-  <div class="filters">
-    <select id="issue-app-filter" onchange="loadIssues()"><option value="">All Apps</option></select>
-    <select id="issue-status-filter" onchange="loadIssues()">
-      <option value="">All Statuses</option>
-      <option value="OPEN">OPEN</option><option value="ACKNOWLEDGED">ACKNOWLEDGED</option>
-      <option value="ESCALATED">ESCALATED</option><option value="RESOLVED">RESOLVED</option>
-    </select>
-    <select id="issue-sev-filter" onchange="loadIssues()">
-      <option value="">All Severities</option>
-      <option value="critical">SEV1 — Critical</option><option value="high">SEV2 — High</option>
-      <option value="medium">SEV3 — Medium</option><option value="low">SEV4 — Low</option>
-    </select>
-    <button class="btn btn-icon btn-accent" onclick="loadIssues()" title="Refresh now">↻</button>
-    <button class="btn" id="auto-refresh-toggle" onclick="toggleAutoRefresh()" title="Toggle auto-refresh"></button>
-  </div>
-  <div class="card">
-    <div class="card-header"><h2>Issues</h2></div>
-    <table>
-      <thead><tr><th>#</th><th>App</th><th>Severity</th><th>Rule</th><th>Status</th><th>Title</th><th>Created</th><th>Actions</th></tr></thead>
-      <tbody id="issues-tbody"><tr><td colspan="8" class="empty">Loading…</td></tr></tbody>
-    </table>
+  <div class="issues-workbench" id="issues-workbench">
+    <aside class="issue-sidebar" id="issues-sidebar">
+      <div class="issue-sidebar-card">
+        <div class="issue-sidebar-head">
+          <div class="issue-sidebar-head-top">
+            <div>
+              <div class="issue-sidebar-title">Incident Queue</div>
+              <div class="issue-sidebar-subtitle">Select an issue to load the VM topology, health state, and live component diagnostics.</div>
+            </div>
+            <div class="issue-sidebar-controls">
+              <button class="btn btn-icon btn-accent" onclick="loadIssues()" title="Refresh issues">↻</button>
+              <button class="btn" id="auto-refresh-toggle" onclick="toggleAutoRefresh()" title="Toggle auto-refresh"></button>
+              <button class="issue-collapse-btn" onclick="toggleIssueSidebar()" title="Collapse incident queue">Collapse</button>
+            </div>
+          </div>
+          <div class="issue-filter-grid">
+            <div class="search-wrap filter-full">
+              <span class="si">⌕</span>
+              <input type="search" id="issue-search" placeholder="Search app, title, or rule…" oninput="renderIssueList(_issuesCache)">
+            </div>
+            <select id="issue-app-filter" onchange="loadIssues()"><option value="">All Apps</option></select>
+            <select id="issue-status-filter" onchange="loadIssues()">
+              <option value="">All Statuses</option>
+              <option value="OPEN">OPEN</option><option value="ACKNOWLEDGED">ACKNOWLEDGED</option>
+              <option value="ESCALATED">ESCALATED</option><option value="RESOLVED">RESOLVED</option>
+            </select>
+            <select id="issue-sev-filter" class="filter-full" onchange="loadIssues()">
+              <option value="">All Severities</option>
+              <option value="critical">SEV1 — Critical</option><option value="high">SEV2 — High</option>
+              <option value="medium">SEV3 — Medium</option><option value="low">SEV4 — Low</option>
+            </select>
+          </div>
+        </div>
+        <div class="issue-list" id="issues-list">
+          <div class="issue-list-empty">Loading issues…</div>
+        </div>
+      </div>
+    </aside>
+    <div class="issues-splitter" id="issues-splitter" title="Drag to resize the incident queue"></div>
+    <section class="issue-workspace">
+      <button class="sidebar-restore-btn" id="sidebar-restore-btn" onclick="restoreIssueSidebar()">Show Incident Queue</button>
+      <div class="issue-workspace-card">
+        <div class="workspace-overview">
+          <div class="workspace-overview-top">
+            <div>
+              <div class="workspace-kicker">Incident Topology Workspace</div>
+              <div class="workspace-title" id="selected-issue-title">Select an issue to inspect the affected VM topology.</div>
+              <div class="workspace-meta" id="selected-issue-meta"></div>
+            </div>
+            <div class="topology-health" id="topology-health-counts"></div>
+          </div>
+          <div class="workspace-summary" id="selected-issue-summary">The topology panel on the right will show component relationships, current health, and the runtime path affected by the selected issue.</div>
+          <div class="workspace-kpis" id="selected-issue-kpis">
+            <div class="workspace-kpi">
+              <div class="workspace-kpi-label">Issue State</div>
+              <div class="workspace-kpi-value">Ready</div>
+              <div class="workspace-kpi-sub">Waiting for selection</div>
+            </div>
+            <div class="workspace-kpi">
+              <div class="workspace-kpi-label">Severity</div>
+              <div class="workspace-kpi-value">--</div>
+              <div class="workspace-kpi-sub">Use the left pane to inspect an issue</div>
+            </div>
+            <div class="workspace-kpi">
+              <div class="workspace-kpi-label">Impacted Components</div>
+              <div class="workspace-kpi-value">0</div>
+              <div class="workspace-kpi-sub">Warning and error nodes</div>
+            </div>
+            <div class="workspace-kpi">
+              <div class="workspace-kpi-label">Observability</div>
+              <div class="workspace-kpi-value">Live</div>
+              <div class="workspace-kpi-sub">Component logs stream below</div>
+            </div>
+          </div>
+        </div>
+        <div class="workspace-body">
+          <div class="workspace-strip" id="topology-metrics-strip"></div>
+          <div class="topology-shell">
+            <div class="topology-shell-head">
+              <div>
+                <div class="topology-shell-title" id="issue-topology-title">VM Component Topology</div>
+                <div class="topology-shell-subtitle" id="issue-topology-subtitle">Connected components will appear here as soon as an issue is selected.</div>
+              </div>
+            </div>
+            <div class="topology-stage-wrap">
+              <div class="topology-stage" id="topology-stage">
+                <div class="topology-zone-labels" id="topology-zone-labels"></div>
+                <svg class="topology-links" id="topology-links" viewBox="0 0 100 100" preserveAspectRatio="none"></svg>
+              </div>
+            </div>
+          </div>
+          <div class="component-stream">
+            <div class="component-stream-head">
+              <div>
+                <div class="component-stream-title" id="component-stream-title">Component Diagnostics</div>
+                <div class="component-stream-subtitle" id="component-stream-subtitle">Select a warning or error component in the topology to view live logs and evidence.</div>
+              </div>
+              <div class="component-stream-note" id="component-stream-note">Polling when a component is selected</div>
+            </div>
+            <div class="component-log-console" id="component-log-console">
+              <div class="component-log-empty">No component selected.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
   </div>
 </div>
 
@@ -778,6 +991,13 @@ let _allTraces=[];
 let _filtered=[];
 let _page=0;
 const PAGE_SIZE=50;
+let _issuesCache=[];
+let _selectedIssueId=null;
+let _selectedTopology=null;
+let _selectedComponentId=null;
+let _componentLogPoll=null;
+let _sidebarDragState=null;
+const ISSUE_SIDEBAR_STORAGE_KEY='aiops.issueSidebarWidth';
 
 
 // ── Language toggle for /light (?lang=ja) ───────────────────────────────────
@@ -1459,16 +1679,31 @@ async function loadIssues(){
   try{
     const data=await api(url);
     const issues=data.issues;
+    _issuesCache=issues;
     _renderIssueAnalytics(issues);
-    if(!issues.length){document.getElementById('issues-tbody').innerHTML='<tr><td colspan="8" class="empty">No issues.</td></tr>';return;}
-    document.getElementById('issues-tbody').innerHTML=issues.map(issueRow).join('');
+    renderIssueList(issues);
     // Populate app filter dropdown from live data (first load only)
     const appSel=document.getElementById('issue-app-filter');
     const apps=[...new Set(issues.map(i=>i.app_name).filter(Boolean))].sort();
     if(appSel.options.length<=1){
       apps.forEach(a=>{const o=document.createElement('option');o.value=a;o.textContent=a;appSel.appendChild(o);});
     }
-  }catch(e){document.getElementById('issues-tbody').innerHTML=`<tr><td colspan="8" class="empty">Error: ${esc(e.message)}</td></tr>`;}
+    const filteredIssues=_getVisibleIssues(issues);
+    const selectedStillVisible=filteredIssues.some(issue=>issue.id===_selectedIssueId);
+    if(!filteredIssues.length){
+      _selectedIssueId=null;
+      _selectedTopology=null;
+      _selectedComponentId=null;
+      _clearComponentLogPolling();
+      renderWorkspaceEmpty('No issues match the current filters.');
+      return;
+    }
+    const nextId=selectedStillVisible?_selectedIssueId:filteredIssues[0].id;
+    await selectIssue(nextId,{preserveComponent:selectedStillVisible});
+  }catch(e){
+    document.getElementById('issues-list').innerHTML=`<div class="issue-list-empty">Error loading issues: ${esc(e.message)}</div>`;
+    renderWorkspaceEmpty(`Unable to load issue topology: ${esc(e.message)}`);
+  }
 }
 
 function _renderIssueAnalytics(issues){
@@ -1494,7 +1729,7 @@ function _renderIssueAnalytics(issues){
   }).catch(()=>{});
 }
 
-function issueRow(i){
+function issueCard(i){
   const sevMap={low:'bsev4',medium:'bsev3',high:'bsev2',critical:'bsev1'};
   const statMap={OPEN:'bo',ACKNOWLEDGED:'ba',ESCALATED:'besc',RESOLVED:'bres'};
   const sb=sevMap[i.severity]||'bsev4';
@@ -1506,8 +1741,6 @@ function issueRow(i){
   const ack=i.status==='OPEN'?`<button class="action-btn ack" onclick="issueAction(${i.id},'acknowledge',event)">Ack</button>`:'';
   const esc2=(i.status==='OPEN'||i.status==='ACKNOWLEDGED')?`<button class="action-btn esc" onclick="issueAction(${i.id},'escalate',event)">Escalate</button>`:'';
   const res=i.status!=='RESOLVED'?`<button class="action-btn res" onclick="issueAction(${i.id},'resolve',event)">Resolve</button>`:'';
-  const titleEsc=i.title.replace(/'/g,"\\'");
-  const appEsc=i.app_name.replace(/'/g,"\\'");
   // Remediation button — label/class reflects per-issue run state stored in metadata_json
   let rmBtn = '';
   const rmMeta = issueMeta;
@@ -1515,28 +1748,292 @@ function issueRow(i){
   const rmRunId  = rmMeta.remediation_run_id  || null;
   if (i.status !== 'RESOLVED' || rmRunId) {
     if (!rmRunId) {
-      rmBtn = `<button class="action-btn autofix" title="Send this issue to the remediation pipeline" onclick="openRemediationModal(${i.id},'${titleEsc}','${appEsc}',event)">&#x26A1; Send to Remediation</button>`;
+      rmBtn = `<button class="action-btn autofix" title="Send this issue to the remediation pipeline" onclick='openRemediationModal(${i.id},${JSON.stringify(i.title)},${JSON.stringify(i.app_name)},event)'>&#x26A1; Send to Remediation</button>`;
     } else if (rmStatus === 'PR_CREATED') {
-      rmBtn = `<button class="action-btn autofix rm-done" title="Remediation complete" onclick="openRemediationModal(${i.id},'${titleEsc}','${appEsc}',event)">&#x2705; Remediation Done</button>`;
+      rmBtn = `<button class="action-btn autofix rm-done" title="Remediation complete" onclick='openRemediationModal(${i.id},${JSON.stringify(i.title)},${JSON.stringify(i.app_name)},event)'>&#x2705; Remediation Done</button>`;
     } else {
-      rmBtn = `<button class="action-btn autofix rm-active" title="Remediation in progress — click to view" onclick="openRemediationModal(${i.id},'${titleEsc}','${appEsc}',event)">&#x1F4CB; View Remediation Steps</button>`;
+      rmBtn = `<button class="action-btn autofix rm-active" title="Remediation in progress — click to view" onclick='openRemediationModal(${i.id},${JSON.stringify(i.title)},${JSON.stringify(i.app_name)},event)'>&#x1F4CB; View Remediation Steps</button>`;
     }
   }
   const humanEsc=i.status!=='RESOLVED'?`<button class="action-btn human" style="white-space:nowrap" title="Escalate to a human agent" onclick="escalateToHuman(event)">&#x1F464; Escalate to Human</button>`:'';
   const recurBadge=i.recurrence_count>0?`<span class="badge" style="background:var(--warn-bg,#78350f);color:#fde68a;margin-left:4px" title="Previously seen ${i.recurrence_count}x — issue #${i.previous_issue_id}">&#x21A9; ${i.recurrence_count}x</span>`:'';
-  return`<tr class="expandable" onclick="toggleAnalysis(${i.id},null)" style="cursor:pointer">
-    <td style="color:var(--muted)">${i.id}</td>
-    <td style="font-weight:500">${esc(displayApp)}</td>
-    <td><span class="badge ${sb}">${sevLabel}</span></td>
-    <td>${ruleId}</td>
-    <td><span class="badge ${stb}">${i.status}</span></td>
-    <td title="${esc(i.description||'')}">${esc(i.title)}${recurBadge}</td>
-    <td style="color:var(--muted)">${timeAgo(i.created_at)}</td>
-    <td onclick="event.stopPropagation()"><div style="display:flex;gap:4px;flex-wrap:wrap;min-height:22px;align-items:center">${ack}${esc2}${res}${rmBtn}${humanEsc}</div></td>
-  </tr>
-  <tr id="analysis-row-${i.id}" class="analysis-row" style="display:none">
-    <td colspan="8"><div class="analysis-panel" id="analysis-panel-${i.id}"><div class="analysis-pending"><div class="analysis-spinner"></div>Loading analysis…</div></div></td>
-  </tr>`;
+  return`<article class="issue-card ${_selectedIssueId===i.id?'active':''}" onclick="selectIssue(${i.id})">
+    <div class="issue-card-top">
+      <div>
+        <div class="issue-card-app">${esc(displayApp)}</div>
+        <div class="issue-card-title">${esc(i.title)}${recurBadge}</div>
+      </div>
+      <span class="badge ${sb}">${sevLabel}</span>
+    </div>
+    <div class="issue-card-meta">
+      <span class="badge ${stb}">${i.status}</span>
+      ${ruleId}
+      <span class="badge bk">#${i.id}</span>
+    </div>
+    <div class="issue-card-desc">${esc(i.description||'No description available.')}</div>
+    <div class="issue-card-foot">
+      <span>Updated ${timeAgo(i.updated_at||i.created_at)}</span>
+      <div class="issue-card-actions" onclick="event.stopPropagation()">${ack}${esc2}${res}${rmBtn}${humanEsc}</div>
+    </div>
+  </article>`;
+}
+
+function _getVisibleIssues(issues){
+  const q=(document.getElementById('issue-search')?.value||'').trim().toLowerCase();
+  if(!q)return issues;
+  return issues.filter(issue=>{
+    const hay=[issue.app_name,issue.title,issue.description,issue.rule_id,issue.status].join(' ').toLowerCase();
+    return hay.includes(q);
+  });
+}
+
+function renderIssueList(issues){
+  const visible=_getVisibleIssues(issues||[]);
+  const list=document.getElementById('issues-list');
+  if(!visible.length){
+    list.innerHTML='<div class="issue-list-empty">No issues match your current filters or search.</div>';
+    return;
+  }
+  list.innerHTML=visible.map(issueCard).join('');
+}
+
+function renderWorkspaceEmpty(message){
+  document.getElementById('selected-issue-title').textContent='Select an issue to inspect the affected VM topology.';
+  document.getElementById('selected-issue-meta').innerHTML='';
+  document.getElementById('selected-issue-summary').textContent=message;
+  document.getElementById('selected-issue-kpis').innerHTML=`
+    <div class="workspace-kpi"><div class="workspace-kpi-label">Issue State</div><div class="workspace-kpi-value">Ready</div><div class="workspace-kpi-sub">Waiting for selection</div></div>
+    <div class="workspace-kpi"><div class="workspace-kpi-label">Severity</div><div class="workspace-kpi-value">--</div><div class="workspace-kpi-sub">Select an issue on the left</div></div>
+    <div class="workspace-kpi"><div class="workspace-kpi-label">Impacted Components</div><div class="workspace-kpi-value">0</div><div class="workspace-kpi-sub">Warning and error nodes</div></div>
+    <div class="workspace-kpi"><div class="workspace-kpi-label">Observability</div><div class="workspace-kpi-value">Live</div><div class="workspace-kpi-sub">Logs appear below the topology</div></div>`;
+  document.getElementById('topology-health-counts').innerHTML='';
+  document.getElementById('topology-metrics-strip').innerHTML='';
+  document.getElementById('issue-topology-title').textContent='VM Component Topology';
+  document.getElementById('issue-topology-subtitle').textContent=message;
+  document.getElementById('topology-zone-labels').innerHTML='';
+  document.getElementById('topology-links').innerHTML='';
+  document.querySelectorAll('#topology-stage .topology-node').forEach(node=>node.remove());
+  document.getElementById('component-stream-title').textContent='Component Diagnostics';
+  document.getElementById('component-stream-subtitle').textContent='Select a warning or error component in the topology to view live logs and evidence.';
+  document.getElementById('component-stream-note').textContent='Polling when a component is selected';
+  document.getElementById('component-log-console').innerHTML='<div class="component-log-empty">No component selected.</div>';
+}
+
+async function selectIssue(issueId,opts={}){
+  const preserveComponent=!!opts.preserveComponent;
+  const issue=_issuesCache.find(item=>item.id===issueId);
+  if(!issue)return;
+  _selectedIssueId=issueId;
+  renderIssueList(_issuesCache);
+  if(!preserveComponent){
+    _selectedComponentId=null;
+    _clearComponentLogPolling();
+  }
+  document.getElementById('selected-issue-title').textContent=issue.title;
+  document.getElementById('selected-issue-summary').textContent='Loading issue topology, RCA summary, and component diagnostics…';
+  try{
+    const payload=await api(`/api/topology/issues/${issueId}`);
+    _selectedTopology=payload.topology;
+    renderIssueWorkspace(payload);
+    const canKeepComponent=preserveComponent && _selectedComponentId && payload.topology.nodes.some(node=>node.id===_selectedComponentId);
+    const nextComponent=canKeepComponent?_selectedComponentId:payload.topology.default_component_id;
+    if(nextComponent){
+      await selectTopologyComponent(nextComponent);
+    }else{
+      document.getElementById('component-log-console').innerHTML='<div class="component-log-empty">No component diagnostics available.</div>';
+    }
+  }catch(e){
+    _selectedTopology=null;
+    renderWorkspaceEmpty(`Unable to load topology for issue #${issueId}: ${esc(e.message)}`);
+  }
+}
+
+function renderIssueWorkspace(payload){
+  const issue=payload.issue||{};
+  const analysis=payload.analysis||{};
+  const topology=payload.topology||{};
+  const counts=topology.health_counts||{ok:0,warn:0,error:0};
+  const impacted=(counts.warn||0)+(counts.error||0);
+  document.getElementById('selected-issue-title').textContent=issue.title||'Incident Topology';
+  document.getElementById('selected-issue-meta').innerHTML=`
+    <span class="badge ${issue.status==='RESOLVED'?'bres':issue.status==='ESCALATED'?'besc':issue.status==='ACKNOWLEDGED'?'ba':'bo'}">${esc(issue.status||'OPEN')}</span>
+    <span class="badge ${issue.severity==='critical'?'bsev1':issue.severity==='high'?'bsev2':issue.severity==='medium'?'bsev3':'bsev4'}">${esc((issue.severity||'').toUpperCase())}</span>
+    ${issue.rule_id?`<span class="badge bk">${esc(issue.rule_id)}</span>`:''}
+    <span class="badge bk">Issue #${issue.id}</span>
+    ${issue.trace_id?`<span class="badge bk">${esc(issue.trace_id)}</span>`:''}
+  `;
+  document.getElementById('selected-issue-summary').textContent=analysis.likely_cause||issue.description||'No RCA summary available for this issue.';
+  document.getElementById('selected-issue-kpis').innerHTML=`
+    <div class="workspace-kpi">
+      <div class="workspace-kpi-label">Issue State</div>
+      <div class="workspace-kpi-value">${esc(issue.status||'OPEN')}</div>
+      <div class="workspace-kpi-sub">Updated ${timeAgo(issue.updated_at||issue.created_at)}</div>
+    </div>
+    <div class="workspace-kpi">
+      <div class="workspace-kpi-label">Severity</div>
+      <div class="workspace-kpi-value">${esc((issue.severity||'').toUpperCase())}</div>
+      <div class="workspace-kpi-sub">${issue.rule_id?esc(issue.rule_id):'No linked rule'}</div>
+    </div>
+    <div class="workspace-kpi">
+      <div class="workspace-kpi-label">Impacted Components</div>
+      <div class="workspace-kpi-value">${impacted}</div>
+      <div class="workspace-kpi-sub">${counts.error||0} error · ${counts.warn||0} warning</div>
+    </div>
+    <div class="workspace-kpi">
+      <div class="workspace-kpi-label">RCA Status</div>
+      <div class="workspace-kpi-value">${analysis.status==='done'?'Ready':analysis.status==='failed'?'Failed':'Pending'}</div>
+      <div class="workspace-kpi-sub">${analysis.model_used?esc(analysis.model_used):'Topology workspace view'}</div>
+    </div>`;
+  document.getElementById('topology-health-counts').innerHTML=`
+    <span class="topology-health-chip error">Error ${counts.error||0}</span>
+    <span class="topology-health-chip warn">Warning ${counts.warn||0}</span>
+    <span class="topology-health-chip ok">Healthy ${counts.ok||0}</span>`;
+  document.getElementById('topology-metrics-strip').innerHTML=(topology.metrics||[]).slice(0,6).map(metric=>{
+    const tone=String(metric.tone||'').toLowerCase();
+    const cls=tone==='critical'?'error':tone==='warning'?'warn':'ok';
+    return `<span class="workspace-pill"><span class="topology-node-status ${cls}">${esc(metric.label||'Metric')}</span><strong>${esc(metric.value||'--')}</strong></span>`;
+  }).join('');
+  document.getElementById('issue-topology-title').textContent=topology.title||'VM Component Topology';
+  document.getElementById('issue-topology-subtitle').textContent=topology.root_cause_chain||analysis.recommended_action||'Select a component to inspect detailed logs.';
+  renderTopology(topology);
+}
+
+function renderTopology(topology){
+  const zoneCenters={platform:16.66,runtime:50,observability:83.33};
+  document.getElementById('topology-zone-labels').innerHTML=(topology.zones||[]).map(zone=>`
+    <div class="topology-zone-label" style="left:${zoneCenters[zone.id]||50}%">${esc(zone.label||zone.id)}</div>
+  `).join('');
+  document.getElementById('topology-links').innerHTML=renderTopologyLinks(topology);
+  const stage=document.getElementById('topology-stage');
+  stage.querySelectorAll('.topology-node').forEach(node=>node.remove());
+  (topology.nodes||[]).forEach(node=>{
+    const status=node.status||'ok';
+    const btn=document.createElement('button');
+    btn.className=`topology-node ${status} ${_selectedComponentId===node.id?'active':''}`;
+    btn.style.left=`${node.layout?.x||50}%`;
+    btn.style.top=`${node.layout?.y||50}%`;
+    btn.type='button';
+    btn.onclick=()=>selectTopologyComponent(node.id);
+    btn.innerHTML=`
+      <div class="topology-node-top">
+        <div>
+          <div class="topology-node-name">${esc(node.name||node.id)}</div>
+          <div class="topology-node-role">${esc(node.role||'Connected VM component')}</div>
+        </div>
+        <span class="topology-node-status ${status}">${status.toUpperCase()}</span>
+      </div>
+      <div class="topology-node-summary">${esc(node.summary||node.error_message||'Healthy')}</div>
+      <div class="topology-node-metrics">${(node.metrics||[]).slice(0,2).map(metric=>`<span class="topology-metric-pill">${esc(metric.label||'')}: <strong>${esc(metric.value||'--')}</strong></span>`).join('')}</div>
+    `;
+    stage.appendChild(btn);
+  });
+}
+
+function renderTopologyLinks(topology){
+  const nodes=new Map((topology.nodes||[]).map(node=>[node.id,node]));
+  return (topology.edges||[]).map(edge=>{
+    const source=nodes.get(edge.from);
+    const target=nodes.get(edge.to);
+    if(!source||!target)return'';
+    const x1=source.layout?.x||50;
+    const y1=source.layout?.y||50;
+    const x2=target.layout?.x||50;
+    const y2=target.layout?.y||50;
+    const curve=Math.max(6,Math.abs(x2-x1)/2);
+    const tone=_edgeTone(source.status,target.status);
+    return `<path class="topology-link ${tone}" d="M ${x1} ${y1} C ${x1+curve} ${y1}, ${x2-curve} ${y2}, ${x2} ${y2}" />`;
+  }).join('');
+}
+
+function _edgeTone(a,b){
+  const pair=[a,b].map(value=>String(value||'ok'));
+  if(pair.includes('error'))return'error';
+  if(pair.includes('warn'))return'warn';
+  return'ok';
+}
+
+async function selectTopologyComponent(componentId){
+  if(!_selectedIssueId||!_selectedTopology)return;
+  _selectedComponentId=componentId;
+  renderTopology(_selectedTopology);
+  await loadComponentLogs();
+  _clearComponentLogPolling();
+  _componentLogPoll=setInterval(loadComponentLogs,5000);
+}
+
+async function loadComponentLogs(){
+  if(!_selectedIssueId||!_selectedComponentId)return;
+  try{
+    const payload=await api(`/api/topology/issues/${_selectedIssueId}/components/${encodeURIComponent(_selectedComponentId)}/logs?limit=60`);
+    const component=payload.component||{};
+    document.getElementById('component-stream-title').textContent=`${component.name||_selectedComponentId} Diagnostics`;
+    document.getElementById('component-stream-subtitle').textContent=component.summary||component.role||'Live diagnostic logs for the selected VM component.';
+    document.getElementById('component-stream-note').textContent=payload.live?'Live polling every 5s':'Historical logs';
+    const logs=payload.logs||[];
+    document.getElementById('component-log-console').innerHTML=logs.length?logs.map(componentLogRow).join(''):'<div class="component-log-empty">No logs recorded for this component yet.</div>';
+    const consoleEl=document.getElementById('component-log-console');
+    consoleEl.scrollTop=consoleEl.scrollHeight;
+  }catch(e){
+    document.getElementById('component-log-console').innerHTML=`<div class="component-log-empty">Unable to load component logs: ${esc(e.message)}</div>`;
+  }
+}
+
+function componentLogRow(log){
+  const level=(log.level||'INFO').toLowerCase();
+  return `<div class="component-log-row">
+    <div class="component-log-ts">${esc(_formatLogTs(log.timestamp))}</div>
+    <div class="component-log-level ${level}">${esc((log.level||'INFO').toUpperCase())}</div>
+    <div class="component-log-msg">${esc(log.message||'')}</div>
+  </div>`;
+}
+
+function _formatLogTs(timestamp){
+  if(!timestamp)return'--';
+  const d=new Date(timestamp+(String(timestamp).endsWith('Z')?'':'Z'));
+  if(Number.isNaN(d.getTime()))return String(timestamp);
+  return d.toLocaleTimeString([], {hour12:false,hour:'2-digit',minute:'2-digit',second:'2-digit'});
+}
+
+function _clearComponentLogPolling(){
+  if(_componentLogPoll){
+    clearInterval(_componentLogPoll);
+    _componentLogPoll=null;
+  }
+}
+
+function toggleIssueSidebar(){
+  document.getElementById('issues-workbench').classList.toggle('collapsed');
+}
+
+function restoreIssueSidebar(){
+  document.getElementById('issues-workbench').classList.remove('collapsed');
+}
+
+function initializeIssueWorkbench(){
+  const workbench=document.getElementById('issues-workbench');
+  const splitter=document.getElementById('issues-splitter');
+  const savedWidth=localStorage.getItem(ISSUE_SIDEBAR_STORAGE_KEY);
+  if(savedWidth)workbench.style.setProperty('--issues-sidebar-width',savedWidth);
+  if(!splitter)return;
+  splitter.addEventListener('mousedown',event=>{
+    if(window.innerWidth<=1120)return;
+    _sidebarDragState={startX:event.clientX,startWidth:document.getElementById('issues-sidebar').getBoundingClientRect().width};
+    document.body.style.cursor='col-resize';
+    document.body.style.userSelect='none';
+  });
+  document.addEventListener('mousemove',event=>{
+    if(!_sidebarDragState)return;
+    const width=Math.min(520,Math.max(320,_sidebarDragState.startWidth+(event.clientX-_sidebarDragState.startX)));
+    workbench.style.setProperty('--issues-sidebar-width',`${width}px`);
+  });
+  document.addEventListener('mouseup',()=>{
+    if(!_sidebarDragState)return;
+    const width=getComputedStyle(workbench).getPropertyValue('--issues-sidebar-width').trim();
+    if(width)localStorage.setItem(ISSUE_SIDEBAR_STORAGE_KEY,width);
+    _sidebarDragState=null;
+    document.body.style.cursor='';
+    document.body.style.userSelect='';
+  });
 }
 
 async function issueAction(id,action,event){
@@ -2806,6 +3303,8 @@ new MutationObserver(()=>{
 // ── Init ─────────────────────────────────────────────────────────────────────
 setupLanguage();
 _updateAutoRefreshBtn();
+initializeIssueWorkbench();
+renderWorkspaceEmpty('Select an issue from the incident queue to render the enterprise VM topology view.');
 loadIssues();
 setInterval(()=>{
   if(_anyPanelOpen() && _userIsActive()){ _refreshPending = true; return; }
