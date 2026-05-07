@@ -28,6 +28,7 @@ def app_display_name_ja(app_name: str | None) -> str:
         "gateway-api": "ゲートウェイAPI",
         "rca-assistant": "RCAアシスタント",
         "web-search-agent": "Web検索エージェント",
+        "pod_resource_guard": "Podリソースガード",
     }
     key = (app_name or "").lower()
     return names.get(key, app_name or "対象サービス")
@@ -64,6 +65,13 @@ def issue_title_ja(title: str | None, *, app_name: str | None = None, rule_id: s
         return f"{app_ja}の入力確認でエラーが発生しました"
     if rule_id in {"NFR-31", "NFR-32"} or re.search(r"llm|rate limit|openai", text, flags=re.IGNORECASE):
         return f"{app_ja}のAI応答でエラーが発生しました"
+    match = re.match(r"^Error spike in (.+)$", text, flags=re.IGNORECASE)
+    if match:
+        target = match.group(1).strip()
+        target_ja = app_display_name_ja(target)
+        if app_name and target.lower() == (app_name or "").lower():
+            target_ja = app_ja
+        return f"{target_ja}でエラーが急増しています"
     replacements = [
         (r"^3 consecutive trace failures in (.+)$", r"\1 で3回連続のトレース失敗"),
         (r"^HTTP error rate >=?5% in (.+)$", r"\1 でHTTPエラー率が5%以上"),
@@ -119,6 +127,20 @@ def issue_description_ja(
         return (
             f"{app_ja}が利用者の入力を処理する前の確認で失敗しました。"
             "入力文字の扱いまたはバリデーション設定を確認してください。"
+        )
+    match = re.match(
+        r"^(?P<failed>\d+)/(?P<total>\d+)\s+calls failed\s+\((?P<rate>\d+)%\)\s+in the last\s+(?P<minutes>\d+)\s+min$",
+        description.strip(),
+        flags=re.IGNORECASE,
+    )
+    if match:
+        failed = match.group("failed")
+        total = match.group("total")
+        rate = match.group("rate")
+        minutes = match.group("minutes")
+        return (
+            f"直近{minutes}分間で{total}件中{failed}件の呼び出しが失敗し、"
+            f"失敗率は{rate}%です。"
         )
     industry_descriptions = [
         (("memory", "limit"), f"{app_ja}のメモリ使用量が割り当て上限に近づき、コンテナ再起動や依存サービスの失敗につながっています。まずメモリ容量、レプリカ数、負荷状況を確認してください。"),

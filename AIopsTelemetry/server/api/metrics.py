@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import func
 
 from server.database.engine import get_db
-from server.database.models import Trace, Span, Issue
+from server.database.models import Trace, Span, Issue, EscalationRule
 
 router = APIRouter(prefix="/metrics", tags=["metrics"])
 
@@ -42,6 +42,32 @@ def _percentile(sorted_vals: list[float], pct: int) -> float:
 
 def _trace_ids_for_app(db: Session, app_name: str) -> list[str]:
     return [r[0] for r in db.query(Trace.id).filter(Trace.app_name == app_name).all()]
+
+
+def _load_sla_targets(db: Session) -> dict[str, float | None]:
+    nfr_ids = ("NFR-7", "NFR-7p95", "NFR-8")
+    rows = (
+        db.query(
+            EscalationRule.nfr_id,
+            EscalationRule.condition_value,
+            EscalationRule.enabled,
+        )
+        .filter(EscalationRule.nfr_id.in_(nfr_ids))
+        .all()
+    )
+    enabled = {nfr_id: value for nfr_id, value, is_enabled in rows if is_enabled}
+    fallback = {nfr_id: value for nfr_id, value, _ in rows}
+    return {
+        "avg_latency_target_ms": enabled.get("NFR-7", fallback.get("NFR-7")),
+        "p95_latency_target_ms": enabled.get("NFR-7p95", fallback.get("NFR-7p95")),
+        "error_rate_target_pct": enabled.get("NFR-8", fallback.get("NFR-8")),
+    }
+
+
+def _sla_status(current: float, target: float | None) -> str:
+    if target is None:
+        return "unknown"
+    return "met" if current < target else "breached"
 
 
 # ── Existing endpoints (unchanged) ───────────────────────────────────────────
@@ -148,6 +174,18 @@ def overview(
     tokens_in  = sum(s[0] or 0 for s in llm_spans)
     tokens_out = sum(s[1] or 0 for s in llm_spans)
     total_cost = sum(_estimate_cost(s[2], s[0] or 0, s[1] or 0) for s in llm_spans)
+    avg_latency_ms = round(sum(durations) / len(durations), 1) if durations else 0
+    p95_latency_ms = _percentile(durations, 95)
+    error_rate_pct = round(errors / total * 100, 1) if total else 0
+    sla_targets = _load_sla_targets(db)
+    avg_sla_status = _sla_status(avg_latency_ms, sla_targets["avg_latency_target_ms"])
+    p95_sla_status = _sla_status(p95_latency_ms, sla_targets["p95_latency_target_ms"])
+    error_sla_status = _sla_status(error_rate_pct, sla_targets["error_rate_target_pct"])
+    overall_sla_status = "met"
+    if "breached" in {avg_sla_status, p95_sla_status, error_sla_status}:
+        overall_sla_status = "breached"
+    elif "unknown" in {avg_sla_status, p95_sla_status, error_sla_status}:
+        overall_sla_status = "unknown"
 
     active_issues = db.query(func.count(Issue.id)).filter(
         Issue.status.in_(["OPEN", "ACKNOWLEDGED", "ESCALATED"])
@@ -155,13 +193,20 @@ def overview(
 
     return {
         "total_traces":      total,
-        "avg_latency_ms":    round(sum(durations) / len(durations), 1) if durations else 0,
-        "p95_latency_ms":    _percentile(durations, 95),
-        "error_rate_pct":    round(errors / total * 100, 1) if total else 0,
+        "avg_latency_ms":    avg_latency_ms,
+        "p95_latency_ms":    p95_latency_ms,
+        "error_rate_pct":    error_rate_pct,
         "active_issues":     active_issues,
         "tokens_in":         tokens_in,
         "tokens_out":        tokens_out,
         "estimated_cost_usd": round(total_cost, 4),
+        "sla": {
+            **sla_targets,
+            "avg_latency_status": avg_sla_status,
+            "p95_latency_status": p95_sla_status,
+            "error_rate_status": error_sla_status,
+            "overall_status": overall_sla_status,
+        },
     }
 
 

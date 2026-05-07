@@ -776,21 +776,27 @@ def _component_logs(
     component_id: str,
     limit: int,
     lang: str,
+    source_filter: str | None = None,
 ) -> tuple[dict[str, Any], list[dict[str, str]], list[dict[str, str]]]:
     node = next((item for item in topology.get("nodes") or [] if item.get("id") == component_id), None)
     if node is None:
         raise HTTPException(status_code=404, detail="Topology component not found")
 
+    requested_source = str(source_filter or "").strip().lower() or None
     aliases = _node_aliases(node)
     if issue.app_name and component_id == "ai-agent":
         aliases |= _tokens(issue.app_name)
 
     rows: list[dict[str, str]] = []
-    for log in node.get("logs") or []:
-        if isinstance(log, dict):
-            rows.append(_coerce_log(log))
+    if requested_source in {None, "all", "aiops-local"}:
+        for log in node.get("logs") or []:
+            if isinstance(log, dict):
+                payload = dict(log)
+                payload.setdefault("source", "aiops-local")
+                payload.setdefault("source_label", "Local")
+                rows.append(_coerce_log(payload))
 
-    if node.get("metrics") and any(source.get("id") == "prometheus" for source in node.get("evidence_sources") or []):
+    if requested_source in {None, "all", "prometheus"} and node.get("metrics") and any(source.get("id") == "prometheus" for source in node.get("evidence_sources") or []):
         for metric in node.get("metrics") or []:
             if not isinstance(metric, dict):
                 continue
@@ -805,9 +811,10 @@ def _component_logs(
                     }
                 )
             )
-    rows.extend(_prometheus_rows_for_component(issue, node))
+    if requested_source in {None, "all", "prometheus"}:
+        rows.extend(_prometheus_rows_for_component(issue, node))
 
-    if issue.trace_id:
+    if issue.trace_id and requested_source in {None, "all", "langfuse"}:
         trace_logs = (
             db.query(TraceLog)
             .filter(TraceLog.trace_id == issue.trace_id)
@@ -817,7 +824,7 @@ def _component_logs(
         )
         for entry in trace_logs:
             haystack = " ".join([entry.logger or "", entry.message or ""]).lower()
-            if aliases and not any(token in haystack for token in aliases):
+            if requested_source != "langfuse" and aliases and not any(token in haystack for token in aliases):
                 continue
             rows.append(
                 _coerce_log(
@@ -840,7 +847,7 @@ def _component_logs(
         )
         for span in spans:
             haystack = " ".join([span.name or "", span.error_message or "", span.span_type or ""]).lower()
-            if aliases and not any(token in haystack for token in aliases):
+            if requested_source != "langfuse" and aliases and not any(token in haystack for token in aliases):
                 continue
             level = "ERROR" if span.status == "error" or span.error_message else "INFO"
             message = span.error_message or f"span={span.name} status={span.status} duration_ms={span.duration_ms}"
@@ -945,6 +952,7 @@ def get_component_logs(
     component_id: str,
     limit: int = Query(40, ge=1, le=200),
     lang: str = Query("ja"),
+    source: str | None = Query(None),
     db: Session = Depends(get_db),
 ):
     issue = db.query(Issue).filter(Issue.id == issue_id).first()
@@ -952,7 +960,7 @@ def get_component_logs(
         raise HTTPException(status_code=404, detail="Issue not found")
     analysis = db.query(IssueAnalysis).filter(IssueAnalysis.issue_id == issue_id).first()
     topology = _build_topology(issue, analysis, lang)
-    node, logs, sources = _component_logs(db, issue, topology, component_id, limit, lang)
+    node, logs, sources = _component_logs(db, issue, topology, component_id, limit, lang, source)
     return {
         "issue_id": issue_id,
         "component_id": component_id,

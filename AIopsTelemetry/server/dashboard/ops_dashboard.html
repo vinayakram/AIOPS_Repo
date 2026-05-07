@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>AIOPS Dashboard</title>
+  <title>AIOPS運用ダッシュボード</title>
   <style>
     :root{
       --bg:#eef3f8;
@@ -440,6 +440,63 @@
 
     .metric-note{font-size:13px;color:#475467;max-width:30ch}
 
+    .sla-grid{
+      display:grid;
+      grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+      gap:16px;
+    }
+
+    .sla-card{
+      padding:18px;
+      border-radius:20px;
+      border:1px solid var(--line);
+      background:rgba(255,255,255,.9);
+      display:grid;
+      gap:12px;
+    }
+
+    .sla-card.met{
+      background:linear-gradient(180deg,#f6fdf8,var(--green-soft));
+      border-color:#bfe2cb;
+    }
+
+    .sla-card.breached{
+      background:linear-gradient(180deg,#fff6f7,var(--red-soft));
+      border-color:#ecb4bd;
+    }
+
+    .sla-card.unknown{
+      background:linear-gradient(180deg,#fffdf7,var(--amber-soft));
+      border-color:#ebc987;
+    }
+
+    .sla-card-top{
+      display:flex;
+      align-items:flex-start;
+      justify-content:space-between;
+      gap:12px;
+    }
+
+    .sla-card-title{
+      font-size:14px;
+      font-weight:850;
+      color:var(--ink);
+    }
+
+    .sla-card-value{
+      font-size:28px;
+      line-height:1;
+      font-weight:900;
+      color:var(--ink);
+    }
+
+    .sla-card-meta{
+      display:grid;
+      gap:6px;
+      font-size:13px;
+      color:#475467;
+    }
+
     .overview-grid{
       display:grid;
       grid-template-columns:1.2fr .8fr;
@@ -709,6 +766,13 @@
       gap:14px;
     }
 
+    .detail-header-main{
+      display:grid;
+      gap:12px;
+      flex:1 1 620px;
+      min-width:0;
+    }
+
     .detail-header{
       display:flex;
       align-items:flex-start;
@@ -724,6 +788,57 @@
       letter-spacing:.08em;
       text-transform:uppercase;
       color:#6b7280;
+    }
+
+    .detail-nav{
+      display:flex;
+      align-items:center;
+      gap:8px;
+      flex-wrap:wrap;
+    }
+
+    .detail-nav-pill{
+      display:inline-flex;
+      align-items:center;
+      min-height:34px;
+      padding:7px 12px;
+      border-radius:999px;
+      border:1px solid #d6e1ed;
+      background:rgba(255,255,255,.92);
+      color:#526581;
+      font-size:12px;
+      font-weight:800;
+      cursor:pointer;
+    }
+
+    .detail-nav-pill:hover{
+      border-color:#bfd1ff;
+      background:#f7faff;
+      color:#174ea6;
+    }
+
+    .detail-nav-pill.current{
+      border-color:#bfd1ff;
+      background:#edf4ff;
+      color:#174ea6;
+    }
+
+    .detail-nav-sep{
+      color:#94a3b8;
+      font-size:12px;
+      font-weight:800;
+    }
+
+    .detail-actions{
+      display:flex;
+      align-items:center;
+      justify-content:flex-end;
+      gap:10px;
+      flex-wrap:wrap;
+    }
+
+    .detail-actions .btn{
+      white-space:nowrap;
     }
 
     .detail-header-copy{
@@ -2621,6 +2736,231 @@
       gap:18px;
     }
 
+    .insight-rail{
+      display:grid;
+      gap:10px;
+      align-content:start;
+      position:sticky;
+      top:0;
+    }
+
+    .insight-rail-head{
+      display:grid;
+      gap:10px;
+      padding:12px 14px;
+      border:1px solid #d7e2ef;
+      border-radius:22px;
+      background:linear-gradient(180deg,rgba(255,255,255,.98),rgba(245,249,255,.94));
+      box-shadow:0 16px 28px rgba(20,38,70,.08);
+    }
+
+    .insight-rail-copy{
+      display:grid;
+      gap:4px;
+      min-width:0;
+    }
+
+    .insight-rail-kicker{
+      font-size:10px;
+      font-weight:850;
+      letter-spacing:.08em;
+      text-transform:uppercase;
+      color:#667085;
+    }
+
+    .insight-rail-title{
+      font-size:16px;
+      font-weight:900;
+      line-height:1.2;
+      color:#10233f;
+      min-width:0;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
+
+    .insight-rail-subtitle{
+      font-size:11px;
+      line-height:1.45;
+      color:#526581;
+    }
+
+    .insight-rail-tabs{
+      display:grid;
+      grid-template-columns:repeat(3,minmax(0,1fr));
+      gap:6px;
+    }
+
+    .insight-tab{
+      min-height:34px;
+      padding:7px 8px;
+      border-radius:12px;
+      border:1px solid #dbe5f1;
+      background:#fff;
+      color:#526581;
+      font-size:11px;
+      font-weight:850;
+      cursor:pointer;
+      white-space:nowrap;
+    }
+
+    .insight-tab:hover{
+      border-color:#bfd1ff;
+      background:#f8fbff;
+      color:#174ea6;
+    }
+
+    .insight-tab.active{
+      border-color:#bfd1ff;
+      background:#edf4ff;
+      color:#174ea6;
+      box-shadow:0 0 0 2px rgba(35,100,210,.10);
+    }
+
+    .insight-rail-body{
+      display:grid;
+      gap:10px;
+    }
+
+    .insight-panel{
+      display:grid;
+      gap:10px;
+      padding:12px 14px;
+      border:1px solid #d7e2ef;
+      border-radius:22px;
+      background:linear-gradient(180deg,rgba(255,255,255,.97),rgba(247,250,255,.95));
+      box-shadow:0 16px 28px rgba(20,38,70,.08);
+      min-width:0;
+    }
+
+    .insight-section{
+      display:grid;
+      gap:8px;
+    }
+
+    .insight-section-title{
+      font-size:10px;
+      font-weight:850;
+      letter-spacing:.08em;
+      text-transform:uppercase;
+      color:#667085;
+    }
+
+    .insight-stat-grid{
+      display:grid;
+      grid-template-columns:repeat(2,minmax(0,1fr));
+      gap:8px;
+    }
+
+    .insight-stat-card{
+      display:grid;
+      gap:6px;
+      padding:10px 11px;
+      border-radius:16px;
+      border:1px solid #dbe5f1;
+      background:#fff;
+      min-width:0;
+    }
+
+    .insight-stat-label{
+      font-size:10px;
+      font-weight:850;
+      letter-spacing:.08em;
+      text-transform:uppercase;
+      color:#667085;
+    }
+
+    .insight-stat-value{
+      font-size:12px;
+      line-height:1.5;
+      color:#10233f;
+      display:-webkit-box;
+      -webkit-line-clamp:4;
+      -webkit-box-orient:vertical;
+      overflow:hidden;
+    }
+
+    .insight-quick-row{
+      display:grid;
+      grid-template-columns:repeat(3,minmax(0,1fr));
+      gap:6px;
+    }
+
+    .insight-quick-btn{
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      gap:6px;
+      min-height:38px;
+      padding:8px 9px;
+      border-radius:12px;
+      border:1px solid var(--line);
+      background:var(--panel-soft);
+      color:var(--muted);
+      cursor:pointer;
+      font-size:11px;
+      font-weight:800;
+      line-height:1.2;
+      text-align:center;
+    }
+
+    .insight-quick-btn:hover{
+      border-color:var(--blue);
+      color:var(--blue);
+      background:var(--blue-soft);
+    }
+
+    .insight-quick-btn .ico{
+      font-size:14px;
+      line-height:1;
+    }
+
+    .insight-action-row{
+      display:grid;
+      grid-template-columns:repeat(2,minmax(0,1fr));
+      gap:8px;
+    }
+
+    .rca-chat-btn.compact,
+    .compact-action-btn{
+      min-height:40px;
+      font-size:12px;
+      padding:8px 10px;
+      border-radius:12px;
+    }
+
+    .insight-node-head{
+      display:flex;
+      align-items:flex-start;
+      justify-content:space-between;
+      gap:10px;
+      flex-wrap:wrap;
+    }
+
+    .insight-node-title{
+      font-size:15px;
+      font-weight:900;
+      line-height:1.2;
+      color:#10233f;
+    }
+
+    .insight-node-copy{
+      font-size:12px;
+      line-height:1.5;
+      color:#526581;
+    }
+
+    .insight-log-meta,
+    .insight-muted{
+      font-size:11px;
+      color:#667085;
+      font-weight:700;
+    }
+
+    .node-log-sources.compact{
+      gap:5px;
+    }
+
     .ops-issue-board{
       display:grid;
       gap:18px;
@@ -3005,6 +3345,397 @@
       color:#667085;
       font-size:13px;
       line-height:1.6;
+    }
+
+    .issue-detail-fit{
+      min-height:0;
+      display:grid;
+    }
+
+    .fit-page-body{
+      overflow:hidden;
+    }
+
+    .app-shell.fit-page{
+      height:calc(100vh - 72px);
+      min-height:calc(100vh - 72px);
+    }
+
+    .app-shell.fit-page .content{
+      height:calc(100vh - 72px);
+      overflow:hidden;
+      padding:18px 22px;
+    }
+
+    .app-shell.fit-page .view-shell{
+      height:100%;
+      gap:14px;
+    }
+
+    .app-shell.fit-page .metric-grid{
+      gap:12px;
+    }
+
+    .app-shell.fit-page .metric-card{
+      min-height:136px;
+      padding:18px;
+      gap:8px;
+    }
+
+    .app-shell.fit-page .section-card{
+      padding:18px;
+    }
+
+    .app-shell.fit-page .section-head{
+      margin-bottom:12px;
+    }
+
+    .app-shell.fit-page .toolbar{
+      padding:14px;
+      gap:10px;
+    }
+
+    .app-shell.fit-page .issue-list{
+      min-height:0;
+      overflow:auto;
+      gap:10px;
+      padding-right:4px;
+    }
+
+    .app-shell.fit-page .issue-card{
+      padding:14px 16px;
+      gap:12px;
+    }
+
+    .app-shell.fit-page .issue-desc{
+      margin-top:6px;
+      line-height:1.5;
+    }
+
+    .app-shell.fit-page .issue-detail-fit{
+      min-height:0;
+    }
+
+    .app-shell.fit-page .issue-detail-fit .detail-stack{
+      display:grid;
+      gap:12px;
+    }
+
+    .app-shell.fit-page .issue-detail-fit .detail-header{
+      padding:2px 2px 0;
+      gap:8px;
+    }
+
+    .app-shell.fit-page .issue-detail-fit .detail-title{
+      font-size:clamp(17px,1.5vw,22px);
+    }
+
+    .app-shell.fit-page .issue-detail-fit .section-card{
+      padding:10px 12px;
+      gap:8px;
+      overflow:visible;
+    }
+
+    .app-shell.fit-page .issue-detail-fit .section-head{
+      margin-bottom:0;
+    }
+
+    .app-shell.fit-page .issue-detail-fit .section-copy{
+      font-size:11px;
+      line-height:1.4;
+    }
+
+    .app-shell.fit-page .issue-detail-fit .ops-workbench{
+      gap:10px;
+      grid-template-columns:minmax(0,1.56fr) minmax(340px,1.02fr);
+      grid-template-rows:auto;
+      align-items:start;
+    }
+
+    .app-shell.fit-page .issue-detail-fit .ops-workbench > .ops-issue-board{
+      grid-column:1;
+      grid-row:1;
+      align-self:start;
+    }
+
+    .app-shell.fit-page .issue-detail-fit .ops-workbench > .insight-rail{
+      grid-column:2;
+      grid-row:1;
+      align-self:start;
+      min-height:0;
+    }
+
+    .app-shell.fit-page .issue-detail-fit .ops-issue-board{
+      gap:10px;
+      padding:12px 14px;
+      align-content:start;
+      overflow:visible;
+    }
+
+    .app-shell.fit-page .issue-detail-fit .ops-issue-board-head{
+      gap:10px;
+    }
+
+    .app-shell.fit-page .issue-detail-fit .ops-issue-board-title{
+      margin-top:4px;
+      font-size:clamp(17px,1.55vw,23px);
+    }
+
+    .app-shell.fit-page .issue-detail-fit .ops-issue-board-copy{
+      margin-top:2px;
+      max-width:52ch;
+      font-size:11.5px;
+      line-height:1.34;
+      display:-webkit-box;
+      -webkit-line-clamp:3;
+      -webkit-box-orient:vertical;
+      overflow:hidden;
+    }
+
+    .app-shell.fit-page .issue-detail-fit .ops-badge-grid{
+      grid-template-columns:repeat(4,minmax(0,1fr));
+      gap:6px;
+      align-items:stretch;
+    }
+
+    .app-shell.fit-page .issue-detail-fit .ops-badge{
+      min-height:86px;
+      padding:10px 9px 8px;
+      gap:5px;
+      border-radius:16px;
+    }
+
+    .app-shell.fit-page .issue-detail-fit .ops-badge-title{
+      font-size:clamp(13.5px,1.18vw,18px);
+      line-height:1.02;
+    }
+
+    .app-shell.fit-page .issue-detail-fit .ops-badge-copy{
+      max-width:none;
+      font-size:9px;
+      line-height:1.12;
+      display:-webkit-box;
+      -webkit-line-clamp:1;
+      -webkit-box-orient:vertical;
+      overflow:hidden;
+    }
+
+    .app-shell.fit-page .issue-detail-fit .ops-mini-pill{
+      padding:3px 6px;
+      font-size:8px;
+      gap:2px;
+    }
+
+    .app-shell.fit-page .issue-detail-fit .ops-detail-panel{
+      padding:11px 12px;
+      gap:9px;
+      overflow:visible;
+    }
+
+    .app-shell.fit-page .issue-detail-fit .ops-detail-title{
+      font-size:clamp(15px,1.2vw,18px);
+    }
+
+    .app-shell.fit-page .issue-detail-fit .ops-detail-copy{
+      margin-top:2px;
+      font-size:10.5px;
+      line-height:1.3;
+      display:-webkit-box;
+      -webkit-line-clamp:2;
+      -webkit-box-orient:vertical;
+      overflow:hidden;
+    }
+
+    .app-shell.fit-page .issue-detail-fit .ops-detail-metrics{
+      gap:8px;
+    }
+
+    .app-shell.fit-page .issue-detail-fit .ops-detail-metric{
+      padding:9px 10px;
+    }
+
+    .app-shell.fit-page .issue-detail-fit .ops-detail-metric strong{
+      font-size:16px;
+    }
+
+    .app-shell.fit-page .issue-detail-fit .ops-node-grid{
+      gap:6px;
+      grid-template-columns:repeat(auto-fit,minmax(150px,1fr));
+      align-content:start;
+      overflow:visible;
+      padding-right:0;
+    }
+
+    .app-shell.fit-page .issue-detail-fit .ops-node-card{
+      padding:9px 10px;
+      gap:6px;
+      border-radius:14px;
+    }
+
+    .app-shell.fit-page .issue-detail-fit .ops-node-title{
+      font-size:12px;
+      line-height:1.2;
+    }
+
+    .app-shell.fit-page .issue-detail-fit .ops-node-copy{
+      font-size:9px;
+      line-height:1.2;
+      display:-webkit-box;
+      -webkit-line-clamp:2;
+      -webkit-box-orient:vertical;
+      overflow:hidden;
+    }
+
+    .app-shell.fit-page .issue-detail-fit .ops-node-metric{
+      padding:3px 6px;
+      font-size:9px;
+    }
+
+    .app-shell.fit-page .issue-detail-fit .ops-node-status{
+      min-width:48px;
+      padding:4px 6px;
+      font-size:9px;
+    }
+
+    .app-shell.fit-page .issue-detail-fit .detail-nav-pill,
+    .app-shell.fit-page .issue-detail-fit .chip{
+      min-height:auto;
+      padding:4px 8px;
+      font-size:10px;
+    }
+
+    .app-shell.fit-page .issue-detail-fit .detail-actions{
+      gap:6px;
+      padding:5px;
+      border-radius:14px;
+      background:rgba(255,255,255,.76);
+      border:1px solid rgba(195,207,221,.72);
+    }
+
+    .app-shell.fit-page .issue-detail-fit .detail-actions .btn{
+      min-height:32px;
+      padding:6px 9px;
+      font-size:11px;
+    }
+
+    .app-shell.fit-page .issue-detail-fit .insight-rail-head,
+    .app-shell.fit-page .issue-detail-fit .insight-panel{
+      padding:9px 11px;
+      border-radius:18px;
+    }
+
+    .app-shell.fit-page .issue-detail-fit .insight-rail-head{
+      gap:7px;
+    }
+
+    .app-shell.fit-page .issue-detail-fit .insight-rail-title{
+      font-size:15px;
+    }
+
+    .app-shell.fit-page .issue-detail-fit .insight-rail-subtitle,
+    .app-shell.fit-page .issue-detail-fit .insight-node-copy,
+    .app-shell.fit-page .issue-detail-fit .topology-metric-name,
+    .app-shell.fit-page .issue-detail-fit .topology-log-message{
+      font-size:10px;
+      line-height:1.3;
+    }
+
+    .app-shell.fit-page .issue-detail-fit .topology-metric-row{
+      gap:8px;
+      padding-bottom:8px;
+    }
+
+    .app-shell.fit-page .issue-detail-fit .topology-metric-source,
+    .app-shell.fit-page .issue-detail-fit .topology-source-pill,
+    .app-shell.fit-page .issue-detail-fit .node-log-source-pill{
+      padding:4px 7px;
+      font-size:9px;
+    }
+
+    .app-shell.fit-page .issue-detail-fit .topology-log-row{
+      border-radius:12px;
+      padding:7px;
+      gap:5px;
+    }
+
+    .app-shell.fit-page .issue-detail-fit .topology-log-meta{
+      font-size:9px;
+      gap:6px;
+    }
+
+    .app-shell.fit-page .issue-detail-fit .insight-stat-grid,
+    .app-shell.fit-page .issue-detail-fit .insight-action-row{
+      gap:6px;
+    }
+
+    .app-shell.fit-page .issue-detail-fit .insight-quick-row{
+      gap:5px;
+    }
+
+    .app-shell.fit-page .issue-detail-fit .insight-stat-card{
+      padding:7px 8px;
+      border-radius:14px;
+      gap:4px;
+    }
+
+    .app-shell.fit-page .issue-detail-fit .insight-stat-value{
+      font-size:10.5px;
+      line-height:1.28;
+    }
+
+    .app-shell.fit-page .issue-detail-fit .insight-quick-btn{
+      min-height:32px;
+      padding:6px 7px;
+      font-size:10px;
+      gap:4px;
+    }
+
+    .app-shell.fit-page .issue-detail-fit .insight-quick-btn .ico{
+      font-size:12px;
+    }
+
+    .app-shell.fit-page .issue-detail-fit .insight-tab{
+      min-height:28px;
+      padding:5px 7px;
+      font-size:10px;
+    }
+
+    .app-shell.fit-page .issue-detail-fit .ops-badge-summary{
+      margin-top:auto;
+      gap:4px;
+    }
+
+    @media (max-width: 1420px){
+      .app-shell.fit-page .issue-detail-fit .ops-workbench{
+        grid-template-columns:minmax(0,1fr);
+        grid-template-rows:auto auto;
+      }
+
+      .app-shell.fit-page .issue-detail-fit .ops-workbench > .ops-issue-board,
+      .app-shell.fit-page .issue-detail-fit .ops-workbench > .insight-rail{
+        grid-column:1;
+        grid-row:auto;
+      }
+
+      .app-shell.fit-page .issue-detail-fit .ops-issue-board{
+        height:auto;
+      }
+    }
+
+    .fit-scale-shell{
+      height:100%;
+      min-height:0;
+      overflow:hidden;
+      display:flex;
+      align-items:flex-start;
+      justify-content:flex-start;
+    }
+
+    .fit-scale-content{
+      width:100%;
+      max-width:none;
+      transform-origin:top center;
+      will-change:transform;
     }
 
     /* ── VM Topology Diagram legacy styles retained below ─────── */
@@ -3444,7 +4175,7 @@
     .node-log-source-pill.langfuse{background:#faf5ff;color:#7e22ce;border-color:#e9d5ff}
     .node-log-source-pill.aiops-local,.node-log-source-pill.incident{background:#f8fafc;color:#526581;border-color:#dbe5f1}
     .node-log-source-pill.all{background:#edf4ff;color:#2364d2;border-color:#bfd1ff}
-    .node-log-drawer-body{padding:12px 16px;display:grid;gap:4px;max-height:260px;overflow-y:auto}
+    .node-log-drawer-body{padding:12px 16px;display:grid;gap:4px;max-height:none;overflow:visible}
     .node-log-row{display:grid;grid-template-columns:130px 52px 118px 1fr;gap:8px;font-size:11px;align-items:baseline;padding:6px 0;border-bottom:1px solid var(--line);font-family:ui-monospace,SFMono-Regular,monospace}
     .node-log-row:last-child{border-bottom:0}
     .node-log-ts{color:var(--muted)}
@@ -3457,6 +4188,7 @@
     .node-log-origin.langfuse{background:#faf5ff;color:#7e22ce;border-color:#e9d5ff}
     .node-log-origin.aiops-local,.node-log-origin.incident{background:#f8fafc;color:#526581;border-color:#dbe5f1}
     .node-log-msg{word-break:break-word;line-height:1.4}
+    .node-log-summary{color:#667085;font-size:11px;font-weight:700;padding:0 16px 10px}
     .node-log-empty{color:var(--muted);font-size:12px;text-align:center;padding:24px;font-style:italic}
 
     @media (max-width:1100px){
@@ -3617,19 +4349,19 @@
 <body>
   <header class="topbar">
     <div class="topbar-left">
-      <button class="icon-btn" id="sidebarToggle" type="button" aria-label="Toggle sidebar">☰</button>
+      <button class="icon-btn" id="sidebarToggle" type="button" aria-label="サイドバーを切り替え" title="サイドバーを切り替え">☰</button>
       <div class="brand">
         <div class="brand-mark" id="brandMark">助</div>
         <div class="brand-copy">
-          <div class="brand-title" id="brandName">Ops Assistant</div>
-          <div class="brand-subtitle" id="brandSubtitle">Operations overview and incident detail</div>
+          <div class="brand-title" id="brandName">AIOPSアシスタント</div>
+          <div class="brand-subtitle" id="brandSubtitle">運用概要とインシデント詳細</div>
         </div>
       </div>
     </div>
     <div class="topbar-right">
-      <div class="live-pill"><span class="status-dot"></span><span id="liveText">Live</span></div>
+      <div class="live-pill"><span class="status-dot"></span><span id="liveText">ライブ</span></div>
       <div class="mcp-pill hidden" id="mcpPill"><span class="mcp-pill-dot"></span><span>MCP</span></div>
-      <button class="btn subtle" id="viewSwitchBtn" type="button">Chat View</button>
+      <button class="btn subtle" id="viewSwitchBtn" type="button">会話ビュー</button>
       <button class="btn" id="langBtn" type="button">English</button>
     </div>
   </header>
@@ -3643,10 +4375,15 @@
 
   <script>
     const initialParams = new URLSearchParams(location.search);
+    const initialIssueId = Number(initialParams.get('issue_id') || 0) || null;
+    const initialPageParam = String(initialParams.get('page') || '').toLowerCase();
+    const initialPage = ['home', 'overview', 'issues'].includes(initialPageParam)
+      ? initialPageParam
+      : (initialIssueId ? 'issues' : 'overview');
     const state = {
       lang: initialParams.get('lang') || 'ja',
       issues: [],
-      currentPage: 'issues',
+      currentPage: initialPage,
       selectedIssueId: null,
       loadingIssues: true,
       loadingDetail: false,
@@ -3661,7 +4398,10 @@
       componentLogSource: 'all',
       componentLogs: [],
       componentLogMeta: null,
+      componentLogLoading: false,
+      detailPane: 'rca',
       componentLogTimer: null,
+      fitRaf: 0,
       assistantMessages: [],
       assistantLoading: false,
       assistantDraft: '',
@@ -3672,23 +4412,28 @@
         failure: false,
         evidence: false,
       },
+      overviewData: null,
+      overviewLoading: false,
       appHealthData: null,
       appHealthLoading: false,
       mcpActive: false,
       hasAutoOpenedIssue: false,
-      initialIssueId: Number(initialParams.get('issue_id') || 0) || null,
+      initialIssueId,
       initialMode: initialParams.get('mode') || '',
     };
 
     const t = {
       en: {
+        pageTitle:'AIOPS Operations Dashboard',
         brand:'AIOPS',
         mark:'助',
         subtitle:'Operations overview and incident detail',
         live:'Live',
-        switchToChat:'Chat View',
+        switchToChat:'Open Conversation',
         openRemediationInChat:'Remediation In Chat',
         lang:'日本語',
+        toggleSidebar:'Toggle sidebar',
+        dashboardNavigation:'Dashboard navigation',
         homeLine:'See the system first. Stop the issue before it spreads.',
         sidebarGroup:'Workspace',
         sidebarHintTitle:'Navigation',
@@ -3706,6 +4451,16 @@
         resolvedIssuesNote:'Tickets already moved out of the active queue.',
         criticalIssues:'Critical Issues',
         criticalIssuesNote:'Highest-severity incidents that need the fastest response.',
+        slaTitle:'SLA Overview',
+        slaCopy:'Current telemetry compared with the configured SLA targets from the existing NFR rules.',
+        slaMet:'Within SLA',
+        slaBreached:'SLA breached',
+        slaUnknown:'SLA target unavailable',
+        avgLatencySla:'Average latency',
+        p95LatencySla:'P95 latency',
+        errorRateSla:'Error rate',
+        currentValue:'Current',
+        targetValue:'Target',
         healthTitle:'Live status snapshot',
         healthCopy:'A focused summary for operators who need the current picture quickly.',
         healthOpenTitle:'Open workload',
@@ -3730,7 +4485,7 @@
         primaryPoint:'Primary point',
         issueListEmptyTitle:'No issues matched',
         issueListEmptyCopy:'Try adjusting the search or filters to broaden the results.',
-        chatView:'Chat view',
+        chatView:'Open conversation',
         dashboardView:'Dashboard',
         loadingTitle:'Loading dashboard data',
         loadingCopy:'Fetching the latest issues and live metrics.',
@@ -3773,6 +4528,14 @@
         rcaSummaryCopy:'A concise explanation stays visible here while deeper RCA chat opens in a popup.',
         openChatPanel:'Open RCA chat',
         closeChatPanel:'Close RCA chat',
+        insightKicker:'Incident desk',
+        insightLogs:'Logs',
+        insightMetrics:'Metrics',
+        insightRca:'RCA',
+        insightQuickTools:'Quick tools',
+        insightFocusedNode:'Focused component',
+        insightHiddenLogs:'more entries hidden',
+        insightSignals:'Signals',
         selectedComponent:'Selected component',
         askPlaceholder:'Ask about the cause, impact, or next step…',
         askButton:'Ask',
@@ -3792,13 +4555,16 @@
         noIssueCopy:'Open the Issues page and choose a ticket when you want to inspect topology and logs.',
       },
       ja: {
-        brand:'助手 Ops',
+        pageTitle:'AIOPS運用ダッシュボード',
+        brand:'AIOPSアシスタント',
         mark:'助',
         subtitle:'運用概要とインシデント詳細',
         live:'ライブ',
-        switchToChat:'会話ビュー',
+        switchToChat:'会話を開く',
         openRemediationInChat:'会話で対応フロー',
         lang:'English',
+        toggleSidebar:'サイドバーを切り替え',
+        dashboardNavigation:'ダッシュボードナビゲーション',
         homeLine:'まず全体を捉え、障害が広がる前に止める。',
         sidebarGroup:'ワークスペース',
         sidebarHintTitle:'ナビゲーション',
@@ -3816,6 +4582,16 @@
         resolvedIssuesNote:'すでに対応完了したチケット数です。',
         criticalIssues:'重大な問題',
         criticalIssuesNote:'最優先で見るべき重大チケット数です。',
+        slaTitle:'SLA概要',
+        slaCopy:'既存のNFRルールで定義されているSLA目標と現在のテレメトリを並べて確認できます。',
+        slaMet:'SLA内',
+        slaBreached:'SLA超過',
+        slaUnknown:'SLA目標なし',
+        avgLatencySla:'平均レイテンシ',
+        p95LatencySla:'P95レイテンシ',
+        errorRateSla:'エラー率',
+        currentValue:'現在値',
+        targetValue:'目標値',
         healthTitle:'ライブ状況サマリー',
         healthCopy:'今の状況をすばやく把握したい運用担当者向けの要約です。',
         healthOpenTitle:'対応中の負荷',
@@ -3840,7 +4616,7 @@
         primaryPoint:'主要ポイント',
         issueListEmptyTitle:'一致するチケットがありません',
         issueListEmptyCopy:'検索条件やフィルターを調整してください。',
-        chatView:'チャット表示',
+        chatView:'会話で確認',
         dashboardView:'ダッシュボード',
         loadingTitle:'ダッシュボードを読み込み中',
         loadingCopy:'最新の問題一覧と指標を取得しています。',
@@ -3883,6 +4659,14 @@
         rcaSummaryCopy:'要点はここに残し、より深い RCA チャットはポップアップで開きます。',
         openChatPanel:'RCA チャットを開く',
         closeChatPanel:'RCA チャットを閉じる',
+        insightKicker:'インシデントデスク',
+        insightLogs:'ログ',
+        insightMetrics:'指標',
+        insightRca:'RCA',
+        insightQuickTools:'クイック操作',
+        insightFocusedNode:'注目コンポーネント',
+        insightHiddenLogs:'件を省略表示',
+        insightSignals:'シグナル',
         selectedComponent:'選択中のコンポーネント',
         askPlaceholder:'原因、影響、次に取る対応を入力してください…',
         askButton:'質問',
@@ -4030,6 +4814,7 @@
     function buildDashboardUrl(){
       const params = new URLSearchParams();
       params.set('lang', state.lang);
+      params.set('page', state.currentPage);
       if(state.selectedIssueId) params.set('issue_id', String(state.selectedIssueId));
       if(state.chatPanelOpen) params.set('mode', 'rca');
       return `${dashboardBasePath()}?${params.toString()}`;
@@ -4069,6 +4854,39 @@
         resolved: state.issues.filter(issue => issue.status === 'RESOLVED').length,
         critical: state.issues.filter(issue => issue.severity === 'critical' && issue.status !== 'RESOLVED').length,
       };
+    }
+
+    function overviewSla(){
+      return state.overviewData?.sla || null;
+    }
+
+    function formatSlaMetric(value, unit = ''){
+      if(value == null || Number.isNaN(Number(value))) return '--';
+      const num = Number(value);
+      if(unit === '%') return `${num.toFixed(1)}%`;
+      return `${Math.round(num)}${unit}`;
+    }
+
+    function slaStatusLabel(status){
+      if(status === 'met') return tr('slaMet');
+      if(status === 'breached') return tr('slaBreached');
+      return tr('slaUnknown');
+    }
+
+    function renderSlaCard({title, current, target, status, unit = ''}){
+      return `
+        <article class="sla-card ${esc(status || 'unknown')}">
+          <div class="sla-card-top">
+            <div class="sla-card-title">${esc(title)}</div>
+            <span class="chip ${status === 'breached' ? 'escalated' : status === 'met' ? 'resolved' : ''}">${esc(slaStatusLabel(status))}</span>
+          </div>
+          <div class="sla-card-value">${esc(formatSlaMetric(current, unit))}</div>
+          <div class="sla-card-meta">
+            <div>${esc(`${tr('currentValue')}: ${formatSlaMetric(current, unit)}`)}</div>
+            <div>${esc(`${tr('targetValue')}: ${formatSlaMetric(target, unit)}`)}</div>
+          </div>
+        </article>
+      `;
     }
 
     function issueMatchesQuery(issue){
@@ -4670,6 +5488,8 @@
       state.componentLogSource = 'all';
       state.componentLogs = [];
       state.componentLogMeta = null;
+      state.componentLogLoading = false;
+      state.detailPane = 'rca';
       state.assistantMessages = [];
       state.assistantDraft = '';
       state.chatPanelOpen = false;
@@ -4702,6 +5522,8 @@
       state.componentLogSource = 'all';
       state.componentLogs = [];
       state.componentLogMeta = null;
+      state.componentLogLoading = false;
+      state.detailPane = 'rca';
       state.assistantMessages = [];
       state.assistantDraft = '';
       state.chatPanelOpen = false;
@@ -4729,6 +5551,8 @@
       state.componentLogSource = 'all';
       state.componentLogs = [];
       state.componentLogMeta = null;
+      state.componentLogLoading = false;
+      state.detailPane = 'rca';
       state.chatPanelOpen = false;
       const topology = state.topologyPayload?.topology || {};
       const defaultNodeId = topology.default_component_id
@@ -4749,19 +5573,29 @@
       clearComponentLogTimer();
       state.componentLogs = [];
       state.componentLogMeta = null;
+      state.componentLogLoading = true;
       const issue = getSelectedIssue();
-      if(!issue || !state.topologyLogsSelected) return;
-      await refreshComponentLogs();
+      if(!issue || !state.topologyLogsSelected){
+        state.componentLogLoading = false;
+        return;
+      }
+      await refreshComponentLogs(state.componentLogSource);
       if(issue.status !== 'RESOLVED'){
-        state.componentLogTimer = setInterval(refreshComponentLogs, 5000);
+        state.componentLogTimer = setInterval(() => {
+          refreshComponentLogs(state.componentLogSource);
+        }, 5000);
       }
     }
 
-    async function refreshComponentLogs(){
+    async function refreshComponentLogs(requestedSource = state.componentLogSource){
       const issue = getSelectedIssue();
       if(!issue || !state.topologyLogsSelected) return;
+      state.componentLogLoading = true;
+      const sourceParam = requestedSource && requestedSource !== 'all'
+        ? `&source=${encodeURIComponent(requestedSource)}`
+        : '';
       try{
-        const res = await fetch(`/api/topology/issues/${issue.id}/components/${encodeURIComponent(state.topologyLogsSelected)}/logs?limit=60&lang=${encodeURIComponent(state.lang)}`);
+        const res = await fetch(`/api/topology/issues/${issue.id}/components/${encodeURIComponent(state.topologyLogsSelected)}/logs?limit=60&lang=${encodeURIComponent(state.lang)}${sourceParam}`);
         if(!res.ok) throw new Error(await res.text());
         const data = await res.json();
         state.componentLogMeta = data;
@@ -4785,6 +5619,8 @@
           ? fallbackLogs
           : [{timestamp:new Date().toISOString(), level:'ERROR', message:String(error.message || error)}];
         choosePreferredLogSource();
+      } finally {
+        state.componentLogLoading = false;
       }
       render();
     }
@@ -4804,6 +5640,8 @@
       state.componentLogSource = preferredSourceForNode(nodeId);
       state.componentLogs = [];
       state.componentLogMeta = null;
+      state.componentLogLoading = true;
+      state.detailPane = 'metrics';
       render();
       await loadComponentLogs();
     }
@@ -4829,12 +5667,15 @@
         state.topologyLogsSelected = null;
         state.componentLogSource = 'all';
         state.componentLogs = [];
+        state.componentLogLoading = false;
         clearComponentLogTimer();
         render();
         return;
       }
       state.topologyLogsSelected = nodeId;
       state.componentLogSource = preferredSourceForNode(nodeId);
+      state.componentLogLoading = true;
+      state.detailPane = 'logs';
       render();
       await loadComponentLogs();
     }
@@ -4845,11 +5686,20 @@
       return 'all';
     }
 
+    async function requestLogSource(sourceId){
+      if(!state.topologyLogsSelected) return;
+      state.componentLogSource = sourceId || 'all';
+      state.componentLogLoading = true;
+      state.detailPane = 'logs';
+      render();
+      await loadComponentLogs();
+    }
+
     function choosePreferredLogSource(){
       const rows = Array.isArray(state.componentLogs) ? state.componentLogs : [];
       const rowSources = new Set(rows.map(log => inferredLogSource(log, state.topologyLogsSelected)).filter(Boolean));
       const availableSources = Array.isArray(state.componentLogMeta?.sources)
-        ? state.componentLogMeta.sources.map(source => String(source?.id || '').toLowerCase()).filter(Boolean)
+        ? state.componentLogMeta.sources.map(source => String(source?.id || source?.label || '').toLowerCase()).filter(Boolean)
         : [];
       if(state.topologyLogsSelected === 'prometheus'){
         state.componentLogSource = 'prometheus';
@@ -4977,8 +5827,10 @@
         state.topologySelected = null;
         state.topologyBadge = null;
         state.topologyLogsSelected = null;
+        state.componentLogSource = 'all';
         state.componentLogs = [];
         state.componentLogMeta = null;
+        state.componentLogLoading = false;
         state.assistantMessages = [];
         state.assistantDraft = '';
         state.chatPanelOpen = false;
@@ -5009,7 +5861,7 @@
       sidebar.innerHTML = `
         <div class="sidebar-section">
           <div class="sidebar-label">${esc(tr('sidebarGroup'))}</div>
-          <nav class="nav-list" aria-label="Dashboard navigation">
+          <nav class="nav-list" aria-label="${esc(tr('dashboardNavigation'))}">
             ${items.map(item => `
               <button class="nav-item ${state.currentPage === item.id ? 'active' : ''}" type="button" data-nav="${item.id}">
                 <span class="nav-icon" aria-hidden="true">${item.icon}</span>
@@ -5066,6 +5918,20 @@
         state.appHealthData = null;
       }
       state.appHealthLoading = false;
+      if (state.currentPage === 'overview') render();
+    }
+
+    async function loadOverview() {
+      state.overviewLoading = true;
+      try {
+        const res = await fetch('/api/metrics/overview');
+        if (res.ok) {
+          state.overviewData = await res.json();
+        }
+      } catch(e) {
+        state.overviewData = null;
+      }
+      state.overviewLoading = false;
       if (state.currentPage === 'overview') render();
     }
 
@@ -5135,6 +6001,7 @@
     function renderOverview(){
       const counts = metricCounts();
       const recent = state.issues.slice(0, 4);
+      const sla = overviewSla();
       return `
         <section class="metric-grid">
           <article class="metric-card open">
@@ -5153,6 +6020,41 @@
             <div class="metric-note">${esc(tr('criticalIssuesNote'))}</div>
           </article>
         </section>
+
+        ${sla ? `
+          <section class="section-card">
+            <div class="section-head">
+              <div>
+                <h2 class="section-title">${esc(tr('slaTitle'))}</h2>
+                <div class="section-copy">${esc(tr('slaCopy'))}</div>
+              </div>
+              <span class="chip ${sla.overall_status === 'breached' ? 'escalated' : sla.overall_status === 'met' ? 'resolved' : ''}">${esc(slaStatusLabel(sla.overall_status))}</span>
+            </div>
+            <div class="sla-grid">
+              ${renderSlaCard({
+                title: tr('avgLatencySla'),
+                current: state.overviewData?.avg_latency_ms,
+                target: sla.avg_latency_target_ms,
+                status: sla.avg_latency_status,
+                unit: 'ms',
+              })}
+              ${renderSlaCard({
+                title: tr('p95LatencySla'),
+                current: state.overviewData?.p95_latency_ms,
+                target: sla.p95_latency_target_ms,
+                status: sla.p95_latency_status,
+                unit: 'ms',
+              })}
+              ${renderSlaCard({
+                title: tr('errorRateSla'),
+                current: state.overviewData?.error_rate_pct,
+                target: sla.error_rate_target_pct,
+                status: sla.error_rate_status,
+                unit: '%',
+              })}
+            </div>
+          </section>
+        ` : ''}
 
         ${renderAppHealthGrid()}
 
@@ -5686,13 +6588,173 @@
       };
     }
 
+    function getActiveTopologyNode(){
+      const nodes = state.topologyPayload?.topology?.nodes || [];
+      return nodes.find(node => node.id === state.topologySelected)
+        || nodes.find(node => node.id === state.topologyLogsSelected)
+        || nodes[0]
+        || null;
+    }
+
+    function visibleComponentLogs(){
+      const sourceTone = value => {
+        const id = typeof value === 'string'
+          ? String(value || '').toLowerCase()
+          : inferredLogSource(value, state.topologyLogsSelected);
+        if(id.includes('prom')) return 'prometheus';
+        if(id.includes('langfuse')) return 'langfuse';
+        return 'aiops-local';
+      };
+      const rows = Array.isArray(state.componentLogs) ? state.componentLogs : [];
+      return state.componentLogSource === 'all'
+        ? rows
+        : rows.filter(log => sourceTone(log) === state.componentLogSource);
+    }
+
+    function renderCompactRcaPanel(issue, topology, analysis){
+      const cause = topologyCauseOf(topology, analysis, issue);
+      const action = topologyActionOf(topology, analysis) || '--';
+      return `
+        <div class="insight-panel insight-rca-panel">
+          <div class="insight-stat-grid">
+            <div class="insight-stat-card">
+              <div class="insight-stat-label">${esc(state.lang === 'ja' ? '原因候補' : 'Root cause')}</div>
+              <div class="insight-stat-value">${esc(shortenPlainText(cause, 150) || '--')}</div>
+            </div>
+            <div class="insight-stat-card">
+              <div class="insight-stat-label">${esc(state.lang === 'ja' ? '推奨対応' : 'Next step')}</div>
+              <div class="insight-stat-value">${esc(shortenPlainText(action, 150) || '--')}</div>
+            </div>
+          </div>
+          <div class="insight-section">
+            <div class="insight-section-title">${esc(tr('insightQuickTools'))}</div>
+            <div class="insight-quick-row">
+              <button class="insight-quick-btn" type="button" data-assistant-mode="five"><span class="ico">🔍</span><span>${esc(tr('quickFive'))}</span></button>
+              <button class="insight-quick-btn" type="button" data-assistant-mode="summary"><span class="ico">📋</span><span>${esc(tr('quickSummary'))}</span></button>
+              <button class="insight-quick-btn" type="button" data-assistant-mode="detailed"><span class="ico">📄</span><span>${esc(tr('quickDetailed'))}</span></button>
+            </div>
+          </div>
+          <div class="insight-action-row">
+            <button class="rca-chat-btn compact" type="button" data-action="open-chat-panel">${esc(tr('openChatPanel'))}</button>
+            <button class="btn subtle compact-action-btn" type="button" data-action="open-conversation-remediation">${esc(tr('openRemediationInChat'))}</button>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderCompactLogPanel(issue){
+      const selectedNode = getActiveTopologyNode();
+      const nodeName = selectedNode ? localizeNodeName(selectedNode, issue) : tr('selectedComponent');
+      const sources = state.componentLogMeta?.sources || state.componentLogMeta?.component?.evidence_sources || selectedNode?.evidence_sources || [];
+      const sourceButtons = (sources.length
+        ? Array.from(new Map(sources.map(source => {
+            const id = String(source?.id || source?.label || 'incident').toLowerCase();
+            const label = source?.label || source?.id || (state.lang === 'ja' ? 'ローカル' : 'Local');
+            const tone = id.includes('prom') ? 'prometheus' : id.includes('langfuse') ? 'langfuse' : 'aiops-local';
+            return [id, `<button class="node-log-source-pill ${esc(tone)} ${state.componentLogSource === id ? 'active' : ''}" type="button" data-log-source="${esc(id)}">● ${esc(label)}</button>`];
+          })).values()).join('')
+        : [
+            `<button class="node-log-source-pill prometheus ${state.componentLogSource === 'prometheus' ? 'active' : ''}" type="button" data-log-source="prometheus">● Prometheus</button>`,
+            `<button class="node-log-source-pill langfuse ${state.componentLogSource === 'langfuse' ? 'active' : ''}" type="button" data-log-source="langfuse">● Langfuse</button>`,
+          ].join(''));
+      const sourcePills = `
+        <button class="node-log-source-pill all ${state.componentLogSource === 'all' ? 'active' : ''}" type="button" data-log-source="all">${esc(state.lang === 'ja' ? '● すべて' : '● All')}</button>
+        ${sourceButtons}
+      `;
+      const visibleLogs = visibleComponentLogs();
+      const previewLogs = visibleLogs.slice(0, 6);
+      const hiddenCount = Math.max(visibleLogs.length - previewLogs.length, 0);
+      return `
+        <div class="insight-panel insight-log-panel">
+          <div class="insight-node-head">
+            <div>
+              <div class="insight-section-title">${esc(tr('insightFocusedNode'))}</div>
+              <div class="insight-node-title">${esc(nodeName)}</div>
+            </div>
+            ${selectedNode ? `<span class="ops-node-status ${esc(selectedNode.status || 'ok')}">${esc(statusLabel(selectedNode.status))}</span>` : ''}
+          </div>
+          <div class="node-log-sources compact">${sourcePills}</div>
+          <div class="insight-log-meta">${esc(state.componentLogLoading
+            ? (state.lang === 'ja' ? 'ログを更新しています...' : 'Refreshing logs...')
+            : `${visibleLogs.length} ${state.lang === 'ja' ? '件の関連ログ' : 'related log entries'}`)}</div>
+          ${state.componentLogLoading
+            ? `<div class="node-log-empty">${esc(state.lang === 'ja' ? '関連ログを読み込み中...' : 'Loading related logs...')}</div>`
+            : previewLogs.length
+              ? renderInspectorLogs(previewLogs)
+              : `<div class="node-log-empty">${esc(tr('noLogs'))}</div>`
+          }
+          ${hiddenCount ? `<div class="insight-muted">+${hiddenCount} ${esc(tr('insightHiddenLogs'))}</div>` : ''}
+        </div>
+      `;
+    }
+
+    function renderCompactMetricsPanel(issue){
+      const selectedNode = getActiveTopologyNode();
+      if(!selectedNode){
+        return `<div class="insight-panel"><div class="node-log-empty">${esc(tr('noIssueCopy'))}</div></div>`;
+      }
+      const evidenceSources = state.componentLogMeta?.sources || selectedNode?.evidence_sources || [];
+      return `
+        <div class="insight-panel insight-metric-panel">
+          <div class="insight-node-head">
+            <div>
+              <div class="insight-section-title">${esc(tr('selectedComponent'))}</div>
+              <div class="insight-node-title">${esc(localizeNodeName(selectedNode, issue))}</div>
+            </div>
+            <span class="ops-node-status ${esc(selectedNode.status || 'ok')}">${esc(statusLabel(selectedNode.status))}</span>
+          </div>
+          <div class="insight-node-copy">${esc(shortenPlainText(nodeSummaryOf(selectedNode), 160) || '--')}</div>
+          ${evidenceSources.length ? `
+            <div class="insight-section">
+              <div class="insight-section-title">${esc(tr('insightSignals'))}</div>
+              <div class="topology-source-row">
+                ${evidenceSources.slice(0, 4).map(source => `
+                  <span class="topology-source-pill ${esc(source?.id || 'incident')}">${esc(source?.label || source?.id || 'Signal')}</span>
+                `).join('')}
+              </div>
+            </div>
+          ` : ''}
+          <div class="insight-section">
+            <div class="insight-section-title">${esc(tr('insightMetrics'))}</div>
+            ${renderInspectorMetrics(selectedNode)}
+          </div>
+        </div>
+      `;
+    }
+
+    function renderInsightRail(issue, topology, analysis){
+      const selectedNode = getActiveTopologyNode();
+      const activePane = ['rca', 'logs', 'metrics'].includes(state.detailPane) ? state.detailPane : 'rca';
+      const paneContent = activePane === 'logs'
+        ? renderCompactLogPanel(issue)
+        : activePane === 'metrics'
+          ? renderCompactMetricsPanel(issue)
+          : renderCompactRcaPanel(issue, topology, analysis);
+      return `
+        <aside class="insight-rail">
+          <div class="insight-rail-head">
+            <div class="insight-rail-copy">
+              <div class="insight-rail-kicker">${esc(tr('insightKicker'))}</div>
+              <div class="insight-rail-title">${esc(selectedNode ? localizeNodeName(selectedNode, issue) : tr('selectedComponent'))}</div>
+              <div class="insight-rail-subtitle">${esc(shortenPlainText(selectedNode ? nodeSummaryOf(selectedNode) : topologyCauseOf(topology, analysis, issue), 96) || '--')}</div>
+            </div>
+            <div class="insight-rail-tabs" role="tablist" aria-label="${esc(tr('insightKicker'))}">
+              <button class="insight-tab ${activePane === 'rca' ? 'active' : ''}" type="button" data-detail-pane="rca">${esc(tr('insightRca'))}</button>
+              <button class="insight-tab ${activePane === 'logs' ? 'active' : ''}" type="button" data-detail-pane="logs">${esc(tr('insightLogs'))}</button>
+              <button class="insight-tab ${activePane === 'metrics' ? 'active' : ''}" type="button" data-detail-pane="metrics">${esc(tr('insightMetrics'))}</button>
+            </div>
+          </div>
+          <div class="insight-rail-body">${paneContent}</div>
+        </aside>
+      `;
+    }
+
     function renderVisualFlow(topology, issue){
       const analysis = state.topologyPayload?.analysis || {};
       return `
         <div class="ops-workbench">
           ${renderOpsIssueBoard(topology, issue, analysis)}
-          ${renderNodeLogDrawer()}
-          ${renderRcaSidePanel(issue, topology, analysis)}
+          ${renderInsightRail(issue, topology, analysis)}
         </div>
       `;
     }
@@ -5716,7 +6778,7 @@
           <div class="ops-issue-board-head">
             <div>
               <div class="ops-issue-board-kicker">${esc(state.lang === 'ja' ? 'インシデントコンポーネントビュー' : 'Incident component view')}</div>
-              <h3 class="ops-issue-board-title">${esc(state.lang === 'ja' ? 'クリックでライブの異常・警告・情報を確認' : 'Click a component badge to inspect live errors, warnings, and info')}</h3>
+              <h3 class="ops-issue-board-title">${esc(state.lang === 'ja' ? 'ライブ異常をすばやく確認' : 'Inspect live fault signals quickly')}</h3>
               <p class="ops-issue-board-copy">${esc(topologyCauseOf(topology, analysis, issue) || descOf(issue) || titleOf(issue))}</p>
             </div>
             <div class="ops-issue-board-meta">
@@ -6324,6 +7386,11 @@
       const visibleLogs = state.componentLogSource === 'all'
         ? state.componentLogs
         : state.componentLogs.filter(log => sourceTone(log) === state.componentLogSource);
+      const logSummary = !state.componentLogLoading && visibleLogs.length
+        ? (state.lang === 'ja'
+          ? `${visibleLogs.length} 件の関連ログを表示`
+          : `Showing ${visibleLogs.length} related log entries`)
+        : '';
       return `
         <div class="node-log-drawer">
           <div class="node-log-drawer-head">
@@ -6339,8 +7406,13 @@
             </div>
             <div class="node-log-sources">${sourcePills}</div>
           </div>
+          ${logSummary ? `<div class="node-log-summary">${esc(logSummary)}</div>` : ''}
           <div class="node-log-drawer-body">
-            ${visibleLogs.length
+            ${state.componentLogLoading
+              ? `<div class="node-log-empty">${esc(state.lang === 'ja'
+                  ? `${state.componentLogSource === 'prometheus' ? 'Prometheus' : state.componentLogSource === 'langfuse' ? 'Langfuse' : ''} ログを読み込み中...`.trim()
+                  : `Loading ${state.componentLogSource === 'prometheus' ? 'Prometheus ' : state.componentLogSource === 'langfuse' ? 'Langfuse ' : ''}logs...`)}</div>`
+              : visibleLogs.length
               ? visibleLogs.slice(0, 50).map(log => `
                   <div class="node-log-row">
                     <span class="node-log-ts">${esc(formatLogTs(log.timestamp))}</span>
@@ -6372,34 +7444,87 @@
       const topology = state.topologyPayload.topology || {};
       const analysis = state.topologyPayload.analysis || {};
       return `
-        <div class="detail-stack">
-          <section class="detail-header">
-            <div>
-              <div class="detail-kicker">${esc(tr('detailEyebrow'))}</div>
-              <h1 class="detail-title">#${issue.id} ${esc(titleOf(issue))}</h1>
-              <div class="chips">
-                <span class="chip ${severityBadgeClass(issue.severity)}">${esc(sevText(issue.severity))}</span>
-                <span class="chip ${statusBadgeClass(issue.status)}">${esc(statusText(issue.status))}</span>
-                <span class="chip primary-point">${esc(`${tr('primaryPoint')}: ${primaryIncidentPointOf(issue)}`)}</span>
-                <span class="chip">${esc(`${tr('createdOn')}: ${formatIssueDate(issue.created_at)}`)}</span>
-              </div>
-            </div>
-            <button class="btn subtle" type="button" data-action="back-to-issues">${esc(tr('backToIssues'))}</button>
-          </section>
+        <div class="fit-scale-shell" data-fit-mode="issue-detail">
+          <div class="fit-scale-content issue-detail-fit">
+            <div class="detail-stack">
+              <section class="detail-header">
+                <div class="detail-header-main">
+                  <div class="detail-nav" aria-label="${esc(tr('dashboardNavigation'))}">
+                    <button class="detail-nav-pill" type="button" data-action="go-overview">${esc(tr('overview'))}</button>
+                    <span class="detail-nav-sep">/</span>
+                    <button class="detail-nav-pill" type="button" data-action="back-to-issues">${esc(tr('issues'))}</button>
+                    <span class="detail-nav-sep">/</span>
+                    <span class="detail-nav-pill current">#${issue.id}</span>
+                  </div>
+                  <div>
+                    <div class="detail-kicker">${esc(tr('detailEyebrow'))}</div>
+                    <h1 class="detail-title">#${issue.id} ${esc(titleOf(issue))}</h1>
+                    <div class="chips">
+                      <span class="chip ${severityBadgeClass(issue.severity)}">${esc(sevText(issue.severity))}</span>
+                      <span class="chip ${statusBadgeClass(issue.status)}">${esc(statusText(issue.status))}</span>
+                      <span class="chip primary-point">${esc(`${tr('primaryPoint')}: ${primaryIncidentPointOf(issue)}`)}</span>
+                      <span class="chip">${esc(`${tr('createdOn')}: ${formatIssueDate(issue.created_at)}`)}</span>
+                    </div>
+                  </div>
+                </div>
+                <div class="detail-actions">
+                  <button class="btn subtle" type="button" data-action="back-to-issues">${esc(tr('backToIssues'))}</button>
+                  <button class="btn" type="button" data-action="open-conversation" data-conversation-issue-id="${issue.id}">${esc(tr('chatView'))}</button>
+                  <button class="btn primary" type="button" data-action="open-conversation-remediation">${esc(tr('openRemediationInChat'))}</button>
+                </div>
+              </section>
 
-          <section class="section-card">
-            <div class="section-head">
-              <div>
-                <h2 class="section-title">${esc(tr('visualFlowTitle'))}</h2>
-                <p class="section-copy">${esc(tr('visualFlowCopy'))}</p>
-              </div>
+              <section class="section-card">
+                <div class="section-head">
+                  <div>
+                    <h2 class="section-title">${esc(tr('visualFlowTitle'))}</h2>
+                    <p class="section-copy">${esc(tr('visualFlowCopy'))}</p>
+                  </div>
+                </div>
+                ${renderVisualFlow(topology, issue)}
+              </section>
             </div>
-            ${renderVisualFlow(topology, issue)}
-          </section>
+          </div>
         </div>
 
         ${state.chatPanelOpen ? renderAssistantModal() : ''}
       `;
+    }
+
+    function applyViewportFit(){
+      const shells = Array.from(document.querySelectorAll('[data-fit-mode]'));
+      shells.forEach(shell => {
+        const content = shell.querySelector('.fit-scale-content');
+        if(!content) return;
+
+        content.style.transform = 'scale(1)';
+
+        const availableWidth = Math.floor(shell.clientWidth);
+        const availableHeight = Math.floor(shell.clientHeight);
+        if(!availableWidth || !availableHeight) return;
+
+        content.style.width = `${availableWidth}px`;
+
+        const naturalWidth = Math.ceil(content.scrollWidth);
+        const naturalHeight = Math.ceil(content.scrollHeight);
+        if(!naturalWidth || !naturalHeight) return;
+
+        const widthScale = availableWidth / naturalWidth;
+        const heightScale = availableHeight / naturalHeight;
+        const scale = Math.min(1, widthScale, heightScale);
+
+        content.style.transform = `scale(${scale})`;
+      });
+    }
+
+    function scheduleViewportFit(){
+      if(state.fitRaf){
+        cancelAnimationFrame(state.fitRaf);
+      }
+      state.fitRaf = requestAnimationFrame(() => {
+        state.fitRaf = 0;
+        applyViewportFit();
+      });
     }
 
     function renderContent(){
@@ -6418,20 +7543,32 @@
       return renderIssuesList();
     }
 
+    function shouldFitViewport(){
+      if(window.innerWidth <= 1180) return false;
+      if(state.currentPage === 'issues') return true;
+      if(state.currentPage === 'overview') return true;
+      return false;
+    }
+
     function applySidebarState(){
       const shell = document.getElementById('appShell');
       shell.classList.toggle('collapsed', state.sidebarCollapsed);
+      shell.classList.toggle('fit-page', shouldFitViewport());
+      document.body.classList.toggle('fit-page-body', shouldFitViewport());
       localStorage.setItem('opsSidebarCollapsed', state.sidebarCollapsed ? '1' : '0');
     }
 
     function renderText(){
       document.documentElement.lang = state.lang;
+      document.title = tr('pageTitle');
       document.getElementById('brandName').textContent = tr('brand');
       document.getElementById('brandMark').textContent = tr('mark');
       document.getElementById('brandSubtitle').textContent = tr('subtitle');
       document.getElementById('liveText').textContent = tr('live');
       document.getElementById('viewSwitchBtn').textContent = tr('switchToChat');
       document.getElementById('langBtn').textContent = tr('lang');
+      document.getElementById('sidebarToggle').setAttribute('aria-label', tr('toggleSidebar'));
+      document.getElementById('sidebarToggle').setAttribute('title', tr('toggleSidebar'));
     }
 
     function render(){
@@ -6443,6 +7580,7 @@
       syncDashboardUrl();
       restoreFocusState(focusState);
       syncAssistantScroll();
+      scheduleViewportFit();
     }
 
     function renderIssuesWorkspace(){
@@ -6455,6 +7593,7 @@
       content.innerHTML = renderIssuesList();
       restoreFocusState(focusState);
       syncAssistantScroll();
+      scheduleViewportFit();
     }
 
     function captureFocusState(){
@@ -6503,6 +7642,11 @@
       await loadIssues({preserveDetail});
     });
 
+    window.addEventListener('resize', () => {
+      applySidebarState();
+      scheduleViewportFit();
+    });
+
     document.getElementById('sidebar').addEventListener('click', event => {
       const nav = event.target.closest('[data-nav]');
       if(!nav) return;
@@ -6535,6 +7679,17 @@
         closeIssueDetail();
         return;
       }
+      const overviewButton = event.target.closest('[data-action="go-overview"]');
+      if(overviewButton){
+        switchPage('overview');
+        return;
+      }
+      const paneButton = event.target.closest('[data-detail-pane]');
+      if(paneButton){
+        state.detailPane = paneButton.dataset.detailPane || 'rca';
+        render();
+        return;
+      }
       const nodeButton = event.target.closest('[data-node-id]');
       if(nodeButton){
         selectTopologyNode(nodeButton.dataset.nodeId);
@@ -6542,8 +7697,7 @@
       }
       const logSourceButton = event.target.closest('[data-log-source]');
       if(logSourceButton){
-        state.componentLogSource = logSourceButton.dataset.logSource;
-        render();
+        requestLogSource(logSourceButton.dataset.logSource);
         return;
       }
       const nodeLogsButton = event.target.closest('[data-node-logs]');
@@ -6628,6 +7782,7 @@
     });
 
     loadIssues();
+    loadOverview();
     loadAppHealth();
   </script>
 </body>
