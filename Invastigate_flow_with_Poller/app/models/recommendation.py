@@ -83,9 +83,18 @@ class Solution(BaseModel):
         max_length=120,
         description="Short actionable title for the solution",
     )
+    title_ja: Optional[str] = Field(
+        None,
+        max_length=160,
+        description="Japanese translation of title for display",
+    )
     description: str = Field(
         ...,
         description="Detailed description of what to do and why it addresses the root cause",
+    )
+    description_ja: Optional[str] = Field(
+        None,
+        description="Japanese translation of description for display",
     )
     category: SolutionCategory = Field(
         ...,
@@ -106,6 +115,10 @@ class Solution(BaseModel):
     expected_outcome: str = Field(
         ...,
         description="What improvement is expected after implementing this solution",
+    )
+    expected_outcome_ja: Optional[str] = Field(
+        None,
+        description="Japanese translation of expected_outcome for display",
     )
     error_ids: list[str] = Field(
         default_factory=list,
@@ -130,6 +143,11 @@ class RecommendationResult(BaseModel):
         max_length=500,
         description="Executive summary of the recommended action plan",
     )
+    recommendation_summary_ja: Optional[str] = Field(
+        None,
+        max_length=650,
+        description="Japanese translation of recommendation_summary for display",
+    )
     solutions: list[Solution] = Field(
         ...,
         min_length=1,
@@ -139,6 +157,10 @@ class RecommendationResult(BaseModel):
     root_cause_addressed: str = Field(
         ...,
         description="The root cause that these solutions are designed to address",
+    )
+    root_cause_addressed_ja: Optional[str] = Field(
+        None,
+        description="Japanese translation of root_cause_addressed for display",
     )
     confidence: float = Field(
         ...,

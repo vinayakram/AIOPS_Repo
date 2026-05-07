@@ -92,9 +92,17 @@ class CausalLink(BaseModel):
         ...,
         description="The causing event or condition",
     )
+    source_event_ja: Optional[str] = Field(
+        None,
+        description="Japanese translation of source_event for display",
+    )
     target_event: str = Field(
         ...,
         description="The event that was caused",
+    )
+    target_event_ja: Optional[str] = Field(
+        None,
+        description="Japanese translation of target_event for display",
     )
     link_type: CausalLinkType = Field(
         ...,
@@ -112,6 +120,10 @@ class ContributingFactor(BaseModel):
     factor: str = Field(
         ...,
         description="Description of the contributing factor",
+    )
+    factor_ja: Optional[str] = Field(
+        None,
+        description="Japanese translation of factor for display",
     )
     component: str = Field(
         ...,
@@ -141,6 +153,10 @@ class RootCause(BaseModel):
     description: str = Field(
         ...,
         description="Detailed explanation of what went wrong and why",
+    )
+    description_ja: Optional[str] = Field(
+        None,
+        description="Japanese translation of description for display",
     )
     evidence: list[str] = Field(
         ...,
@@ -193,13 +209,25 @@ class WhyStep(BaseModel):
         ...,
         description="The 'Why?' question asked at this step",
     )
+    question_ja: Optional[str] = Field(
+        None,
+        description="Japanese translation of question for display",
+    )
     answer: str = Field(
         ...,
         description="The explanation of the cause at this level of analysis",
     )
+    answer_ja: Optional[str] = Field(
+        None,
+        description="Japanese translation of answer for display",
+    )
     evidence: str = Field(
         ...,
         description="Log or metric evidence supporting this answer",
+    )
+    evidence_ja: Optional[str] = Field(
+        None,
+        description="Japanese translation of evidence for display",
     )
     component: str = Field(
         ...,
@@ -218,6 +246,10 @@ class FiveWhyAnalysis(BaseModel):
         ...,
         description="The initial observed problem or symptom being investigated",
     )
+    problem_statement_ja: Optional[str] = Field(
+        None,
+        description="Japanese translation of problem_statement for display",
+    )
     whys: list[WhyStep] = Field(
         ...,
         min_length=5,
@@ -227,6 +259,10 @@ class FiveWhyAnalysis(BaseModel):
     fundamental_root_cause: str = Field(
         ...,
         description="The fundamental root cause revealed after five iterations of asking Why",
+    )
+    fundamental_root_cause_ja: Optional[str] = Field(
+        None,
+        description="Japanese translation of fundamental_root_cause for display",
     )
 
 
@@ -241,6 +277,11 @@ class RCAResult(BaseModel):
         ...,
         max_length=800,
         description="Executive summary of the root cause analysis findings",
+    )
+    rca_summary_ja: Optional[str] = Field(
+        None,
+        max_length=1000,
+        description="Japanese translation of rca_summary for display",
     )
     root_cause: RootCause = Field(
         ...,

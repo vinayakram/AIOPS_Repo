@@ -1,6 +1,7 @@
 import { useState, type ReactNode } from 'react'
 import type { AgentName, AgentState, LogEntry } from '../types'
-import { AGENT_LABELS } from '../types'
+import { useLang, pick } from '../LanguageContext'
+import { t } from '../i18n'
 import ConfidenceBadge from './ConfidenceBadge'
 
 interface Props {
@@ -62,7 +63,6 @@ function computeComplexity(agent: AgentName, output: Record<string, unknown> | u
     }
     if (agent === 'recommendation') {
       const recs = output.recommendations as Record<string, unknown> | undefined
-      // solutions lives directly on the RecommendationResult, not nested under .recommendations
       const count = (recs?.solutions as unknown[])?.length ?? 0
       return { label: `${count} solutions`, level: count > 3 ? 'high' : count > 1 ? 'mid' : 'low' }
     }
@@ -109,20 +109,23 @@ function ChainBadges({ chain }: { chain: string[] }) {
 // ── Summary views per agent ────────────────────────────────────────────
 
 function NormalizationSummary({ output }: { output: Record<string, unknown> }) {
+  const { lang } = useLang()
   const incident = output.incident as Record<string, unknown> | undefined
-  if (!incident) return <span style={{ color: 'var(--text-muted)', fontSize: 12 }}>No incident data</span>
+  if (!incident) return <span style={{ color: 'var(--text-muted)', fontSize: 12 }}>{t('noIncidentData', lang)}</span>
   const signals = (incident.signals as string[]) ?? []
   return (
     <div>
-      <InfoRow label="Error Type">
+      <InfoRow label={t('errorType', lang)}>
         <span className="badge badge-running">{String(incident.error_type ?? '')}</span>
       </InfoRow>
-      <InfoRow label="Summary">{String(incident.error_summary ?? '')}</InfoRow>
-      <InfoRow label="Confidence">
+      <InfoRow label={t('summary', lang)}>
+        {pick(String(incident.error_summary ?? ''), incident.error_summary_ja as string | null, lang)}
+      </InfoRow>
+      <InfoRow label={t('confidence', lang)}>
         <ConfidenceBadge value={incident.confidence as number} />
       </InfoRow>
       {signals.length > 0 && (
-        <InfoRow label="Signals">
+        <InfoRow label={t('signals', lang)}>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
             {signals.map((s, i) => (
               <span key={i} style={{
@@ -138,32 +141,35 @@ function NormalizationSummary({ output }: { output: Record<string, unknown> }) {
 }
 
 function CorrelationSummary({ output }: { output: Record<string, unknown> }) {
+  const { lang } = useLang()
   const corr = output.correlation as Record<string, unknown> | undefined
-  if (!corr) return <span style={{ color: 'var(--text-muted)', fontSize: 12 }}>No correlation data</span>
+  if (!corr) return <span style={{ color: 'var(--text-muted)', fontSize: 12 }}>{t('noCorrelationData', lang)}</span>
   const chain = (corr.correlation_chain as string[]) ?? []
   const rc = corr.root_cause_candidate as Record<string, unknown> | undefined
   const peers = (corr.peer_components as Record<string, unknown>[]) ?? []
   const timeline = (corr.timeline as Record<string, unknown>[]) ?? []
   return (
     <div>
-      <InfoRow label="Correlation Chain">
+      <InfoRow label={t('correlationChain', lang)}>
         {chain.length > 0 ? <ChainBadges chain={chain} /> : <span style={{ color: 'var(--text-muted)', fontSize: 12 }}>—</span>}
       </InfoRow>
       {rc && (
         <>
-          <InfoRow label="Root Cause Candidate">
+          <InfoRow label={t('rootCauseCandidate', lang)}>
             <span style={{ fontFamily: 'var(--font-mono)', color: 'var(--accent)', fontSize: 12 }}>
               {String(rc.component ?? '')}
             </span>
           </InfoRow>
-          <InfoRow label="Reason">{String(rc.reason ?? '')}</InfoRow>
-          <InfoRow label="RC Confidence">
+          <InfoRow label={t('reason', lang)}>
+            {pick(String(rc.reason ?? ''), rc.reason_ja as string | null, lang)}
+          </InfoRow>
+          <InfoRow label={t('rcConfidence', lang)}>
             <ConfidenceBadge value={rc.confidence as number} />
           </InfoRow>
         </>
       )}
       {peers.length > 0 && (
-        <InfoRow label="Peer Components">
+        <InfoRow label={t('peerComponents', lang)}>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
             {peers.map((p, i) => (
               <span key={i} style={{
@@ -180,7 +186,7 @@ function CorrelationSummary({ output }: { output: Record<string, unknown> }) {
       {timeline.length > 0 && (
         <div style={{ marginTop: 12 }}>
           <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 8 }}>
-            Timeline
+            {t('timeline', lang)}
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
             {timeline.map((te, i) => (
@@ -191,7 +197,9 @@ function CorrelationSummary({ output }: { output: Record<string, unknown> }) {
                 <span style={{ color: 'var(--accent)', fontFamily: 'var(--font-mono)', flexShrink: 0 }}>
                   {String(te.service ?? '')}
                 </span>
-                <span style={{ color: 'var(--text)' }}>{String(te.event ?? '')}</span>
+                <span style={{ color: 'var(--text)' }}>
+                  {pick(String(te.event ?? ''), te.event_ja as string | null, lang)}
+                </span>
               </div>
             ))}
           </div>
@@ -202,26 +210,29 @@ function CorrelationSummary({ output }: { output: Record<string, unknown> }) {
 }
 
 function ErrorAnalysisSummary({ output }: { output: Record<string, unknown> }) {
+  const { lang } = useLang()
   const analysis = output.analysis as Record<string, unknown> | undefined
-  if (!analysis) return <span style={{ color: 'var(--text-muted)', fontSize: 12 }}>No analysis data</span>
+  if (!analysis) return <span style={{ color: 'var(--text-muted)', fontSize: 12 }}>{t('noAnalysisData', lang)}</span>
   const errors = (analysis.errors as Record<string, unknown>[]) ?? []
   const patterns = (analysis.error_patterns as Record<string, unknown>[]) ?? []
   const propagation = (analysis.error_propagation_path as string[]) ?? []
   return (
     <div>
-      <InfoRow label="Summary">{String(analysis.analysis_summary ?? '')}</InfoRow>
-      <InfoRow label="Confidence">
+      <InfoRow label={t('summary', lang)}>
+        {pick(String(analysis.analysis_summary ?? ''), analysis.analysis_summary_ja as string | null, lang)}
+      </InfoRow>
+      <InfoRow label={t('confidence', lang)}>
         <ConfidenceBadge value={analysis.confidence as number} />
       </InfoRow>
       {propagation.length > 0 && (
-        <InfoRow label="Propagation">
+        <InfoRow label={t('propagation', lang)}>
           <ChainBadges chain={propagation} />
         </InfoRow>
       )}
       {errors.length > 0 && (
         <div style={{ marginTop: 12 }}>
           <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 8 }}>
-            Errors ({errors.length})
+            {t('errors', lang)} ({errors.length})
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
             {errors.map((err, i) => (
@@ -238,7 +249,9 @@ function ErrorAnalysisSummary({ output }: { output: Record<string, unknown> }) {
                   <span style={{ color: 'var(--text-muted)', fontSize: 11 }}>{String(err.category ?? '')}</span>
                   <span style={{ color: 'var(--accent)', fontFamily: 'var(--font-mono)', fontSize: 11 }}>{String(err.component ?? '')}</span>
                 </div>
-                <div style={{ color: 'var(--text)', lineHeight: 1.4 }}>{String(err.error_message ?? '')}</div>
+                <div style={{ color: 'var(--text)', lineHeight: 1.4 }}>
+                  {pick(String(err.error_message ?? ''), err.error_message_ja as string | null, lang)}
+                </div>
               </div>
             ))}
           </div>
@@ -247,7 +260,7 @@ function ErrorAnalysisSummary({ output }: { output: Record<string, unknown> }) {
       {patterns.length > 0 && (
         <div style={{ marginTop: 12 }}>
           <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 8 }}>
-            Patterns ({patterns.length})
+            {t('patterns', lang)} ({patterns.length})
           </div>
           {patterns.map((p, i) => (
             <div key={i} style={{
@@ -256,7 +269,9 @@ function ErrorAnalysisSummary({ output }: { output: Record<string, unknown> }) {
             }}>
               <span style={{ fontWeight: 600, color: 'var(--yellow)' }}>{String(p.pattern_name ?? '')}</span>
               <span style={{ color: 'var(--text-muted)', marginLeft: 8 }}>×{String(p.occurrence_count ?? '')}</span>
-              <span style={{ display: 'block', color: 'var(--text)', marginTop: 2 }}>{String(p.description ?? '')}</span>
+              <span style={{ display: 'block', color: 'var(--text)', marginTop: 2 }}>
+                {pick(String(p.description ?? ''), p.description_ja as string | null, lang)}
+              </span>
             </div>
           ))}
         </div>
@@ -266,6 +281,7 @@ function ErrorAnalysisSummary({ output }: { output: Record<string, unknown> }) {
 }
 
 function FiveWhysView({ analysis }: { analysis: Record<string, unknown> }) {
+  const { lang } = useLang()
   const [openStep, setOpenStep] = useState<number | null>(null)
   const whys = (analysis.whys as Record<string, unknown>[]) ?? []
 
@@ -277,10 +293,10 @@ function FiveWhysView({ analysis }: { analysis: Record<string, unknown> }) {
         background: 'rgba(248,81,73,.08)', border: '1px solid rgba(248,81,73,.25)',
       }}>
         <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--red)', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 4 }}>
-          Problem Statement
+          {t('problemStatement', lang)}
         </div>
         <div style={{ fontSize: 13, color: 'var(--text)', lineHeight: 1.5 }}>
-          {String(analysis.problem_statement ?? '')}
+          {pick(String(analysis.problem_statement ?? ''), analysis.problem_statement_ja as string | null, lang)}
         </div>
       </div>
 
@@ -299,7 +315,7 @@ function FiveWhysView({ analysis }: { analysis: Record<string, unknown> }) {
                 transition: 'border-color 0.15s',
               }}
             >
-              {/* Step header — always visible */}
+              {/* Step header */}
               <div
                 onClick={() => setOpenStep(isOpen ? null : step)}
                 style={{
@@ -309,7 +325,6 @@ function FiveWhysView({ analysis }: { analysis: Record<string, unknown> }) {
                   transition: 'background 0.15s',
                 }}
               >
-                {/* Step pill */}
                 <div style={{
                   width: 24, height: 24, borderRadius: '50%', flexShrink: 0,
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -322,10 +337,10 @@ function FiveWhysView({ analysis }: { analysis: Record<string, unknown> }) {
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 2 }}>
-                    {String(why.question ?? '')}
+                    {pick(String(why.question ?? ''), why.question_ja as string | null, lang)}
                   </div>
                   <div style={{ fontSize: 13, color: 'var(--text)', fontWeight: 500, lineHeight: 1.4 }}>
-                    {String(why.answer ?? '')}
+                    {pick(String(why.answer ?? ''), why.answer_ja as string | null, lang)}
                   </div>
                 </div>
                 <svg
@@ -336,21 +351,21 @@ function FiveWhysView({ analysis }: { analysis: Record<string, unknown> }) {
                 </svg>
               </div>
 
-              {/* Step detail — expanded */}
+              {/* Step detail */}
               {isOpen && (
                 <div style={{ padding: '0 14px 12px 48px', background: 'var(--surface2)' }}>
-                  {why.component && (
+                  {!!why.component && (
                     <div style={{ marginBottom: 6 }}>
-                      <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.07em' }}>Component</span>
+                      <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.07em' }}>{t('component', lang)}</span>
                       <span style={{ marginLeft: 8, fontSize: 12, fontFamily: 'var(--font-mono)', color: 'var(--accent)' }}>
                         {String(why.component)}
                       </span>
                     </div>
                   )}
-                  {why.evidence && (
+                  {!!why.evidence && (
                     <div>
                       <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 4 }}>
-                        Evidence
+                        {t('evidence', lang)}
                       </div>
                       <div style={{
                         fontSize: 12, color: 'var(--text)', lineHeight: 1.5,
@@ -358,7 +373,7 @@ function FiveWhysView({ analysis }: { analysis: Record<string, unknown> }) {
                         padding: '8px 10px', border: '1px solid var(--border)',
                         fontFamily: 'var(--font-mono)', whiteSpace: 'pre-wrap', wordBreak: 'break-word',
                       }}>
-                        {String(why.evidence)}
+                        {pick(String(why.evidence), why.evidence_ja as string | null, lang)}
                       </div>
                     </div>
                   )}
@@ -370,16 +385,16 @@ function FiveWhysView({ analysis }: { analysis: Record<string, unknown> }) {
       </div>
 
       {/* Fundamental Root Cause */}
-      {analysis.fundamental_root_cause && (
+      {!!analysis.fundamental_root_cause && (
         <div style={{
           padding: '10px 14px', borderRadius: 6,
           background: 'rgba(63,185,80,.08)', border: '1px solid rgba(63,185,80,.3)',
         }}>
           <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--green)', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 4 }}>
-            Fundamental Root Cause
+            {t('fundamentalRootCause', lang)}
           </div>
           <div style={{ fontSize: 13, color: 'var(--text)', lineHeight: 1.5 }}>
-            {String(analysis.fundamental_root_cause)}
+            {pick(String(analysis.fundamental_root_cause), analysis.fundamental_root_cause_ja as string | null, lang)}
           </div>
         </div>
       )}
@@ -388,8 +403,9 @@ function FiveWhysView({ analysis }: { analysis: Record<string, unknown> }) {
 }
 
 function RCASummary({ output }: { output: Record<string, unknown> }) {
+  const { lang } = useLang()
   const rca = output.rca as Record<string, unknown> | undefined
-  if (!rca) return <span style={{ color: 'var(--text-muted)', fontSize: 12 }}>No RCA data</span>
+  if (!rca) return <span style={{ color: 'var(--text-muted)', fontSize: 12 }}>{t('noRCAData', lang)}</span>
   const rc = rca.root_cause as Record<string, unknown> | undefined
   const fw = rca.five_why_analysis as Record<string, unknown> | undefined
   const causalChain = (rca.causal_chain as Record<string, unknown>[]) ?? []
@@ -398,11 +414,12 @@ function RCASummary({ output }: { output: Record<string, unknown> }) {
 
   return (
     <div>
-      {/* RCA Summary text */}
-      {rca.rca_summary && (
-        <InfoRow label="Summary">{String(rca.rca_summary)}</InfoRow>
+      {!!rca.rca_summary && (
+        <InfoRow label={t('summary', lang)}>
+          {pick(String(rca.rca_summary), rca.rca_summary_ja as string | null, lang)}
+        </InfoRow>
       )}
-      <InfoRow label="Confidence">
+      <InfoRow label={t('confidence', lang)}>
         <ConfidenceBadge value={rca.confidence as number} />
       </InfoRow>
 
@@ -410,7 +427,7 @@ function RCASummary({ output }: { output: Record<string, unknown> }) {
       {rc && (
         <div style={{ marginBottom: 16 }}>
           <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 8 }}>
-            Root Cause
+            {t('rootCause', lang)}
           </div>
           <div style={{
             padding: '10px 14px', borderRadius: 6,
@@ -423,7 +440,7 @@ function RCASummary({ output }: { output: Record<string, unknown> }) {
               </span>
             </div>
             <div style={{ fontSize: 13, color: 'var(--text)', lineHeight: 1.5 }}>
-              {String(rc.description ?? '')}
+              {pick(String(rc.description ?? ''), rc.description_ja as string | null, lang)}
             </div>
           </div>
         </div>
@@ -433,19 +450,19 @@ function RCASummary({ output }: { output: Record<string, unknown> }) {
       {causalChain.length > 0 && (
         <div style={{ marginBottom: 16 }}>
           <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 8 }}>
-            Causal Chain ({causalChain.length} links)
+            {t('causalChain', lang)} ({causalChain.length} {t('links', lang)})
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
             {causalChain.map((link, i) => (
               <div key={i} style={{ display: 'flex', gap: 8, alignItems: 'center', fontSize: 12 }}>
                 <span style={{ padding: '2px 8px', borderRadius: 4, background: 'var(--surface2)', border: '1px solid var(--border)', fontFamily: 'var(--font-mono)', fontSize: 11 }}>
-                  {String(link.source_event ?? '')}
+                  {pick(String(link.source_event ?? ''), link.source_event_ja as string | null, lang)}
                 </span>
                 <span style={{ color: 'var(--text-muted)', flexShrink: 0, fontSize: 10 }}>
                   —{String(link.link_type ?? '').replace(/_/g, ' ')}→
                 </span>
                 <span style={{ padding: '2px 8px', borderRadius: 4, background: 'var(--surface2)', border: '1px solid var(--border)', fontFamily: 'var(--font-mono)', fontSize: 11 }}>
-                  {String(link.target_event ?? '')}
+                  {pick(String(link.target_event ?? ''), link.target_event_ja as string | null, lang)}
                 </span>
               </div>
             ))}
@@ -455,7 +472,7 @@ function RCASummary({ output }: { output: Record<string, unknown> }) {
 
       {/* Blast Radius */}
       {blastRadius.length > 0 && (
-        <InfoRow label="Blast Radius">
+        <InfoRow label={t('blastRadius', lang)}>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
             {blastRadius.map((c, i) => (
               <span key={i} style={{
@@ -470,7 +487,7 @@ function RCASummary({ output }: { output: Record<string, unknown> }) {
 
       {/* Contributing Factors */}
       {factors.length > 0 && (
-        <InfoRow label="Contributing Factors">
+        <InfoRow label={t('contributingFactors', lang)}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
             {factors.map((f, i) => (
               <div key={i} style={{ fontSize: 12 }}>
@@ -478,7 +495,9 @@ function RCASummary({ output }: { output: Record<string, unknown> }) {
                 <span style={{ color: 'var(--accent)', fontFamily: 'var(--font-mono)', marginLeft: 6, marginRight: 6 }}>
                   {String(f.component ?? '')}
                 </span>
-                <span style={{ color: 'var(--text)' }}>{String(f.factor ?? '')}</span>
+                <span style={{ color: 'var(--text)' }}>
+                  {pick(String(f.factor ?? ''), f.factor_ja as string | null, lang)}
+                </span>
               </div>
             ))}
           </div>
@@ -489,7 +508,7 @@ function RCASummary({ output }: { output: Record<string, unknown> }) {
       {fw && (
         <div style={{ marginTop: 16 }}>
           <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 10 }}>
-            Five Whys Analysis
+            {t('fiveWhysAnalysis', lang)}
           </div>
           <FiveWhysView analysis={fw} />
         </div>
@@ -499,26 +518,31 @@ function RCASummary({ output }: { output: Record<string, unknown> }) {
 }
 
 function RecommendationSummary({ output }: { output: Record<string, unknown> }) {
+  const { lang } = useLang()
   const rec = output.recommendations as Record<string, unknown> | undefined
-  if (!rec) return <span style={{ color: 'var(--text-muted)', fontSize: 12 }}>No recommendation data</span>
+  if (!rec) return <span style={{ color: 'var(--text-muted)', fontSize: 12 }}>{t('noRecommendationData', lang)}</span>
   const solutions = (rec.solutions as Record<string, unknown>[]) ?? []
 
   return (
     <div>
-      {rec.recommendation_summary && (
-        <InfoRow label="Summary">{String(rec.recommendation_summary)}</InfoRow>
+      {!!rec.recommendation_summary && (
+        <InfoRow label={t('summary', lang)}>
+          {pick(String(rec.recommendation_summary), rec.recommendation_summary_ja as string | null, lang)}
+        </InfoRow>
       )}
-      {rec.root_cause_addressed && (
-        <InfoRow label="Addresses">{String(rec.root_cause_addressed)}</InfoRow>
+      {!!rec.root_cause_addressed && (
+        <InfoRow label={t('addresses', lang)}>
+          {pick(String(rec.root_cause_addressed), rec.root_cause_addressed_ja as string | null, lang)}
+        </InfoRow>
       )}
-      <InfoRow label="Confidence">
+      <InfoRow label={t('confidence', lang)}>
         <ConfidenceBadge value={rec.confidence as number} />
       </InfoRow>
 
       {solutions.length > 0 && (
         <div style={{ marginTop: 12 }}>
           <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 10 }}>
-            Solutions ({solutions.length})
+            {t('solutions', lang)} ({solutions.length})
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             {solutions
@@ -533,7 +557,6 @@ function RecommendationSummary({ output }: { output: Record<string, unknown> }) 
                     background: isRootCause ? 'rgba(88,166,255,.05)' : 'var(--bg)',
                     overflow: 'hidden',
                   }}>
-                    {/* Solution header */}
                     <div style={{
                       display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap',
                       padding: '10px 14px', borderBottom: '1px solid var(--border)',
@@ -547,14 +570,14 @@ function RecommendationSummary({ output }: { output: Record<string, unknown> }) 
                         fontSize: 11, fontWeight: 700,
                       }}>{String(sol.rank ?? i + 1)}</span>
                       <span style={{ fontWeight: 600, fontSize: 13, color: 'var(--text)', flex: 1 }}>
-                        {String(sol.title ?? '')}
+                        {pick(String(sol.title ?? ''), sol.title_ja as string | null, lang)}
                       </span>
                       {isRootCause && (
                         <span style={{
                           fontSize: 10, padding: '1px 6px', borderRadius: 3,
                           background: 'rgba(88,166,255,.15)', color: 'var(--accent)',
                           border: '1px solid rgba(88,166,255,.3)', fontWeight: 600,
-                        }}>Root Cause Fix</span>
+                        }}>{t('rootCauseFix', lang)}</span>
                       )}
                       <span style={{
                         fontSize: 11, padding: '2px 8px', borderRadius: 12,
@@ -572,18 +595,17 @@ function RecommendationSummary({ output }: { output: Record<string, unknown> }) 
                       </span>
                     </div>
 
-                    {/* Solution body */}
                     <div style={{ padding: '10px 14px' }}>
                       <p style={{ fontSize: 13, color: 'var(--text)', lineHeight: 1.55, marginBottom: 8 }}>
-                        {String(sol.description ?? '')}
+                        {pick(String(sol.description ?? ''), sol.description_ja as string | null, lang)}
                       </p>
-                      {sol.expected_outcome && (
+                      {!!sol.expected_outcome && (
                         <div style={{
                           fontSize: 12, color: 'var(--green)',
                           padding: '6px 10px', borderRadius: 4,
                           background: 'rgba(63,185,80,.07)', border: '1px solid rgba(63,185,80,.2)',
                         }}>
-                          Expected: {String(sol.expected_outcome)}
+                          {t('expected', lang)} {pick(String(sol.expected_outcome), sol.expected_outcome_ja as string | null, lang)}
                         </div>
                       )}
                       {(sol.affected_components as string[] | undefined)?.length ? (
@@ -664,11 +686,12 @@ function LogDetailPanel({ entry, onClose }: { entry: LogEntry; onClose: () => vo
 }
 
 function LogList({ logs, dataSources, logsCount }: { logs: LogEntry[]; dataSources?: string[]; logsCount?: number }) {
+  const { lang } = useLang()
   const [selected, setSelected] = useState<LogEntry | null>(null)
   const effectiveSources = (dataSources && dataSources.length > 0) ? dataSources : [...new Set(logs.map(e => e.source))]
 
   if (effectiveSources.length === 0 && logs.length === 0) {
-    return <span style={{ color: 'var(--text-muted)', fontSize: 12 }}>No data sources queried yet</span>
+    return <span style={{ color: 'var(--text-muted)', fontSize: 12 }}>{t('noData', lang)}</span>
   }
   if (logs.length === 0) {
     return (
@@ -676,7 +699,7 @@ function LogList({ logs, dataSources, logsCount }: { logs: LogEntry[]; dataSourc
         {effectiveSources.map(src => (
           <div key={src} style={{ padding: '4px 0' }}>
             <span className={`log-source log-source-${src}`}>{src}</span>
-            <span style={{ marginLeft: 8 }}>Queried — waiting for entries…</span>
+            <span style={{ marginLeft: 8 }}>{t('queried', lang)}</span>
           </div>
         ))}
       </div>
@@ -695,7 +718,7 @@ function LogList({ logs, dataSources, logsCount }: { logs: LogEntry[]; dataSourc
             <span style={{ marginLeft: 4 }}>{bySource[src]?.length ?? 0} entries</span>
           </span>
         ))}
-        <span style={{ fontSize: 11, color: 'var(--text-muted)', marginLeft: 'auto' }}>{logsCount ?? logs.length} total</span>
+        <span style={{ fontSize: 11, color: 'var(--text-muted)', marginLeft: 'auto' }}>{logsCount ?? logs.length} {t('totalEntries', lang)}</span>
       </div>
       {logs.map((entry, i) => (
         <div key={i} className="log-entry" style={{ cursor: 'pointer' }} title="Click to view full details" onClick={() => setSelected(entry)}>
@@ -716,6 +739,7 @@ function LogList({ logs, dataSources, logsCount }: { logs: LogEntry[]; dataSourc
 type Tab = 'summary' | 'logs' | 'input' | 'output'
 
 export default function AgentCard({ agent, state, defaultOpen = false }: Props) {
+  const { lang } = useLang()
   const [open, setOpen] = useState(defaultOpen || state.status !== 'pending')
   const [tab, setTab] = useState<Tab>('summary')
 
@@ -724,10 +748,10 @@ export default function AgentCard({ agent, state, defaultOpen = false }: Props) 
   const hasContent = !!(state.input || state.output || state.data_sources || fetchedLogs.length > 0)
 
   const tabs: { id: Tab; label: string }[] = [
-    { id: 'summary', label: 'Summary' },
-    { id: 'logs', label: `Logs (${fetchedLogs.length})` },
-    { id: 'input', label: 'Input' },
-    { id: 'output', label: 'Output' },
+    { id: 'summary', label: t('tabSummary', lang) },
+    { id: 'logs', label: `${t('tabLogs', lang)} (${fetchedLogs.length})` },
+    { id: 'input', label: t('tabInput', lang) },
+    { id: 'output', label: t('tabOutput', lang) },
   ]
 
   return (
@@ -737,7 +761,7 @@ export default function AgentCard({ agent, state, defaultOpen = false }: Props) 
         <div className="agent-number" style={{ background: numberBg(state.status), color: statusColor(state.status) }}>
           {state.step}
         </div>
-        <span className="agent-card-title">{AGENT_LABELS[agent]}</span>
+        <span className="agent-card-title">{t(agent, lang)}</span>
         <div className="agent-meta">
           <span className={`badge badge-${state.status}`}>
             {state.status === 'running' && <span className="spinner" style={{ width: 10, height: 10, borderWidth: 1.5 }} />}
@@ -767,7 +791,7 @@ export default function AgentCard({ agent, state, defaultOpen = false }: Props) 
           {/* Error */}
           {state.error && (
             <div className="agent-section">
-              <div className="agent-section-title" style={{ color: 'var(--red)' }}>Error</div>
+              <div className="agent-section-title" style={{ color: 'var(--red)' }}>{t('error', lang)}</div>
               <div className="agent-section-body">
                 <pre style={{ color: 'var(--red)', fontFamily: 'var(--font-mono)', fontSize: 12, whiteSpace: 'pre-wrap' }}>
                   {state.error}
@@ -779,37 +803,35 @@ export default function AgentCard({ agent, state, defaultOpen = false }: Props) 
           {/* Tab bar + content */}
           {hasContent && (
             <div className="agent-section">
-              {/* Tab bar */}
               <div className="agent-section-title" style={{ display: 'flex', gap: 0, padding: 0 }}>
-                {tabs.map(t => (
+                {tabs.map(tab_ => (
                   <button
-                    key={t.id}
-                    onClick={() => setTab(t.id)}
+                    key={tab_.id}
+                    onClick={() => setTab(tab_.id)}
                     style={{
                       padding: '8px 16px',
-                      background: tab === t.id ? 'var(--surface)' : 'var(--bg)',
+                      background: tab === tab_.id ? 'var(--surface)' : 'var(--bg)',
                       border: 'none',
-                      borderBottom: tab === t.id ? '2px solid var(--accent)' : '2px solid transparent',
-                      color: tab === t.id ? 'var(--text)' : 'var(--text-muted)',
+                      borderBottom: tab === tab_.id ? '2px solid var(--accent)' : '2px solid transparent',
+                      color: tab === tab_.id ? 'var(--text)' : 'var(--text-muted)',
                       cursor: 'pointer',
                       fontSize: 12,
-                      fontWeight: tab === t.id ? 600 : 400,
+                      fontWeight: tab === tab_.id ? 600 : 400,
                       textTransform: 'uppercase',
                       letterSpacing: '0.05em',
                     }}
                   >
-                    {t.label}
+                    {tab_.label}
                   </button>
                 ))}
               </div>
 
-              {/* Tab content */}
               <div className="agent-section-body">
                 {tab === 'summary' && (
                   state.output
                     ? <AgentSummary agent={agent} output={state.output} />
                     : <span style={{ color: 'var(--text-muted)', fontSize: 12 }}>
-                        {state.status === 'running' ? 'Processing…' : 'No output yet'}
+                        {state.status === 'running' ? t('processing', lang) : t('noOutput', lang)}
                       </span>
                 )}
                 {tab === 'logs' && (
@@ -818,13 +840,13 @@ export default function AgentCard({ agent, state, defaultOpen = false }: Props) 
                 {tab === 'input' && (
                   state.input
                     ? <JsonView data={state.input} />
-                    : <span style={{ color: 'var(--text-muted)', fontSize: 12 }}>No input yet</span>
+                    : <span style={{ color: 'var(--text-muted)', fontSize: 12 }}>{t('noInput', lang)}</span>
                 )}
                 {tab === 'output' && (
                   state.output
                     ? <JsonView data={state.output} />
                     : <span style={{ color: 'var(--text-muted)', fontSize: 12 }}>
-                        {state.status === 'running' ? 'Processing…' : 'No output yet'}
+                        {state.status === 'running' ? t('processing', lang) : t('noOutput', lang)}
                       </span>
                 )}
               </div>

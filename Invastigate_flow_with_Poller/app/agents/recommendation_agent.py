@@ -7,6 +7,7 @@ from typing import Any
 from openai import AsyncOpenAI
 
 from app.core import get_settings, logger
+from app.agents.shared import BILINGUAL_INSTRUCTION
 from app.models.error_analysis import ErrorAnalysisResult
 from app.models.rca import RCAResult
 from app.models.recommendation import (
@@ -88,7 +89,8 @@ Respond with ONLY a valid JSON object matching the schema below.
 No markdown fences, no explanation — raw JSON only.
 
 {schema}
-"""
+
+{bilingual_instruction}"""
 
 
 class RecommendationAgent:
@@ -314,6 +316,7 @@ class RecommendationAgent:
             error_details_section=self._format_error_details(error_analysis),
             deployment_context=self._format_deployment_context(deployment_context),
             schema=self._response_schema,
+            bilingual_instruction=BILINGUAL_INSTRUCTION,
         )
 
         response = await self._client.chat.completions.create(

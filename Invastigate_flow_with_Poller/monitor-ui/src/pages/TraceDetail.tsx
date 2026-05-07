@@ -5,25 +5,25 @@ import type { TraceDetail as TTraceDetail, AgentName, AgentState, LogEntry } fro
 import { AGENT_ORDER } from '../types'
 import AgentCard from '../components/AgentCard'
 import PipelineTimeline from '../components/PipelineTimeline'
+import { useLang } from '../LanguageContext'
+import { t } from '../i18n'
 
 function buildAgentsFromTrace(trace: TTraceDetail): Record<AgentName, AgentState> {
   const agents: Partial<Record<AgentName, AgentState>> = {}
 
   AGENT_ORDER.forEach((agent, idx) => {
-    const input = (trace as Record<string, unknown>)[`${agent}_input`] as Record<string, unknown> | undefined
-    const output = (trace as Record<string, unknown>)[`${agent}_output`] as Record<string, unknown> | undefined
+    const input = (trace as unknown as Record<string, unknown>)[`${agent}_input`] as Record<string, unknown> | undefined
+    const output = (trace as unknown as Record<string, unknown>)[`${agent}_output`] as Record<string, unknown> | undefined
 
     let status: AgentState['status'] = 'pending'
     if (output) status = 'completed'
     else if (input) status = 'failed'
 
-    // Extract metadata from output
     let data_sources: string[] | undefined
     let logs_count: number | undefined
     let confidence: number | null | undefined
 
     if (output) {
-      // correlation
       if (agent === 'correlation') {
         data_sources = (output.data_sources as string[]) ?? []
         logs_count = (output.total_logs_analyzed as number) ?? 0
@@ -31,14 +31,12 @@ function buildAgentsFromTrace(trace: TTraceDetail): Record<AgentName, AgentState
         const rc = corr?.root_cause_candidate as Record<string, unknown> | undefined
         confidence = rc?.confidence as number | undefined
       }
-      // error_analysis
       if (agent === 'error_analysis') {
         data_sources = (output.data_sources as string[]) ?? []
         logs_count = (output.total_logs_analyzed as number) ?? 0
         const analysis = output.analysis as Record<string, unknown> | undefined
         confidence = analysis?.confidence as number | undefined
       }
-      // rca
       if (agent === 'rca') {
         data_sources = (output.data_sources as string[]) ?? []
         logs_count = (output.total_logs_analyzed as number) ?? 0
@@ -47,7 +45,6 @@ function buildAgentsFromTrace(trace: TTraceDetail): Record<AgentName, AgentState
       }
     }
 
-    // Flatten fetched_logs from all sources for this agent
     let fetched_logs: LogEntry[] | undefined
     if (trace.fetched_logs?.[agent]) {
       const bySource = trace.fetched_logs[agent]
@@ -72,6 +69,7 @@ function buildAgentsFromTrace(trace: TTraceDetail): Record<AgentName, AgentState
 
 export default function TraceDetail() {
   const { traceId } = useParams<{ traceId: string }>()
+  const { lang } = useLang()
   const [trace, setTrace] = useState<TTraceDetail | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -82,7 +80,7 @@ export default function TraceDetail() {
     setLoading(true)
     setError(null)
     getTrace(traceId)
-      .then(t => { setTrace(t); setLoading(false) })
+      .then(tr => { setTrace(tr); setLoading(false) })
       .catch(e => { setError(String(e)); setLoading(false) })
   }, [traceId])
 
@@ -97,9 +95,9 @@ export default function TraceDetail() {
   if (error || !trace) {
     return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: 16, alignItems: 'flex-start' }}>
-        <Link to="/" style={{ color: 'var(--text-muted)', fontSize: 13 }}>← Dashboard</Link>
+        <Link to="/" style={{ color: 'var(--text-muted)', fontSize: 13 }}>{t('backDashboard', lang)}</Link>
         <div style={{ color: 'var(--red)' }}>
-          {error ?? 'Trace not found'}
+          {error ?? t('traceNotFound', lang)}
         </div>
       </div>
     )
@@ -113,9 +111,9 @@ export default function TraceDetail() {
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-            <Link to="/" style={{ color: 'var(--text-muted)', fontSize: 13 }}>← Dashboard</Link>
+            <Link to="/" style={{ color: 'var(--text-muted)', fontSize: 13 }}>{t('backDashboard', lang)}</Link>
             <span style={{ color: 'var(--border)' }}>/</span>
-            <span style={{ color: 'var(--text-muted)', fontSize: 13 }}>Trace Detail</span>
+            <span style={{ color: 'var(--text-muted)', fontSize: 13 }}>{t('traceDetail', lang)}</span>
           </div>
           <h2 style={{ fontSize: 18, fontWeight: 700 }}>{trace.agent_name}</h2>
           <div style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--text-muted)', marginTop: 2 }}>
@@ -130,7 +128,7 @@ export default function TraceDetail() {
           </span>
           {trace.status === 'running' && (
             <Link to={`/live/${trace.trace_id}`} className="btn btn-primary" style={{ fontSize: 12 }}>
-              Watch Live →
+              {t('watchLiveArrow', lang)}
             </Link>
           )}
         </div>
@@ -138,14 +136,12 @@ export default function TraceDetail() {
 
       {/* Main grid */}
       <div className="monitor-grid">
-        {/* Left: timeline */}
         <PipelineTimeline
           agents={agents}
           activeAgent={selectedAgent}
           onSelect={setSelectedAgent}
         />
 
-        {/* Right: agent cards */}
         <div>
           {AGENT_ORDER.map(agent => (
             <AgentCard

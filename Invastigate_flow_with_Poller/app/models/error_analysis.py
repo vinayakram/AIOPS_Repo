@@ -100,6 +100,10 @@ class ErrorDetail(BaseModel):
         ...,
         description="The actual error message or description extracted from logs",
     )
+    error_message_ja: Optional[str] = Field(
+        None,
+        description="Japanese translation of error_message for display",
+    )
     timestamp: str = Field(
         ...,
         description="ISO-8601 timestamp when this error occurred",
@@ -145,6 +149,10 @@ class ErrorPattern(BaseModel):
         ...,
         description="Detailed description of the recurring pattern",
     )
+    description_ja: Optional[str] = Field(
+        None,
+        description="Japanese translation of description for display",
+    )
     occurrence_count: int = Field(
         ...,
         ge=1,
@@ -188,6 +196,11 @@ class ErrorAnalysisResult(BaseModel):
         ...,
         max_length=500,
         description="High-level summary of the error analysis findings",
+    )
+    analysis_summary_ja: Optional[str] = Field(
+        None,
+        max_length=600,
+        description="Japanese translation of analysis_summary for display",
     )
     analysis_target: AnalysisDomain = Field(
         ...,

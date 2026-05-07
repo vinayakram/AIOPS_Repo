@@ -1,5 +1,7 @@
 import type { AgentName, AgentState, StepStatus } from '../types'
-import { AGENT_LABELS, AGENT_ORDER } from '../types'
+import { AGENT_ORDER } from '../types'
+import { useLang } from '../LanguageContext'
+import { t } from '../i18n'
 
 interface Props {
   agents: Record<AgentName, AgentState>
@@ -15,10 +17,12 @@ function icon(status: StepStatus) {
 }
 
 export default function PipelineTimeline({ agents, activeAgent, onSelect }: Props) {
+  const { lang } = useLang()
+
   return (
     <div className="card">
       <div className="card-header">
-        <span className="card-title">Pipeline Steps</span>
+        <span className="card-title">{lang === 'ja' ? 'パイプラインステップ' : 'Pipeline Steps'}</span>
       </div>
       <div className="card-body">
         <div className="timeline">
@@ -53,7 +57,7 @@ export default function PipelineTimeline({ agents, activeAgent, onSelect }: Prop
                       lineHeight: '24px',
                     }}
                   >
-                    {AGENT_LABELS[agent]}
+                    {t(agent, lang)}
                   </div>
                   <div className="timeline-meta" style={{ marginTop: 2 }}>
                     {state?.processing_time_ms != null && (
