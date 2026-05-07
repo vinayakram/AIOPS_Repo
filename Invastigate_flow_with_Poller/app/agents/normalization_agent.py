@@ -19,6 +19,7 @@ from app.services.langfuse_client import LangfuseClient
 from app.services.prometheus_client import PrometheusClient
 from app.services.event_bus import get_event_bus
 from app.services.trace_store import TraceStore
+from app.agents.shared import BILINGUAL_INSTRUCTION
 
 # ── System Prompt ──────────────────────────────────────────────────────
 
@@ -55,7 +56,8 @@ Respond with ONLY a valid JSON object matching the schema below.
 No markdown fences, no explanation — raw JSON only.
 
 {schema}
-"""
+
+{bilingual_instruction}"""
 
 # ── Log-level error indicators ─────────────────────────────────────────
 
@@ -465,6 +467,7 @@ class NormalizationAgent:
         system_prompt = SYSTEM_PROMPT.format(
             schema=self._response_schema,
             data_source=data_source.value,
+            bilingual_instruction=BILINGUAL_INSTRUCTION,
         )
 
         response = await self._client.chat.completions.create(

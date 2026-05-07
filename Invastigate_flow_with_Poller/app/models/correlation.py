@@ -84,6 +84,10 @@ class TimelineEvent(BaseModel):
         ...,
         description="Description of what happened at this point",
     )
+    event_ja: Optional[str] = Field(
+        None,
+        description="Japanese translation of event for display",
+    )
     service: str = Field(
         ...,
         description="Service or component where the event occurred",
@@ -106,6 +110,10 @@ class RootCauseCandidate(BaseModel):
     reason: str = Field(
         ...,
         description="Explanation of why this is the root cause candidate",
+    )
+    reason_ja: Optional[str] = Field(
+        None,
+        description="Japanese translation of reason for display",
     )
 
 

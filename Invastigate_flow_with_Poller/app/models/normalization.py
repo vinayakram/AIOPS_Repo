@@ -110,6 +110,11 @@ class NormalizedIncident(BaseModel):
         max_length=300,
         description="Factual 1-2 line summary of the error",
     )
+    error_summary_ja: Optional[str] = Field(
+        None,
+        max_length=400,
+        description="Japanese translation of error_summary for display",
+    )
     timestamp: str = Field(
         ...,
         description="ISO-8601 timestamp of the first occurrence in the logs",

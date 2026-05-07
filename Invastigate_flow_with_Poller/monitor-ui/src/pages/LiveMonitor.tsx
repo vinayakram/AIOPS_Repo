@@ -15,6 +15,8 @@ import type {
 import { AGENT_ORDER } from '../types'
 import AgentCard from '../components/AgentCard'
 import PipelineTimeline from '../components/PipelineTimeline'
+import { useLang } from '../LanguageContext'
+import { t } from '../i18n'
 
 function makeInitialState(): PipelineState {
   const agents: Partial<Record<AgentName, AgentState>> = {}
@@ -175,6 +177,7 @@ export default function LiveMonitor() {
     return next
   }
 
+  const { lang } = useLang()
   const totalCompleted = AGENT_ORDER.filter(a => state.agents[a].status === 'completed').length
   const hasFailed = AGENT_ORDER.some(a => state.agents[a].status === 'failed')
 
@@ -184,9 +187,9 @@ export default function LiveMonitor() {
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-            <Link to="/" style={{ color: 'var(--text-muted)', fontSize: 13 }}>← Dashboard</Link>
+            <Link to="/" style={{ color: 'var(--text-muted)', fontSize: 13 }}>{t('backDashboard', lang)}</Link>
             <span style={{ color: 'var(--border)' }}>/</span>
-            <span style={{ color: 'var(--text-muted)', fontSize: 13 }}>Live Monitor</span>
+            <span style={{ color: 'var(--text-muted)', fontSize: 13 }}>{t('liveMonitor', lang)}</span>
           </div>
           <h2 style={{ fontSize: 18, fontWeight: 700 }}>
             {state.agent_name ? `${state.agent_name}` : traceId}
@@ -253,7 +256,7 @@ export default function LiveMonitor() {
           {/* Event log */}
           <div className="card" style={{ marginTop: 12 }}>
             <div className="card-header">
-              <span className="card-title" style={{ fontSize: 12 }}>Event Log</span>
+              <span className="card-title" style={{ fontSize: 12 }}>{t('eventLog', lang)}</span>
               <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>{events.length} events</span>
             </div>
             <div
@@ -267,7 +270,7 @@ export default function LiveMonitor() {
               }}
             >
               {events.length === 0 ? (
-                <div style={{ color: 'var(--text-muted)', padding: 8 }}>Waiting for events…</div>
+                <div style={{ color: 'var(--text-muted)', padding: 8 }}>{t('noEvents', lang)}</div>
               ) : events.map((e, i) => {
                 let parsed: { type?: string } = {}
                 try { parsed = JSON.parse(e.raw) } catch {}

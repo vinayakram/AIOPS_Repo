@@ -19,6 +19,7 @@ from app.services.langfuse_client import LangfuseClient
 from app.services.prometheus_client import PrometheusClient
 from app.services.event_bus import get_event_bus
 from app.services.trace_store import TraceStore
+from app.agents.shared import BILINGUAL_INSTRUCTION
 
 # ── System Prompt ──────────────────────────────────────────────────────
 
@@ -131,7 +132,8 @@ Respond with ONLY a valid JSON object matching the schema below.
 No markdown fences, no explanation — raw JSON only.
 
 {schema}
-"""
+
+{bilingual_instruction}"""
 
 
 class RCAAgent:
@@ -568,6 +570,7 @@ class RCAAgent:
             deployment_context=self._format_deployment_context(deployment_context),
             data_sources_description=ds_desc,
             schema=self._response_schema,
+            bilingual_instruction=BILINGUAL_INSTRUCTION,
         )
 
         response = await self._client.chat.completions.create(

@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Outlet, NavLink } from 'react-router-dom'
+import { useLang } from '../LanguageContext'
+import { t } from '../i18n'
 
 function SunIcon() {
   return (
@@ -26,6 +28,8 @@ function MoonIcon() {
 }
 
 export default function Layout() {
+  const { lang, setLang } = useLang()
+
   const [theme, setTheme] = useState<'dark' | 'light'>(() => {
     return (localStorage.getItem('theme') as 'dark' | 'light') ?? 'dark'
   })
@@ -40,7 +44,7 @@ export default function Layout() {
       <nav className="navbar">
         <div className="navbar-brand">
           <span>🔍</span>
-          <span>Investigation Monitor</span>
+          <span>{t('appTitle', lang)}</span>
         </div>
         <div className="navbar-links">
           <NavLink
@@ -48,14 +52,34 @@ export default function Layout() {
             end
             className={({ isActive }) => `nav-link${isActive ? ' active' : ''}`}
           >
-            Dashboard
+            {t('dashboard', lang)}
           </NavLink>
         </div>
-        <div style={{ marginLeft: 'auto' }}>
+        <div style={{ marginLeft: 'auto', display: 'flex', gap: 8, alignItems: 'center' }}>
+          {/* Language toggle */}
+          <button
+            onClick={() => setLang(lang === 'en' ? 'ja' : 'en')}
+            title={lang === 'en' ? 'Switch to Japanese' : '英語に切り替え'}
+            style={{
+              background: 'var(--surface2)',
+              border: '1px solid var(--border)',
+              borderRadius: 6,
+              padding: '4px 10px',
+              cursor: 'pointer',
+              fontSize: 12,
+              fontWeight: 600,
+              color: 'var(--text)',
+              letterSpacing: '0.03em',
+            }}
+          >
+            {lang === 'en' ? 'JP' : 'EN'}
+          </button>
+
+          {/* Theme toggle */}
           <button
             className="theme-toggle"
             onClick={() => setTheme(t => t === 'dark' ? 'light' : 'dark')}
-            title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+            title={theme === 'dark' ? t('switchLight', lang) : t('switchDark', lang)}
           >
             {theme === 'dark' ? <SunIcon /> : <MoonIcon />}
           </button>
