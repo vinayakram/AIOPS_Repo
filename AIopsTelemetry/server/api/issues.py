@@ -1,6 +1,6 @@
 import json
 import hashlib
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Optional
 import httpx
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query
@@ -345,6 +345,447 @@ def seed_demo_issues(db: Session = Depends(get_db)):
         ids.append(issue.id)
     db.commit()
     return {"created": created, "refreshed": refreshed, "total": len(cases), "issue_ids": ids}
+
+
+def _upsert_seed_issue(
+    db: Session,
+    *,
+    namespace: str,
+    key: str,
+    app_name: str,
+    issue_type: str,
+    rule_id: str,
+    severity: str,
+    status: str,
+    title_en: str,
+    title_ja: str,
+    description_en: str,
+    description_ja: str,
+    span_name: str,
+    trace_id: str,
+    created_at: datetime,
+) -> tuple[Issue, bool]:
+    base_fp = hashlib.sha256(f"{namespace}:{key}".encode()).hexdigest()[:16]
+    issue = db.query(Issue).filter(Issue.base_fingerprint == base_fp).first()
+    created = False
+    if issue is None:
+        issue = Issue(
+            fingerprint=base_fp,
+            base_fingerprint=base_fp,
+            recurrence_count=0,
+        )
+        db.add(issue)
+        created = True
+    issue.app_name = app_name
+    issue.issue_type = issue_type
+    issue.rule_id = rule_id
+    issue.severity = severity
+    issue.status = status
+    issue.title = title_en
+    issue.description = description_en
+    issue.title_en = title_en
+    issue.title_ja = title_ja
+    issue.description_en = description_en
+    issue.description_ja = description_ja
+    issue.span_name = span_name
+    issue.trace_id = trace_id
+    issue.created_at = created_at
+    issue.updated_at = datetime.utcnow()
+    issue.resolved_at = None
+    db.flush()
+    return issue, created
+
+
+def _upsert_seed_analysis(
+    db: Session,
+    *,
+    issue_id: int,
+    model_used: str,
+    remediation_type: str,
+    likely_cause_en: str,
+    likely_cause_ja: str,
+    evidence_en: str,
+    evidence_ja: str,
+    action_en: str,
+    action_ja: str,
+) -> None:
+    analysis = db.query(IssueAnalysis).filter(IssueAnalysis.issue_id == issue_id).first()
+    if analysis is None:
+        analysis = IssueAnalysis(issue_id=issue_id)
+        db.add(analysis)
+    analysis.status = "done"
+    analysis.model_used = model_used
+    analysis.likely_cause = likely_cause_en
+    analysis.evidence = evidence_en
+    analysis.recommended_action = action_en
+    analysis.remediation_type = remediation_type
+    analysis.likely_cause_en = likely_cause_en
+    analysis.likely_cause_ja = likely_cause_ja
+    analysis.evidence_en = evidence_en
+    analysis.evidence_ja = evidence_ja
+    analysis.recommended_action_en = action_en
+    analysis.recommended_action_ja = action_ja
+    analysis.language_status = "ready"
+    analysis.generated_at = datetime.utcnow()
+
+
+@router.post("/seed/mcp-demo")
+def seed_mcp_demo_issues(db: Session = Depends(get_db)):
+    """Seed a clear cross-service MCP demo across sample-agent and triage-agent."""
+    now = datetime.utcnow().replace(microsecond=0)
+    namespace = "mcp-cross-service-demo"
+    root_created_at = now - timedelta(minutes=4)
+    impact_created_at = now - timedelta(minutes=3, seconds=15)
+
+    root_issue, root_created = _upsert_seed_issue(
+        db,
+        namespace=namespace,
+        key="sample-agent-root",
+        app_name="sample-agent",
+        issue_type="cross_service_upstream_latency",
+        rule_id="MCP-DEMO-ROOT",
+        severity="critical",
+        status="ESCALATED",
+        title_en="Sample-agent retrieval latency is cascading into triage-agent failures",
+        title_ja="sample-agent の検索遅延が triage-agent の障害に波及しています",
+        description_en=(
+            "The sample-agent retrieval path slowed sharply, and dependent triage-agent requests started timing out "
+            "while waiting on upstream search and answer generation."
+        ),
+        description_ja=(
+            "sample-agent の検索処理が急激に遅くなり、依存している triage-agent のリクエストが "
+            "上流の検索・回答生成待ちでタイムアウトし始めています。"
+        ),
+        span_name="demo.mcp.sample_agent.retrieval",
+        trace_id="mcp-demo-sample-root",
+        created_at=root_created_at,
+    )
+    impact_issue, impact_created = _upsert_seed_issue(
+        db,
+        namespace=namespace,
+        key="triage-agent-impact",
+        app_name="triage-agent",
+        issue_type="upstream_dependency_timeout",
+        rule_id="MCP-DEMO-IMPACT",
+        severity="high",
+        status="OPEN",
+        title_en="Triage-agent is timing out on sample-agent upstream calls",
+        title_ja="triage-agent が sample-agent への上流呼び出しでタイムアウトしています",
+        description_en=(
+            "Triage-agent requests are failing because calls to sample-agent exceed the upstream timeout budget "
+            "and return 503/504-style failures."
+        ),
+        description_ja=(
+            "triage-agent のリクエストは、sample-agent への呼び出しが上流タイムアウトの許容時間を超え、"
+            "503 / 504 系の失敗として返るため処理に失敗しています。"
+        ),
+        span_name="demo.mcp.triage_agent.upstream",
+        trace_id="mcp-demo-triage-impact",
+        created_at=impact_created_at,
+    )
+
+    root_topology = {
+        "title": "Cross-service incident path",
+        "description": "sample-agent degradation is propagating to triage-agent through the live service path.",
+        "timestamp": root_created_at.isoformat(),
+        "propagation_label": "sample-agent -> triage-agent",
+        "impact": {
+            "where": "sample-agent -> triage-agent",
+            "user_count": 24,
+            "applications": ["sample-agent", "triage-agent"],
+            "application_count": 2,
+        },
+        "root_cause_chain": (
+            f"sample-agent retrieval latency spike (issue #{root_issue.id}) -> "
+            "upstream wait expansion -> triage-agent timeout symptoms"
+        ),
+        "recommended_action": (
+            "Stabilize sample-agent retrieval first, inspect PGVector latency and queue depth, "
+            "then confirm triage-agent upstream timeouts return to baseline."
+        ),
+        "nodes": [
+            {
+                "id": "vm-host",
+                "zone": "platform",
+                "name": "VM Host",
+                "status": "ok",
+                "role": "Compute, OS scheduler, and network stack",
+                "metrics": [{"label": "CPU", "value": "58%"}],
+                "logs": [
+                    {
+                        "timestamp": root_created_at.isoformat(),
+                        "level": "INFO",
+                        "message": "Host capacity remains stable; contention is localized to the application path.",
+                    }
+                ],
+            },
+            {
+                "id": "docker-runtime",
+                "zone": "runtime",
+                "name": "Docker Runtime",
+                "status": "warn",
+                "role": "Container runtime and service isolation",
+                "metrics": [{"label": "Container CPU", "value": "76%"}],
+                "logs": [
+                    {
+                        "timestamp": root_created_at.isoformat(),
+                        "level": "WARN",
+                        "message": "Container runtime shows pressure from rising upstream retries.",
+                    }
+                ],
+            },
+            {
+                "id": "sample-agent",
+                "zone": "runtime",
+                "name": "sample-agent",
+                "service_name": "sample-agent",
+                "status": "error",
+                "role": "Primary retrieval and answer generation service",
+                "aliases": ["sample-agent", "retrieval", "search"],
+                "layout": {"x": 65, "y": 24},
+                "metrics": [
+                    {"label": "Upstream p99", "value": "3.8s"},
+                    {"label": "5xx rate", "value": "18%"},
+                    {"label": "Queue depth", "value": "41"},
+                ],
+                "logs": [
+                    {
+                        "timestamp": root_created_at.isoformat(),
+                        "level": "ERROR",
+                        "message": "sample-agent p99 retrieval latency climbed above 3.8s during live traffic.",
+                    },
+                    {
+                        "timestamp": (root_created_at + timedelta(seconds=25)).isoformat(),
+                        "level": "ERROR",
+                        "message": "Upstream retrieval queue depth exceeded the safe window and 5xx rate increased.",
+                    },
+                ],
+            },
+            {
+                "id": "triage-agent",
+                "zone": "runtime",
+                "name": "triage-agent",
+                "service_name": "triage-agent",
+                "status": "warn",
+                "role": "Dependent triage workflow calling sample-agent",
+                "aliases": ["triage-agent", "triage", "caller"],
+                "layout": {"x": 65, "y": 58},
+                "metrics": [
+                    {"label": "Timeout rate", "value": "14%"},
+                    {"label": "Failed requests", "value": "12"},
+                ],
+                "logs": [
+                    {
+                        "timestamp": impact_created_at.isoformat(),
+                        "level": "WARN",
+                        "message": "triage-agent observed growing upstream wait time against sample-agent.",
+                    }
+                ],
+            },
+            {
+                "id": "prometheus",
+                "zone": "observability",
+                "name": "Prometheus",
+                "status": "ok",
+                "role": "Metrics scraping and alert evaluation",
+                "metrics": [{"label": "Alert", "value": "SampleAgentLatencyHigh"}],
+                "logs": [
+                    {
+                        "timestamp": root_created_at.isoformat(),
+                        "level": "INFO",
+                        "message": "Prometheus captured sample-agent latency and triage-agent timeout counters in the same window.",
+                    }
+                ],
+            },
+            {
+                "id": "langfuse",
+                "zone": "observability",
+                "name": "Langfuse",
+                "status": "ok",
+                "role": "Trace capture and LLM observability",
+                "logs": [
+                    {
+                        "timestamp": impact_created_at.isoformat(),
+                        "level": "INFO",
+                        "message": "Langfuse traces show triage-agent waiting on sample-agent before failure.",
+                    }
+                ],
+            },
+            {
+                "id": "pgvector",
+                "zone": "observability",
+                "name": "PGVector DB",
+                "status": "warn",
+                "role": "Vector store / retrieval dependency",
+                "metrics": [{"label": "Latency", "value": "420ms"}],
+                "logs": [
+                    {
+                        "timestamp": root_created_at.isoformat(),
+                        "level": "WARN",
+                        "message": "PGVector query latency increased during the sample-agent incident window.",
+                    }
+                ],
+            },
+        ],
+        "metrics": [
+            {"label": "Issue", "value": f"#{root_issue.id}", "tone": "critical"},
+            {"label": "Severity", "value": "CRITICAL", "tone": "critical"},
+            {"label": "Status", "value": "ESCALATED", "tone": "warning"},
+        ],
+        "alerts": [
+            {"name": "SampleAgentLatencyHigh", "severity": "critical", "tone": "critical"},
+            {"name": "TriageAgentUpstreamTimeout", "severity": "warning", "tone": "warning"},
+        ],
+        "traces": [
+            {"timestamp": root_created_at.isoformat(), "status": "fail", "label": "sample-agent"},
+            {"timestamp": impact_created_at.isoformat(), "status": "slow", "label": "triage-agent"},
+        ],
+    }
+    impact_topology = {
+        **root_topology,
+        "timestamp": impact_created_at.isoformat(),
+        "root_cause_chain": (
+            f"sample-agent retrieval slowdown (issue #{root_issue.id}) is the upstream contributor; "
+            f"triage-agent timeout symptoms are tracked in issue #{impact_issue.id}."
+        ),
+        "recommended_action": (
+            "Check sample-agent first, validate upstream latency recovery, then confirm triage-agent timeout counters and "
+            "user-visible failures fall back to normal."
+        ),
+        "correlated_from_issue": root_issue.id,
+    }
+    impact_topology["nodes"] = [dict(node) for node in root_topology["nodes"]]
+    for node in impact_topology["nodes"]:
+        if node.get("id") == "sample-agent":
+            node["status"] = "error"
+            node["error_message"] = f"Upstream source for triage-agent issue #{impact_issue.id}."
+        elif node.get("id") == "triage-agent":
+            node["status"] = "error"
+            node["error_message"] = "Visible customer impact from upstream sample-agent degradation."
+            node["logs"] = [
+                {
+                    "timestamp": impact_created_at.isoformat(),
+                    "level": "ERROR",
+                    "message": "triage-agent timed out while waiting for sample-agent and returned a failed response.",
+                },
+                {
+                    "timestamp": (impact_created_at + timedelta(seconds=20)).isoformat(),
+                    "level": "ERROR",
+                    "message": "Retries against sample-agent did not complete within the upstream timeout budget.",
+                },
+            ]
+    root_meta = {
+        "seed": namespace,
+        "seed_key": "sample-agent-root",
+        "display_app_name": "sample-agent",
+        "demo_kind": "mcp_cross_service",
+        "correlation": {
+            "role": "root",
+            "confidence": "high",
+            "impacted_issue_ids": [impact_issue.id],
+            "reason": "sample-agent degradation aligns with triage-agent timeout symptoms in the same window",
+            "correlated_at": now.isoformat(),
+        },
+        "topology": root_topology,
+    }
+    impact_meta = {
+        "seed": namespace,
+        "seed_key": "triage-agent-impact",
+        "display_app_name": "triage-agent",
+        "demo_kind": "mcp_cross_service",
+        "correlation": {
+            "role": "impact",
+            "root_issue_id": root_issue.id,
+            "confidence": "high",
+            "score": 98,
+            "reason": "triage-agent timeout symptoms align with sample-agent latency and 5xx spikes in the same live window",
+            "correlated_at": now.isoformat(),
+        },
+        "topology": impact_topology,
+    }
+    root_issue.metadata_json = json.dumps(root_meta, ensure_ascii=False)
+    impact_issue.metadata_json = json.dumps(impact_meta, ensure_ascii=False)
+
+    _upsert_seed_analysis(
+        db,
+        issue_id=root_issue.id,
+        model_used="seeded-mcp-cross-service-demo",
+        remediation_type="config_change",
+        likely_cause_en=(
+            "sample-agent is the upstream source of the cascade. Retrieval latency and 5xx spikes expanded inside "
+            "sample-agent first, and triage-agent started failing only after those signals appeared."
+        ),
+        likely_cause_ja=(
+            "今回の波及障害の起点は sample-agent です。まず sample-agent 内で検索遅延と 5xx の増加が発生し、"
+            "その後に triage-agent の失敗が表面化しました。"
+        ),
+        evidence_en=(
+            "Prometheus shows sample-agent latency and 5xx growth before triage-agent timeout counters increase.\n"
+            "Langfuse traces place triage-agent waits behind sample-agent spans.\n"
+            f"Topology view marks issue #{root_issue.id} as the upstream root affecting issue #{impact_issue.id}."
+        ),
+        evidence_ja=(
+            "Prometheus では、triage-agent のタイムアウト増加より前に sample-agent の遅延と 5xx 増加が確認できます。\n"
+            "Langfuse トレースでも、triage-agent の待ち時間は sample-agent のスパンの後ろに現れています。\n"
+            f"トポロジービューでも、問題 #{root_issue.id} が問題 #{impact_issue.id} に影響する上流起点として示されています。"
+        ),
+        action_en=(
+            "Reduce sample-agent retrieval latency first, inspect PGVector and queue saturation, and then verify triage-agent "
+            "timeouts stop without changing the triage workflow itself."
+        ),
+        action_ja=(
+            "まず sample-agent の検索遅延を解消し、PGVector とキューの飽和を確認したうえで、"
+            "triage-agent 側の処理を変えずにタイムアウトが止まることを確認してください。"
+        ),
+    )
+    _upsert_seed_analysis(
+        db,
+        issue_id=impact_issue.id,
+        model_used="seeded-mcp-cross-service-demo",
+        remediation_type="investigation_only",
+        likely_cause_en=(
+            "The triage-agent timeout is downstream impact, not the primary fault. Current topology and timing point to "
+            "sample-agent as the upstream contributor."
+        ),
+        likely_cause_ja=(
+            "triage-agent のタイムアウトは主障害ではなく下流影響です。現在のトポロジーと発生時刻の並びから、"
+            "上流要因は sample-agent だと判断できます。"
+        ),
+        evidence_en=(
+            "Triage-agent failures start after sample-agent latency and 5xx metrics move.\n"
+            "Topology shows a direct sample-agent -> triage-agent dependency path.\n"
+            "Langfuse traces show triage-agent waiting on sample-agent before failing."
+        ),
+        evidence_ja=(
+            "triage-agent の失敗は、sample-agent の遅延と 5xx 指標が悪化した後に始まっています。\n"
+            "トポロジーでも sample-agent -> triage-agent の直接依存経路が確認できます。\n"
+            "Langfuse トレースでも、失敗前に triage-agent が sample-agent を待っていることが分かります。"
+        ),
+        action_en=(
+            "Use MCP against sample-agent as the root candidate and triage-agent as the affected service, then verify "
+            "live evidence before making changes in triage-agent."
+        ),
+        action_ja=(
+            "MCP では root candidate を sample-agent、affected service を triage-agent として確認し、"
+            "triage-agent を変更する前にライブ証拠で上流影響を確かめてください。"
+        ),
+    )
+
+    db.commit()
+    return {
+        "created": int(root_created) + int(impact_created),
+        "refreshed": 2 - int(root_created) - int(impact_created),
+        "total": 2,
+        "issue_ids": [root_issue.id, impact_issue.id],
+        "root_issue_id": root_issue.id,
+        "impact_issue_id": impact_issue.id,
+        "recommended_issue_id": impact_issue.id,
+        "demo": {
+            "root_service": "sample-agent",
+            "affected_service": "triage-agent",
+            "path": "sample-agent -> triage-agent",
+        },
+    }
 
 
 @router.get("/{issue_id}")

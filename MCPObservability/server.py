@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import base64
+import concurrent.futures
 import json
 import os
 import re
@@ -258,8 +259,17 @@ def tool_correlate_cross_service_incident(args: dict[str, Any]) -> dict[str, Any
     affected = _safe_service(args["affected_service"])
     timestamp = _parse_time(args["timestamp"])
     window = min(int(args.get("window_minutes") or 10), PROM_MAX_RANGE_MINUTES)
-    root_ev = tool_prometheus_window_for_incident({"service": root, "timestamp": timestamp.isoformat(), "window_minutes": window})["evidence"]
-    affected_ev = tool_prometheus_window_for_incident({"service": affected, "timestamp": timestamp.isoformat(), "window_minutes": window})["evidence"]
+    request = {"timestamp": timestamp.isoformat(), "window_minutes": window}
+    if root == affected:
+        shared_ev = tool_prometheus_window_for_incident({"service": root, **request})["evidence"]
+        root_ev = shared_ev
+        affected_ev = []
+    else:
+        with concurrent.futures.ThreadPoolExecutor(max_workers=2) as pool:
+            root_future = pool.submit(tool_prometheus_window_for_incident, {"service": root, **request})
+            affected_future = pool.submit(tool_prometheus_window_for_incident, {"service": affected, **request})
+            root_ev = root_future.result()["evidence"]
+            affected_ev = affected_future.result()["evidence"]
     all_ev = root_ev + affected_ev
 
     root_signals = [

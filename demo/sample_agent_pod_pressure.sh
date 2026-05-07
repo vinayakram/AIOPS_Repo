@@ -7,11 +7,13 @@ ROOT_DIR="$(cd "${DEMO_DIR}/.." && pwd)"
 APP_URL="${APP_URL:-http://localhost:8002}"
 AIOPS_URL="${AIOPS_URL:-http://localhost:7000}"
 RCA_URL="${RCA_URL:-http://localhost:8000}"
-PROMETHEUS_URL="${PROMETHEUS_URL:-http://127.0.0.1:9090}"
+PROMETHEUS_URL="${PROMETHEUS_URL:-http://127.0.0.1:9092}"
 GRAFANA_URL="${GRAFANA_URL:-http://127.0.0.1:3000}"
 CONTAINER_NAME="${CONTAINER_NAME:-medical-rag-pod}"
 DISPLAY_CONTAINER_NAME="${DISPLAY_CONTAINER_NAME:-sample-agent-pod}"
-CADVISOR_INSTANCE="${CADVISOR_INSTANCE:-127.0.0.1:8080}"
+CADVISOR_INSTANCE="${CADVISOR_INSTANCE:-cadvisor:8080}"
+CADVISOR_CONTAINER_NAME="${CADVISOR_CONTAINER_NAME:-medical-rag-pod}"
+CADVISOR_SERVICE_NAME="${CADVISOR_SERVICE_NAME:-medical-rag-pod}"
 
 DEMO_USER="${DEMO_USER:-admin}"
 DEMO_PASSWORD="${DEMO_PASSWORD:-admin}"
@@ -64,6 +66,8 @@ Useful environment overrides:
   RCA_URL=${RCA_URL}
   PROMETHEUS_URL=${PROMETHEUS_URL}
   CONTAINER_NAME=<internal cAdvisor-compatible container name>
+  CADVISOR_INSTANCE=${CADVISOR_INSTANCE}
+  CADVISOR_CONTAINER_NAME=${CADVISOR_CONTAINER_NAME}
   LOAD_SECONDS=${LOAD_SECONDS}
   BREACHES_REQUIRED=${BREACHES_REQUIRED}
 
@@ -333,10 +337,11 @@ else:
 show_prometheus_evidence() {
   local title="$1"
   printf "\n%b\n" "${BOLD}${CYAN}${title}${RESET}"
+  local cadvisor_selector="instance=\"${CADVISOR_INSTANCE}\",container_label_com_docker_compose_service=\"${CADVISOR_SERVICE_NAME}\",name=\"${CADVISOR_CONTAINER_NAME}\""
   local queries=(
     "up{job=\"cadvisor\",instance=\"${CADVISOR_INSTANCE}\"}"
-    "sum(rate(container_cpu_usage_seconds_total{instance=\"${CADVISOR_INSTANCE}\",name=\"${CONTAINER_NAME}\"}[30s])) * 100"
-    "100 * sum(rate(container_cpu_usage_seconds_total{instance=\"${CADVISOR_INSTANCE}\",name=\"${CONTAINER_NAME}\"}[30s])) / max(container_spec_cpu_quota{instance=\"${CADVISOR_INSTANCE}\",name=\"${CONTAINER_NAME}\"} / container_spec_cpu_period{instance=\"${CADVISOR_INSTANCE}\",name=\"${CONTAINER_NAME}\"})"
+    "sum(rate(container_cpu_usage_seconds_total{${cadvisor_selector}}[30s])) * 100"
+    "100 * sum(rate(container_cpu_usage_seconds_total{${cadvisor_selector}}[30s])) / max(container_spec_cpu_quota{${cadvisor_selector}} / container_spec_cpu_period{${cadvisor_selector}})"
     "increase(sample_agent_pod_threshold_breaches_total[5m])"
     "sum(rate(sample_agent_query_requests_total{app=\"sample-agent\"}[5m]))"
   )

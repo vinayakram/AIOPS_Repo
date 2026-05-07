@@ -50,8 +50,12 @@ def live_rca(payload: LiveRCARequest, db: Session = Depends(get_db)):
             .first()
         )
 
-    affected_service_raw = payload.service or (issue.app_name if issue else None) or "service"
-    root_candidate_raw = payload.root_candidate_service or _infer_root_candidate(payload.message, affected_service_raw)
+    affected_service_raw = _resolve_affected_service(payload.service, issue)
+    root_candidate_raw = payload.root_candidate_service or _infer_root_candidate(
+        payload.message,
+        affected_service_raw,
+        issue=issue,
+    )
     affected_service = _service_label(affected_service_raw, lang)
     root_candidate = _service_label(root_candidate_raw, lang)
     timestamp = payload.timestamp or _live_timestamp()
@@ -142,12 +146,90 @@ def rca_diagram(payload: RCADiagramRequest, db: Session = Depends(get_db)):
     }
 
 
-def _infer_root_candidate(message: str, affected_service: str) -> str:
-    text = (message or "").strip()
-    return text or affected_service
+def _infer_root_candidate(message: str, affected_service: str, *, issue: Issue | None = None) -> str:
+    text = str(message or "").strip()
+    if not text:
+        return affected_service
+
+    known_services = _known_issue_services(issue, affected_service)
+    lowered = text.lower()
+    affected_lower = str(affected_service or "").strip().lower()
+
+    for service in known_services:
+        if service.lower() != affected_lower and service.lower() in lowered:
+            return service
+
+    token_pattern = re.compile(r"\b[A-Za-z0-9_.-]{2,80}\b")
+    generic_tokens = {
+        "why", "what", "when", "where", "how", "did", "this", "that", "happen", "happened",
+        "issue", "problem", "incident", "service", "services", "root", "cause", "caused",
+        "failure", "failing", "broken", "explain", "reason", "because", "and", "the", "for",
+        "whydidthishappen", "tell", "show", "me",
+    }
+    for token in token_pattern.findall(text):
+        candidate = token.strip()
+        candidate_lower = candidate.lower()
+        if candidate_lower in generic_tokens:
+            continue
+        if candidate_lower == affected_lower:
+            return affected_service
+        if not re.search(r"[-_.\d]", candidate):
+            continue
+        return candidate
+
+    return affected_service
+
+
+def _resolve_affected_service(payload_service: str | None, issue: Issue | None) -> str:
+    for candidate in (
+        str(payload_service or "").strip(),
+        str(issue.app_name if issue else "").strip(),
+        *list(_known_issue_services(issue)),
+        "service",
+    ):
+        if _is_valid_service_name(candidate):
+            return candidate
+    return "service"
+
+
+def _known_issue_services(issue: Issue | None, affected_service: str | None = None) -> list[str]:
+    values: list[str] = []
+
+    def add(value: Any) -> None:
+        text = str(value or "").strip()
+        if not text or not _is_valid_service_name(text):
+            return
+        if text not in values:
+            values.append(text)
+
+    add(affected_service)
+    if issue is None:
+        return values
+
+    add(issue.app_name)
+    metadata = _issue_metadata(issue)
+    topology = metadata.get("topology") if isinstance(metadata, dict) else {}
+    nodes = topology.get("nodes") if isinstance(topology, dict) else []
+    if isinstance(nodes, list):
+        for node in nodes:
+            if not isinstance(node, dict):
+                continue
+            add(node.get("id"))
+            add(node.get("name"))
+            add(node.get("service"))
+            add(node.get("service_name"))
+            add(node.get("app_name"))
+    return values
+
+
+def _is_valid_service_name(value: str | None) -> bool:
+    text = str(value or "").strip()
+    return bool(text) and re.fullmatch(r"[A-Za-z0-9_.-]{1,80}", text) is not None
 
 
 def _message_lang(message: str | None, requested_lang: str | None) -> str:
+    if requested_lang and str(requested_lang).strip():
+        return normalize_lang(requested_lang)
     text = str(message or "").strip()
     if re.search(r"[\u3040-\u30ff\u3400-\u9fff]", text):
         return "ja"
@@ -598,7 +680,7 @@ def _answer(
         )
     if confidence in {"high", "medium"}:
         return f"リアルタイムMCP証拠では、{affected} の障害原因は上流の {root} である可能性が高いです。"
-    return f"助手 は {root} が {affected} を障害させた証拠を十分には確認できませんでした。"
+    return f"AIOPSでは、{root} が {affected} に影響を与えたと断定できるだけのライブ証拠はまだ十分に確認できていません。"
 
 
 def _answer_for_question(
@@ -650,7 +732,7 @@ def _answer_for_question(
         if action:
             return action
         if kb and kb.recommended_action:
-            return str(kb.recommended_action)
+            return _localized_kb_action(kb.recommended_action, lang, issue)
         return _next_action(lang, confidence)
     if _asks_for_cause(text):
         if cause:
@@ -673,7 +755,7 @@ def _answer_for_question(
     if action:
         parts.append(action)
     elif kb and kb.recommended_action:
-        parts.append(str(kb.recommended_action))
+        parts.append(_localized_kb_action(kb.recommended_action, lang, issue))
     elif evidence:
         parts.append(_evidence_answer(lang, evidence, confidence))
     return " ".join(part for part in parts if part)
@@ -717,7 +799,8 @@ def _ticket_answer(lang: str, issue: Issue) -> str:
             f"{issue.title_en or issue.title}"
         )
     return (
-        f"問題 #{issue.id} は {issue.app_name} の {issue.severity} 重大度で、状態は {issue.status} です。"
+        f"問題 #{issue.id} は {_localized_app_name(issue.app_name, lang)} で発生しており、"
+        f"重大度は {_localized_severity(issue.severity, lang)}、状態は {_localized_issue_status(issue.status, lang)} です。"
         f"{issue.title_ja or issue.title}"
     )
 
@@ -741,14 +824,14 @@ def _status_answer(
             return prefix + f"Live evidence is present, but it is informational or healthy for {affected}."
         return prefix + f"No live evidence was returned for {affected} in the selected window."
     prefix = (
-        f"問題 #{issue.id} は状態 {issue.status}、重大度 {issue.severity} です。"
+        f"問題 #{issue.id} は {_localized_issue_status(issue.status, lang)} で、重大度は {_localized_severity(issue.severity, lang)} です。"
         if issue else ""
     )
     if has_hazard:
-        return prefix + f"{affected} に対して、現在も警告またはエラーのライブ証拠があります。"
+        return prefix + f"{affected} では、現在も警告またはエラーを示すライブ証拠が確認されています。"
     if evidence:
-        return prefix + f"{affected} に関するライブ証拠はありますが、内容は正常または参考情報です。"
-    return prefix + f"{affected} について、選択した時間枠ではライブ証拠が返っていません。"
+        return prefix + f"{affected} に関するライブ証拠は取得できていますが、現時点では正常値または参考情報に留まっています。"
+    return prefix + f"{affected} については、選択した時間枠で新しいライブ証拠を確認できませんでした。"
 
 
 def _service_answer(lang: str, issue: Issue | None, root: str, affected: str, confidence: str) -> str:
@@ -757,8 +840,8 @@ def _service_answer(lang: str, issue: Issue | None, root: str, affected: str, co
             return f"The affected service is {affected}. Live evidence points to {root} as the likely upstream contributor."
         return f"The affected service is {affected}. The live window does not strongly prove an upstream contributor."
     if confidence in {"high", "medium"}:
-        return f"影響を受けているサービスは {affected} です。ライブ証拠では、上流要因として {root} が有力です。"
-    return f"影響を受けているサービスは {affected} です。選択したライブ時間枠では上流要因を強く特定できていません。"
+        return f"影響を受けているサービスは {affected} です。ライブ証拠からは、上流要因として {root} が有力です。"
+    return f"影響を受けているサービスは {affected} ですが、選択したライブ時間枠だけでは上流要因を強く特定できていません。"
 
 
 def _evidence_answer(lang: str, evidence: list[dict[str, Any]], confidence: str) -> str:
@@ -781,11 +864,11 @@ def _evidence_answer(lang: str, evidence: list[dict[str, Any]], confidence: str)
     joined = "; ".join(snippets)
     if normalize_lang(lang) == "en":
         return f"Live evidence ({confidence} confidence): {joined}"
-    return f"ライブ証拠（信頼度 {confidence}）: {joined}"
+    return f"ライブ証拠（確度: {_localized_confidence(confidence, lang)}）: {joined}"
 
 
 def _assistant_name(lang: str) -> str:
-    return "AIOPS" if normalize_lang(lang) == "en" else "助手"
+    return "AIOPS" if normalize_lang(lang) == "en" else "AIOPSアシスタント"
 
 
 def _next_action(lang: str, confidence: str) -> str:
@@ -794,8 +877,8 @@ def _next_action(lang: str, confidence: str) -> str:
             return "Next: run the cascade/load scenario or pick a currently failing issue, then ask why again so MCP can capture warning/error evidence."
         return "Check the root service threshold and recent deploy/config changes, then re-run the MCP RCA after mitigation."
     if confidence == "low":
-        return "次に、カスケード負荷シナリオを実行するか、現在発生中の問題を選んでから、もう一度「なぜ起きたの？」と聞いてください。"
-    return "上流サービスのしきい値、直近の設定変更、503 発生状況を確認し、対応後に MCP RCA を再実行してください。"
+        return "次は、カスケード負荷シナリオを再現するか、現在発生中の問題を選び直してから、もう一度原因を確認してください。"
+    return "上流サービスのしきい値、直近の設定変更、503 の発生状況を確認し、対処後に MCP RCA を再実行してください。"
 
 
 def _t(lang: str, key: str, **kwargs) -> str:
@@ -809,3 +892,44 @@ def _t(lang: str, key: str, **kwargs) -> str:
     }
     left, right = table[key]
     return left if en else right
+
+
+def _localized_app_name(app_name: str | None, lang: str) -> str:
+    if normalize_lang(lang) == "ja":
+        return app_display_name_ja(app_name)
+    return (app_name or "service").strip() or "service"
+
+
+def _localized_issue_status(value: str | None, lang: str) -> str:
+    text = str(value or "").strip()
+    if normalize_lang(lang) != "ja":
+        return text or "unknown"
+    return {
+        "OPEN": "対応中",
+        "ESCALATED": "エスカレーション済み",
+        "RESOLVED": "解決済み",
+    }.get(text.upper(), text or "不明")
+
+
+def _localized_severity(value: str | None, lang: str) -> str:
+    text = str(value or "").strip()
+    if normalize_lang(lang) != "ja":
+        return text or "unknown"
+    return {
+        "critical": "重大",
+        "high": "高",
+        "medium": "中",
+        "low": "低",
+    }.get(text.lower(), text or "不明")
+
+
+def _localized_confidence(value: str | None, lang: str) -> str:
+    text = str(value or "").strip()
+    if normalize_lang(lang) != "ja":
+        return text or "unknown"
+    return {
+        "high": "高",
+        "medium": "中",
+        "low": "低",
+        "unknown": "不明",
+    }.get(text.lower(), text or "不明")

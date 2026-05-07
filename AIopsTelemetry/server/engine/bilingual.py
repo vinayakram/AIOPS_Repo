@@ -313,3 +313,255 @@ def _summary_ja(summary: str | None, en: dict[str, str | None]) -> str | None:
             parts.append(f"推奨対応: {action}")
         return "\n".join(parts)
     return summary
+
+
+def localize_observability_text(
+    text: str | None,
+    lang: str | None,
+    *,
+    app_name: str | None = None,
+    dependency: str | None = None,
+) -> str | None:
+    if normalize_lang(lang) != "ja":
+        return text
+    return _observability_text_ja(text, app_name=app_name, dependency=dependency)
+
+
+def _observability_text_ja(
+    text: str | None,
+    *,
+    app_name: str | None = None,
+    dependency: str | None = None,
+) -> str | None:
+    if not text:
+        return text
+    original = str(text).strip()
+    if not original:
+        return original
+
+    app_ja = app_display_name_ja(app_name)
+    dep_ja = app_display_name_ja(dependency)
+    translated = original
+
+    service_aliases = {
+        "sample-agent": app_display_name_ja("sample-agent"),
+        "triage-agent": app_display_name_ja("triage-agent"),
+        "medical-agent": app_display_name_ja("medical-agent"),
+        "medical-search-api": app_display_name_ja("medical-search-api"),
+        "observability-gateway": app_display_name_ja("observability-gateway"),
+    }
+    for source, target in service_aliases.items():
+        translated = re.sub(rf"\b{re.escape(source)}\b", target, translated, flags=re.IGNORECASE)
+
+    direct_map = {
+        "application is not reachable": "アプリケーションに現在アクセスできません",
+        "dependency healthy": "依存先は正常です",
+        "Prometheus captured": "Prometheus では",
+        "Langfuse traces show": "Langfuse トレースでは",
+        "during live traffic": "ライブトラフィック中に",
+        "returned a failed response": "失敗レスポンスを返しました",
+        "while waiting for": "を待っている間に",
+        "before failure": "障害発生前に",
+        "Container runtime shows pressure from rising upstream retries.": "上流リトライの増加により、コンテナランタイムに負荷がかかっています。",
+        "Host capacity remains stable; contention is localized to the application path.": "ホスト全体の容量は安定しており、競合はアプリケーション経路に局所化しています。",
+        "PGVector query latency increased during the sample-agent incident window.": "sample-agent 障害の時間帯に PGVector のクエリ遅延が上昇しました。",
+    }
+    for source, target in direct_map.items():
+        translated = translated.replace(source, target)
+
+    dependency_for_patterns = dependency or "upstream"
+    dep_ja_pattern = dep_ja if dependency else "上流サービス"
+    translated = re.sub(
+        rf"\b{re.escape(dependency_for_patterns)} returned HTTP (\d+)",
+        lambda m: f"{dep_ja_pattern} が HTTP {m.group(1)} を返しました",
+        translated,
+        flags=re.IGNORECASE,
+    )
+    translated = re.sub(
+        rf"\b{re.escape(dependency_for_patterns)} timed out after ([0-9.]+)s",
+        lambda m: f"{dep_ja_pattern} は {m.group(1)} 秒でタイムアウトしました",
+        translated,
+        flags=re.IGNORECASE,
+    )
+    translated = re.sub(
+        rf"\b{re.escape(dependency_for_patterns)} request failed:",
+        f"{dep_ja_pattern} へのリクエストに失敗しました:",
+        translated,
+        flags=re.IGNORECASE,
+    )
+    translated = re.sub(
+        r"HTTP (\d+):",
+        lambda m: f"HTTP {m.group(1)}:",
+        translated,
+        flags=re.IGNORECASE,
+    )
+    translated = re.sub(
+        r"p99 retrieval latency climbed above ([0-9.]+s?) during live traffic\.",
+        lambda m: f"検索 p99 遅延がライブトラフィック中に {m.group(1)} を超えました。",
+        translated,
+        flags=re.IGNORECASE,
+    )
+    translated = re.sub(
+        r"Upstream retrieval queue depth exceeded the safe window and 5xx rate increased\.",
+        "上流検索キューの深さが安全域を超え、5xx 率が上昇しました。",
+        translated,
+        flags=re.IGNORECASE,
+    )
+    translated = re.sub(
+        r"timed out while waiting for (.+?) and returned a failed response\.",
+        lambda m: f"{app_ja} は {app_display_name_ja(m.group(1).strip())} の応答待ちでタイムアウトし、失敗レスポンスを返しました。",
+        translated,
+        flags=re.IGNORECASE,
+    )
+    translated = re.sub(
+        r"Retries against (.+?) did not complete within the upstream timeout budget\.",
+        lambda m: f"{app_display_name_ja(m.group(1).strip())} への再試行は、上流タイムアウト許容時間内に完了しませんでした。",
+        translated,
+        flags=re.IGNORECASE,
+    )
+    translated = re.sub(
+        r"(.+?) recorded (\d+) upstream failure trace\(s\) against (.+?) in the last (\d+) minutes\.",
+        lambda m: (
+            f"{app_display_name_ja(m.group(1).strip())} では直近 {m.group(4)} 分の間に、"
+            f"{app_display_name_ja(m.group(3).strip())} に対する上流障害トレースが {m.group(2)} 件記録されました。"
+        ),
+        translated,
+        flags=re.IGNORECASE,
+    )
+    translated = re.sub(
+        r"Prometheus cascade failures total: (\d+)\.",
+        lambda m: f"Prometheus の波及障害カウンタは合計 {m.group(1)} 件です。",
+        translated,
+        flags=re.IGNORECASE,
+    )
+    translated = re.sub(
+        r"Latest upstream result: ([^.]+)\.",
+        lambda m: f"直近の上流結果は {m.group(1)} です。",
+        translated,
+        flags=re.IGNORECASE,
+    )
+    translated = re.sub(
+        r"The dependent service is failing on a live upstream dependency path rather than an isolated local-only error\.",
+        "下流サービスは単独のローカル障害ではなく、実際の上流依存経路の障害で失敗しています。",
+        translated,
+        flags=re.IGNORECASE,
+    )
+    translated = re.sub(
+        r"(.+?) is the upstream contributor\.",
+        lambda m: f"{app_display_name_ja(m.group(1).strip())} が上流側の主な起点です。",
+        translated,
+        flags=re.IGNORECASE,
+    )
+    translated = re.sub(
+        r"(.+?) started failing after calls to (.+?) returned errors or timed out\.",
+        lambda m: (
+            f"{app_display_name_ja(m.group(1).strip())} は "
+            f"{app_display_name_ja(m.group(2).strip())} の呼び出しがエラーまたはタイムアウトになった後に失敗し始めました。"
+        ),
+        translated,
+        flags=re.IGNORECASE,
+    )
+    translated = re.sub(
+        r"Check (.+?) first, confirm the upstream condition is cleared, and then verify (.+?) request failures stop without changing the downstream workflow\.",
+        lambda m: (
+            f"まず {app_display_name_ja(m.group(1).strip())} を確認し、上流側の状態が解消したことを確かめてください。"
+            f"その後、{app_display_name_ja(m.group(2).strip())} のリクエスト失敗が下流ワークフローを変更せずに収束するか確認してください。"
+        ),
+        translated,
+        flags=re.IGNORECASE,
+    )
+    translated = re.sub(
+        r"Runtime path shows dependency pressure between (.+?) and (.+?)\.",
+        lambda m: (
+            f"ランタイム経路では、{app_display_name_ja(m.group(1).strip())} と "
+            f"{app_display_name_ja(m.group(2).strip())} の間で依存負荷が高まっています。"
+        ),
+        translated,
+        flags=re.IGNORECASE,
+    )
+    translated = re.sub(
+        r"Prometheus indicates repeated cascade failures from (.+?) into (.+?) over the last (\d+) minutes\.",
+        lambda m: (
+            f"Prometheus では直近 {m.group(3)} 分の間に、"
+            f"{app_display_name_ja(m.group(1).strip())} から {app_display_name_ja(m.group(2).strip())} への"
+            "波及障害が繰り返し発生していることを示しています。"
+        ),
+        translated,
+        flags=re.IGNORECASE,
+    )
+    translated = re.sub(
+        r"Langfuse trace ([a-f0-9]{12,}) shows (.+?) failing after waiting on (.+?)\.",
+        lambda m: (
+            f"Langfuse トレース {m.group(1)} では、"
+            f"{app_display_name_ja(m.group(2).strip())} が {app_display_name_ja(m.group(3).strip())} の応答待ち後に失敗したことを示しています。"
+        ),
+        translated,
+        flags=re.IGNORECASE,
+    )
+    translated = re.sub(
+        r"Latest upstream status for (.+?) is healthy\.",
+        lambda m: f"{app_display_name_ja(m.group(1).strip())} の直近の上流状態は正常です。",
+        translated,
+        flags=re.IGNORECASE,
+    )
+    translated = re.sub(
+        r"Latest upstream status for (.+?) is failed\.",
+        lambda m: f"{app_display_name_ja(m.group(1).strip())} の直近の上流状態は異常です。",
+        translated,
+        flags=re.IGNORECASE,
+    )
+    translated = re.sub(
+        r"(.+?) recorded (\d+) cascade failure\(s\) against (.+?)\.",
+        lambda m: (
+            f"{app_display_name_ja(m.group(1).strip())} では "
+            f"{app_display_name_ja(m.group(3).strip())} に起因する波及障害が {m.group(2)} 件記録されています。"
+        ),
+        translated,
+        flags=re.IGNORECASE,
+    )
+    translated = re.sub(
+        r"(.+?) CPU utilisation is ([0-9.]+)% / threshold ([0-9.]+)%\.",
+        lambda m: (
+            f"{app_display_name_ja(m.group(1).strip())} の CPU 使用率は {m.group(2)}% で、"
+            f"しきい値 {m.group(3)}% と比較しています。"
+        ),
+        translated,
+        flags=re.IGNORECASE,
+    )
+    translated = re.sub(
+        r"(.+?) memory utilisation is ([0-9.]+)% / threshold ([0-9.]+)%\.",
+        lambda m: (
+            f"{app_display_name_ja(m.group(1).strip())} のメモリ使用率は {m.group(2)}% で、"
+            f"しきい値 {m.group(3)}% と比較しています。"
+        ),
+        translated,
+        flags=re.IGNORECASE,
+    )
+    translated = re.sub(
+        r"(.+?) pod threshold breaches observed: (\d+)\.",
+        lambda m: f"{app_display_name_ja(m.group(1).strip())} ではポッドしきい値超過が {m.group(2)} 件観測されています。",
+        translated,
+        flags=re.IGNORECASE,
+    )
+    translated = re.sub(
+        r"observed growing upstream wait time against (.+?)\.",
+        lambda m: f"{app_ja} では、{app_display_name_ja(m.group(1).strip())} に対する上流待ち時間の増加を確認しました。",
+        translated,
+        flags=re.IGNORECASE,
+    )
+    translated = re.sub(
+        r"trace ([a-f0-9]{12,}) shows",
+        lambda m: f"トレース {m.group(1)} では",
+        translated,
+        flags=re.IGNORECASE,
+    )
+
+    fallback = issue_description_ja(translated, app_name=app_name)
+    if fallback and fallback != translated and not _looks_overtranslated(fallback):
+        return fallback
+    return translated
+
+
+def _looks_overtranslated(text: str) -> bool:
+    lowered = text.lower()
+    return lowered.startswith("rca結果:") or lowered.startswith("推奨対応:")

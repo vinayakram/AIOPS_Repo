@@ -28,6 +28,7 @@
       --radius-lg:24px;
       --radius-md:18px;
       --radius-sm:14px;
+      --font-sans:"Segoe UI","Hiragino Sans","Hiragino Kaku Gothic ProN","Yu Gothic UI","Yu Gothic","Meiryo","Noto Sans JP",-apple-system,BlinkMacSystemFont,system-ui,sans-serif;
     }
 
     *{box-sizing:border-box}
@@ -40,9 +41,12 @@
         radial-gradient(circle at bottom right, rgba(28,138,88,.10), transparent 20%),
         var(--bg);
       color:var(--ink);
-      font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;
+      font-family:var(--font-sans);
       font-size:14px;
       line-height:1.55;
+      text-rendering:optimizeLegibility;
+      -webkit-font-smoothing:antialiased;
+      -moz-osx-font-smoothing:grayscale;
     }
 
     button,input,select{font:inherit}
@@ -270,7 +274,7 @@
     }
 
     .view-shell{
-      width:min(1320px,100%);
+      width:min(1520px,100%);
       margin:0 auto;
       display:grid;
       gap:22px;
@@ -536,6 +540,15 @@
       box-shadow:0 22px 38px rgba(24,44,83,.08);
     }
 
+    .issue-card:focus-visible{
+      outline:3px solid #dbe8ff;
+      outline-offset:2px;
+    }
+
+    .issue-card-main{
+      min-width:0;
+    }
+
     .issue-title{
       font-size:17px;
       font-weight:850;
@@ -583,6 +596,50 @@
       font-weight:800;
       color:#475467;
       white-space:nowrap;
+    }
+
+    .issue-card-side{
+      display:grid;
+      gap:10px;
+      justify-items:end;
+    }
+
+    .issue-card-actions{
+      display:flex;
+      align-items:center;
+      gap:8px;
+      flex-wrap:wrap;
+      justify-content:flex-end;
+    }
+
+    .issue-card-action{
+      min-width:120px;
+      min-height:40px;
+      padding:8px 14px;
+      border-radius:12px;
+      border:1px solid var(--line-strong);
+      background:#fff;
+      color:var(--ink);
+      font-weight:750;
+      cursor:pointer;
+      box-shadow:0 1px 2px rgba(15,23,42,.04);
+    }
+
+    .issue-card-action:hover{
+      border-color:#9dbbf7;
+      background:#f8fbff;
+    }
+
+    .issue-card-action.chat{
+      background:#eef5ff;
+      border-color:#bfd1ff;
+      color:var(--blue);
+    }
+
+    .issue-card-action.dashboard{
+      background:#fff;
+      border-color:var(--line-strong);
+      color:var(--ink);
     }
 
     .detail-hero{
@@ -2558,7 +2615,399 @@
       border:0;
     }
 
-    /* ── VM Topology Diagram ──────────────────────────────────── */
+    /* ── Ops Issue Board ──────────────────────────────────────── */
+    .ops-workbench{
+      display:grid;
+      gap:18px;
+    }
+
+    .ops-issue-board{
+      display:grid;
+      gap:18px;
+      padding:clamp(18px,2vw,28px);
+      border:1px solid rgba(184,199,219,.78);
+      border-radius:32px;
+      background:
+        linear-gradient(rgba(193,206,224,.35) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(193,206,224,.35) 1px, transparent 1px),
+        radial-gradient(circle at top right, rgba(35,100,210,.10), transparent 24%),
+        linear-gradient(180deg, rgba(255,255,255,.98), rgba(246,249,255,.94));
+      background-size:32px 32px,32px 32px,auto,auto;
+      box-shadow:0 24px 48px rgba(16,35,63,.08);
+      overflow:hidden;
+    }
+
+    .ops-issue-board-head{
+      display:flex;
+      align-items:flex-start;
+      justify-content:space-between;
+      gap:16px;
+      flex-wrap:wrap;
+    }
+
+    .ops-issue-board-kicker{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      width:max-content;
+      padding:6px 11px;
+      border-radius:999px;
+      background:#edf4ff;
+      border:1px solid #c6d7ff;
+      color:#1d4ed8;
+      font-size:11px;
+      font-weight:850;
+      letter-spacing:.08em;
+      text-transform:uppercase;
+    }
+
+    .ops-issue-board-title{
+      margin-top:10px;
+      font-size:clamp(28px,3vw,42px);
+      line-height:1.06;
+      font-weight:900;
+      letter-spacing:-.03em;
+    }
+
+    .ops-issue-board-copy{
+      margin-top:10px;
+      max-width:78ch;
+      color:#526581;
+      font-size:clamp(14px,1.35vw,17px);
+      line-height:1.7;
+    }
+
+    .ops-issue-board-meta{
+      display:flex;
+      align-items:center;
+      gap:8px;
+      flex-wrap:wrap;
+      justify-content:flex-end;
+    }
+
+    .ops-badge-grid{
+      display:grid;
+      grid-template-columns:repeat(4,minmax(0,1fr));
+      gap:clamp(14px,1.5vw,22px);
+      align-items:stretch;
+    }
+
+    .ops-badge{
+      min-height:clamp(190px,24vw,250px);
+      padding:clamp(18px,1.8vw,24px);
+      border-radius:28px;
+      border:2px solid rgba(16,35,63,.16);
+      background:rgba(255,255,255,.92);
+      text-align:center;
+      display:grid;
+      gap:14px;
+      align-content:center;
+      justify-items:center;
+      cursor:pointer;
+      position:relative;
+      overflow:hidden;
+      transition:transform .2s ease,border-color .2s ease,box-shadow .2s ease,background .2s ease;
+    }
+
+    .ops-badge::before{
+      content:"";
+      position:absolute;
+      inset:auto auto -52px -24px;
+      width:120px;
+      height:120px;
+      border-radius:50%;
+      background:currentColor;
+      opacity:.08;
+      pointer-events:none;
+    }
+
+    .ops-badge:hover{
+      transform:translateY(-2px);
+      border-color:#7fa7ef;
+      box-shadow:0 18px 34px rgba(24,44,83,.10);
+      background:#fff;
+    }
+
+    .ops-badge.active{
+      border-color:#2364d2;
+      box-shadow:0 0 0 4px rgba(35,100,210,.12), 0 20px 38px rgba(24,44,83,.12);
+      background:linear-gradient(180deg,#ffffff,#f4f8ff);
+    }
+
+    .ops-badge.error{color:#b42336}
+    .ops-badge.warn{color:#9a5800}
+    .ops-badge.ok{color:#18794e}
+
+    .ops-badge-title{
+      font-size:clamp(28px,3vw,40px);
+      line-height:1.1;
+      font-weight:350;
+      color:#10233f;
+      letter-spacing:-.03em;
+      text-wrap:balance;
+    }
+
+    .ops-badge-copy{
+      max-width:22ch;
+      color:#526581;
+      font-size:clamp(14px,1.3vw,17px);
+      line-height:1.55;
+      text-wrap:balance;
+    }
+
+    .ops-badge-summary{
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      gap:8px;
+      flex-wrap:wrap;
+    }
+
+    .ops-mini-pill{
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+      padding:7px 11px;
+      border-radius:999px;
+      border:1px solid currentColor;
+      background:#fff;
+      font-size:11px;
+      font-weight:850;
+      line-height:1;
+      white-space:nowrap;
+    }
+
+    .ops-mini-pill.error{
+      color:var(--red);
+      background:#fff4f6;
+      border-color:#efbcc6;
+    }
+
+    .ops-mini-pill.warn{
+      color:var(--amber);
+      background:#fff8ea;
+      border-color:#efcf95;
+    }
+
+    .ops-mini-pill.info{
+      color:var(--blue);
+      background:#edf4ff;
+      border-color:#bfd1ff;
+    }
+
+    .ops-mini-pill.selected{
+      color:#2364d2;
+      background:#edf4ff;
+      border-color:#9dbbf7;
+    }
+
+    .ops-detail-panel{
+      display:grid;
+      gap:16px;
+      padding:clamp(16px,1.7vw,24px);
+      border-radius:28px;
+      border:1px solid #d4e0ee;
+      background:linear-gradient(180deg,rgba(255,255,255,.95),rgba(245,249,255,.92));
+      box-shadow:0 18px 34px rgba(20,38,70,.06);
+    }
+
+    .ops-detail-head{
+      display:flex;
+      align-items:flex-start;
+      justify-content:space-between;
+      gap:14px;
+      flex-wrap:wrap;
+    }
+
+    .ops-detail-title{
+      font-size:clamp(24px,2.3vw,32px);
+      line-height:1.12;
+      font-weight:900;
+      color:#10233f;
+      letter-spacing:-.03em;
+    }
+
+    .ops-detail-copy{
+      margin-top:8px;
+      max-width:80ch;
+      font-size:14px;
+      line-height:1.7;
+      color:#526581;
+    }
+
+    .ops-detail-metrics{
+      display:grid;
+      grid-template-columns:repeat(3,minmax(0,1fr));
+      gap:12px;
+    }
+
+    .ops-detail-metric{
+      padding:14px 16px;
+      border-radius:18px;
+      border:1px solid #d7e2ef;
+      background:#fff;
+      display:grid;
+      gap:4px;
+      min-width:0;
+    }
+
+    .ops-detail-metric span{
+      font-size:11px;
+      font-weight:850;
+      letter-spacing:.08em;
+      text-transform:uppercase;
+      color:#667085;
+    }
+
+    .ops-detail-metric strong{
+      font-size:24px;
+      line-height:1;
+      font-weight:900;
+      color:#10233f;
+    }
+
+    .ops-detail-metric.error strong{color:#b42336}
+    .ops-detail-metric.warn strong{color:#9a5800}
+    .ops-detail-metric.info strong{color:#2364d2}
+
+    .ops-node-grid{
+      display:grid;
+      grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+      gap:12px;
+    }
+
+    .ops-node-card{
+      width:100%;
+      padding:15px 16px;
+      border-radius:20px;
+      border:1px solid #d8e2ef;
+      background:#fff;
+      display:grid;
+      gap:10px;
+      text-align:left;
+      cursor:pointer;
+      transition:transform .18s ease,border-color .18s ease,box-shadow .18s ease,background .18s ease;
+    }
+
+    .ops-node-card:hover{
+      transform:translateY(-1px);
+      border-color:#bfd0e7;
+      box-shadow:0 12px 22px rgba(24,44,83,.08);
+    }
+
+    .ops-node-card.active{
+      border-color:#7fa7ef;
+      box-shadow:0 0 0 3px rgba(35,100,210,.12), 0 12px 22px rgba(24,44,83,.08);
+    }
+
+    .ops-node-card.error{
+      background:linear-gradient(180deg,#fff5f7,#ffffff);
+      border-color:#efbcc6;
+    }
+
+    .ops-node-card.warn{
+      background:linear-gradient(180deg,#fffaf2,#ffffff);
+      border-color:#efcf95;
+    }
+
+    .ops-node-card.ok{
+      background:linear-gradient(180deg,#f6fcf8,#ffffff);
+      border-color:#c4e2cf;
+    }
+
+    .ops-node-top{
+      display:flex;
+      align-items:flex-start;
+      justify-content:space-between;
+      gap:10px;
+    }
+
+    .ops-node-title{
+      font-size:15px;
+      line-height:1.35;
+      font-weight:900;
+      color:#10233f;
+      overflow-wrap:anywhere;
+    }
+
+    .ops-node-copy{
+      font-size:12px;
+      line-height:1.55;
+      color:#526581;
+    }
+
+    .ops-node-meta{
+      display:flex;
+      align-items:center;
+      gap:8px;
+      flex-wrap:wrap;
+    }
+
+    .ops-node-metric{
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+      padding:5px 9px;
+      border-radius:999px;
+      background:#f8fbff;
+      border:1px solid #dbe5f1;
+      font-size:11px;
+      font-weight:800;
+      color:#35506f;
+      white-space:nowrap;
+      max-width:100%;
+    }
+
+    .ops-node-metric span:last-child{
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
+
+    .ops-node-status{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      min-width:64px;
+      padding:6px 9px;
+      border-radius:999px;
+      font-size:11px;
+      font-weight:900;
+      letter-spacing:.07em;
+      text-transform:uppercase;
+      border:1px solid transparent;
+      white-space:nowrap;
+    }
+
+    .ops-node-status.error{
+      background:#fff1f4;
+      border-color:#efbcc6;
+      color:#b42336;
+    }
+
+    .ops-node-status.warn{
+      background:#fff8ea;
+      border-color:#efcf95;
+      color:#9a5800;
+    }
+
+    .ops-node-status.ok{
+      background:#eef8f1;
+      border-color:#c4e2cf;
+      color:#18794e;
+    }
+
+    .ops-node-empty{
+      padding:18px;
+      border-radius:18px;
+      border:1px dashed #cbd6e5;
+      background:rgba(255,255,255,.74);
+      text-align:center;
+      color:#667085;
+      font-size:13px;
+      line-height:1.6;
+    }
+
+    /* ── VM Topology Diagram legacy styles retained below ─────── */
     .vm-topo-diagram{
       border:1.5px dashed var(--line-strong);
       border-radius:var(--radius-lg);
@@ -2828,21 +3277,91 @@
     }
     .vm-topo-diagram-col{min-width:0}
 
-    /* ── Topology + RCA 2-col layout ─────────── */
-    .topo-rca-layout{display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:16px;align-items:start}
-    .topo-main-stack{display:grid;gap:14px;min-width:0}
-
-    /* ── RCA side panel ─────────────────────── */
-    .rca-side-panel{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius-md);padding:20px;display:grid;gap:14px;position:sticky;top:88px}
-    .rca-side-title{font-size:11px;font-weight:850;letter-spacing:.08em;text-transform:uppercase;color:var(--blue)}
-    .rca-side-label{font-size:11px;font-weight:700;color:var(--muted);margin-bottom:4px}
-    .rca-side-cause{font-size:13px;line-height:1.6;color:var(--ink)}
-    .rca-side-rec{font-size:12px;line-height:1.55;color:var(--muted);border-left:3px solid var(--blue-soft);padding-left:10px;margin-top:4px}
-    .rca-icon-row{display:flex;gap:6px}
-    .rca-icon-btn{display:flex;flex-direction:column;align-items:center;gap:5px;border:1px solid var(--line);border-radius:12px;background:var(--panel-soft);padding:10px 6px;cursor:pointer;font-size:10px;font-weight:700;color:var(--muted);flex:1;transition:all .18s;text-align:center;line-height:1.2}
+    /* ── RCA panel ──────────────────────────── */
+    .rca-side-panel{
+      display:grid;
+      gap:16px;
+      padding:clamp(18px,2vw,26px);
+      border:1px solid #d7e2ef;
+      border-radius:28px;
+      background:linear-gradient(180deg,rgba(255,255,255,.97),rgba(245,249,255,.94));
+      box-shadow:0 20px 38px rgba(20,38,70,.08);
+    }
+    .rca-side-title{
+      text-align:center;
+      font-size:clamp(24px,2.1vw,32px);
+      line-height:1.2;
+      font-weight:900;
+      letter-spacing:-.03em;
+      color:#10233f;
+    }
+    .rca-side-grid{
+      display:grid;
+      grid-template-columns:repeat(2,minmax(0,1fr));
+      gap:14px;
+    }
+    .rca-side-card{
+      padding:16px 18px;
+      border-radius:20px;
+      border:1px solid #dbe5f1;
+      background:#fff;
+      display:grid;
+      gap:8px;
+      min-width:0;
+    }
+    .rca-side-label{
+      font-size:11px;
+      font-weight:850;
+      letter-spacing:.08em;
+      text-transform:uppercase;
+      color:#667085;
+    }
+    .rca-side-cause,.rca-side-rec{
+      font-size:14px;
+      line-height:1.7;
+      color:#10233f;
+    }
+    .rca-icon-row{
+      display:grid;
+      grid-template-columns:repeat(3,minmax(0,1fr));
+      gap:10px;
+    }
+    .rca-icon-btn{
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      justify-content:center;
+      gap:8px;
+      min-height:92px;
+      border:1px solid var(--line);
+      border-radius:18px;
+      background:var(--panel-soft);
+      padding:14px 12px;
+      cursor:pointer;
+      font-size:12px;
+      font-weight:800;
+      color:var(--muted);
+      transition:all .18s;
+      text-align:center;
+      line-height:1.35;
+    }
     .rca-icon-btn:hover{border-color:var(--blue);color:var(--blue);background:var(--blue-soft)}
-    .rca-icon-btn .ico{font-size:18px;line-height:1}
-    .rca-chat-btn{width:100%;height:40px;border-radius:12px;background:linear-gradient(135deg,#2364d2,#3a7cf1);border:none;color:#fff;font-weight:750;font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px}
+    .rca-icon-btn .ico{font-size:24px;line-height:1}
+    .rca-chat-btn{
+      width:100%;
+      min-height:48px;
+      border-radius:16px;
+      background:linear-gradient(135deg,#2364d2,#3a7cf1);
+      border:none;
+      color:#fff;
+      font-weight:800;
+      font-size:14px;
+      cursor:pointer;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      gap:8px;
+    }
     .rca-chat-btn:hover{background:linear-gradient(135deg,#1e57bd,#2f72ea)}
     .rca-divider{height:1px;background:var(--line)}
 
@@ -2964,8 +3483,9 @@
       .fault-map-evidence{justify-content:flex-start}
       .topology-workspace{grid-template-columns:1fr}
       .topology-canvas-frame{grid-template-columns:1fr}
-      .topo-rca-layout{grid-template-columns:1fr}
-      .rca-side-panel{position:static;top:auto}
+      .ops-badge-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+      .ops-detail-metrics{grid-template-columns:1fr}
+      .rca-side-grid{grid-template-columns:1fr}
       .rca-preview{grid-template-columns:1fr}
       .chat-launch{justify-self:start}
     }
@@ -3000,6 +3520,8 @@
       .issue-card{grid-template-columns:1fr}
       .log-row{grid-template-columns:1fr}
       .node-log-row{grid-template-columns:1fr}
+      .ops-badge-grid{grid-template-columns:1fr}
+      .rca-icon-row{grid-template-columns:1fr}
       .chat-modal-overlay{padding:82px 12px 18px}
       .assistant-modal-head,.assistant-modal-body,.assistant-modal-compose{padding-left:16px;padding-right:16px}
     }
@@ -3107,6 +3629,7 @@
     <div class="topbar-right">
       <div class="live-pill"><span class="status-dot"></span><span id="liveText">Live</span></div>
       <div class="mcp-pill hidden" id="mcpPill"><span class="mcp-pill-dot"></span><span>MCP</span></div>
+      <button class="btn subtle" id="viewSwitchBtn" type="button">Chat View</button>
       <button class="btn" id="langBtn" type="button">English</button>
     </div>
   </header>
@@ -3119,10 +3642,11 @@
   </div>
 
   <script>
+    const initialParams = new URLSearchParams(location.search);
     const state = {
-      lang: new URLSearchParams(location.search).get('lang') || 'ja',
+      lang: initialParams.get('lang') || 'ja',
       issues: [],
-      currentPage: 'home',
+      currentPage: 'issues',
       selectedIssueId: null,
       loadingIssues: true,
       loadingDetail: false,
@@ -3132,6 +3656,7 @@
       severityFilter: '',
       topologyPayload: null,
       topologySelected: null,
+      topologyBadge: null,
       topologyLogsSelected: null,
       componentLogSource: 'all',
       componentLogs: [],
@@ -3150,6 +3675,9 @@
       appHealthData: null,
       appHealthLoading: false,
       mcpActive: false,
+      hasAutoOpenedIssue: false,
+      initialIssueId: Number(initialParams.get('issue_id') || 0) || null,
+      initialMode: initialParams.get('mode') || '',
     };
 
     const t = {
@@ -3158,6 +3686,8 @@
         mark:'助',
         subtitle:'Operations overview and incident detail',
         live:'Live',
+        switchToChat:'Chat View',
+        openRemediationInChat:'Remediation In Chat',
         lang:'日本語',
         homeLine:'See the system first. Stop the issue before it spreads.',
         sidebarGroup:'Workspace',
@@ -3200,6 +3730,8 @@
         primaryPoint:'Primary point',
         issueListEmptyTitle:'No issues matched',
         issueListEmptyCopy:'Try adjusting the search or filters to broaden the results.',
+        chatView:'Chat view',
+        dashboardView:'Dashboard',
         loadingTitle:'Loading dashboard data',
         loadingCopy:'Fetching the latest issues and live metrics.',
         detailLoadingTitle:'Loading issue detail',
@@ -3264,6 +3796,8 @@
         mark:'助',
         subtitle:'運用概要とインシデント詳細',
         live:'ライブ',
+        switchToChat:'会話ビュー',
+        openRemediationInChat:'会話で対応フロー',
         lang:'English',
         homeLine:'まず全体を捉え、障害が広がる前に止める。',
         sidebarGroup:'ワークスペース',
@@ -3306,6 +3840,8 @@
         primaryPoint:'主要ポイント',
         issueListEmptyTitle:'一致するチケットがありません',
         issueListEmptyCopy:'検索条件やフィルターを調整してください。',
+        chatView:'チャット表示',
+        dashboardView:'ダッシュボード',
         loadingTitle:'ダッシュボードを読み込み中',
         loadingCopy:'最新の問題一覧と指標を取得しています。',
         detailLoadingTitle:'問題詳細を読み込み中',
@@ -3318,7 +3854,7 @@
         severity:'重大度',
         createdOn:'作成日',
         likelyCause:'推定原因',
-        nextAction:'推奨アクション',
+        nextAction:'推奨対応',
         technicalView:'技術ビュー',
         technicalCopy:'コンポーネントを選ぶと証拠とログを確認できます。詳細表示中は問題一覧を隠します。',
         runtimeTitle:'ランタイムトポロジー',
@@ -3348,19 +3884,19 @@
         openChatPanel:'RCA チャットを開く',
         closeChatPanel:'RCA チャットを閉じる',
         selectedComponent:'選択中のコンポーネント',
-        askPlaceholder:'原因、影響、次の対応を質問してください…',
+        askPlaceholder:'原因、影響、次に取る対応を入力してください…',
         askButton:'質問',
         quickSummary:'要約',
-        quickFive:'5 Whys',
+        quickFive:'なぜを5回',
         quickDetailed:'詳細レポート',
         chatAnswerTitle:'問題に関する回答',
         noIssueSpecificAnswer:'この質問に対する問題固有の回答は返されませんでした。',
         assistantWaiting:'クイック質問を選ぶか、自由入力で分析を開始してください。',
-        assistantThinking:'インシデント証拠を確認しています…',
+        assistantThinking:'証拠と関連シグナルを確認しています…',
         operator:'オペレーター',
-        assistant:'AIOPS',
-        summaryTitle:'状況サマリー',
-        detailedTitle:'詳細レポート',
+        assistant:'AIOPSアシスタント',
+        summaryTitle:'要点まとめ',
+        detailedTitle:'詳細分析',
         evidenceList:'根拠',
         noIssueTitle:'問題はまだ選択されていません',
         noIssueCopy:'詳細を確認したい時は問題一覧からチケットを選択してください。',
@@ -3483,6 +4019,39 @@
       return date.toLocaleDateString('en-US', {year:'numeric', month:'short', day:'numeric'});
     }
 
+    function dashboardBasePath(){
+      return state.lang === 'ja' ? '/ops_j' : '/ops';
+    }
+
+    function conversationBasePath(){
+      return state.lang === 'ja' ? '/conversation_j' : '/assistant_j';
+    }
+
+    function buildDashboardUrl(){
+      const params = new URLSearchParams();
+      params.set('lang', state.lang);
+      if(state.selectedIssueId) params.set('issue_id', String(state.selectedIssueId));
+      if(state.chatPanelOpen) params.set('mode', 'rca');
+      return `${dashboardBasePath()}?${params.toString()}`;
+    }
+
+    function buildConversationUrl(mode = 'issue'){
+      const params = new URLSearchParams();
+      params.set('lang', state.lang);
+      if(state.selectedIssueId) params.set('issue_id', String(state.selectedIssueId));
+      if(mode && mode !== 'issue') params.set('mode', mode);
+      return `${conversationBasePath()}?${params.toString()}`;
+    }
+
+    function syncDashboardUrl(){
+      if(typeof history?.replaceState !== 'function') return;
+      history.replaceState(null, '', buildDashboardUrl());
+    }
+
+    function goToConversationView(mode = 'issue'){
+      location.href = buildConversationUrl(mode);
+    }
+
     function issueMeta(issue){
       const raw = issue?.metadata_json;
       if(!raw) return {};
@@ -3561,6 +4130,12 @@
       return `sev-${severity || ''}`;
     }
 
+    function groupToneOf(nodes){
+      if((nodes || []).some(node => String(node?.status || '').toLowerCase() === 'error')) return 'error';
+      if((nodes || []).some(node => String(node?.status || '').toLowerCase() === 'warn')) return 'warn';
+      return 'ok';
+    }
+
     function statusLabel(status){
       return status === 'error' ? 'ERROR' : status === 'warn' ? 'WARN' : 'OK';
     }
@@ -3568,6 +4143,8 @@
     function localizeNodeName(node, issue){
       const name = String(node?.name || node?.id || '').trim();
       const catalog = {
+        'sample-agent': {en:'sample-agent', ja:'サンプル医療検索エージェント'},
+        'triage-agent': {en:'triage-agent', ja:'トリアージエージェント'},
         'vm host': {en:'Host', ja:'VMホスト'},
         'background job': {en:'Background Job', ja:'バックグラウンドジョブ'},
         'docker runtime': {en:'Docker Runtime', ja:'Dockerランタイム'},
@@ -3590,11 +4167,15 @@
         'Host-side workload / scheduled batch activity': {en:'Host-side workload / scheduled batch activity', ja:'ホスト側ワークロード / 定期バッチ処理'},
         'Docker runtime and isolation': {en:'Docker runtime and isolation', ja:'Dockerランタイムと分離'},
         'Container runtime and isolation': {en:'Container runtime and isolation', ja:'コンテナランタイムと分離'},
+        'Container runtime and service isolation': {en:'Container runtime and service isolation', ja:'コンテナランタイムとサービス分離'},
         'Container boundary, CPU sharing, and service isolation': {en:'Container boundary, CPU sharing, and service isolation', ja:'コンテナ境界、CPU共有、サービス分離'},
         'Primary application service': {en:'Primary application service', ja:'主要アプリケーションサービス'},
+        'Primary retrieval and answer generation service': {en:'Primary retrieval and answer generation service', ja:'主要な検索・回答生成サービス'},
+        'Dependent triage workflow calling sample-agent': {en:'Dependent triage workflow calling sample-agent', ja:'sample-agent を呼び出す依存トリアージフロー'},
         'Metrics scraping and alerting': {en:'Metrics scraping and alerting', ja:'メトリクス収集とアラート'},
         'Trace capture and LLM observability': {en:'Trace capture and LLM observability', ja:'トレース取得とLLM可観測性'},
         'Stateful vector dependency': {en:'Stateful vector dependency', ja:'状態保持型ベクトル依存'},
+        'Vector store / retrieval dependency': {en:'Vector store / retrieval dependency', ja:'ベクトルストア / 検索依存先'},
       };
       return map[role]?.[state.lang] || role;
     }
@@ -3607,16 +4188,123 @@
         'Severity': {en:'Severity', ja:'重大度'},
         'Status': {en:'Status', ja:'状態'},
         'Container': {en:'Container', ja:'コンテナ'},
+        'Container CPU': {en:'Container CPU', ja:'コンテナCPU'},
         'CPU': {en:'CPU', ja:'CPU'},
         'Memory': {en:'Memory', ja:'メモリ'},
+        'Latency': {en:'Latency', ja:'遅延'},
+        'Avg latency': {en:'Avg latency', ja:'平均遅延'},
+        'Alert': {en:'Alert', ja:'アラート'},
         'Agent p99': {en:'Agent p99', ja:'エージェントp99'},
         'Baseline p99': {en:'Baseline p99', ja:'通常時p99'},
+        'Upstream p99': {en:'Upstream p99', ja:'上流p99'},
+        '5xx rate': {en:'5xx rate', ja:'5xx率'},
+        'Queue depth': {en:'Queue depth', ja:'キュー深度'},
+        'Timeout rate': {en:'Timeout rate', ja:'タイムアウト率'},
+        'Cascade failures': {en:'Cascade failures', ja:'波及障害件数'},
+        'Last upstream status': {en:'Last upstream status', ja:'直近の上流状態'},
+        'Failed requests': {en:'Failed requests', ja:'失敗リクエスト数'},
       };
       return map[label]?.[state.lang] || label;
     }
 
     function nodeSummaryOf(node){
       return cleanDisplayText(node?.summary || node?.error_message || '') || localizeNodeRole(node) || '';
+    }
+
+    function uniqueNodeList(nodes){
+      const seen = new Set();
+      return (nodes || []).filter(node => {
+        const id = String(node?.id || '');
+        if(!id || seen.has(id)) return false;
+        seen.add(id);
+        return true;
+      });
+    }
+
+    function topologyBadgeIdForNode(node, issue){
+      if(!node) return 'agent';
+      const text = `${node?.id || ''} ${node?.name || ''} ${node?.role || ''}`.toLowerCase();
+      const zone = String(node?.zone || '').toLowerCase();
+      const issueTokens = [issue?.app_name, appOf(issue)].map(value => String(value || '').toLowerCase()).filter(Boolean);
+      if(node?.id === 'vm-host' || zone === 'host' || /vm host|host-side|scheduler|network stack/.test(text)) return 'vm';
+      if(/docker|container|runtime|isolation|pod/.test(text)) return 'docker';
+      if(issueTokens.some(token => token && text.includes(token))) return 'agent';
+      if(node?.id === 'ai-agent' || zone === 'service' || zone === 'application' || zone === 'caller' || /agent|service|application|worker|retrieval|triage/.test(text)) return 'agent';
+      return 'other';
+    }
+
+    function buildOpsBadgeGroups(topology, issue){
+      const nodes = Array.isArray(topology?.nodes) ? topology.nodes : [];
+      const appName = appOf(issue) || issue?.app_name || 'agent';
+      const buckets = {
+        vm: [],
+        docker: [],
+        agent: [],
+        other: [],
+      };
+
+      nodes.forEach(node => {
+        const badgeId = topologyBadgeIdForNode(node, issue);
+        buckets[badgeId].push(node);
+      });
+
+      const labels = state.lang === 'ja'
+        ? {
+            vm: {title:'VM', copy:'ホスト側の異常や基盤シグナル'},
+            docker: {title:'Docker', copy:'コンテナ実行系の警告と異常'},
+            agent: {title:appName, copy:`問題が発生したアプリケーション: ${appName}`},
+            other: {title:'その他', copy:'関連コンポーネントと監視証拠'},
+          }
+        : {
+            vm: {title:'VM', copy:'Host-level faults and platform signals'},
+            docker: {title:'Docker', copy:'Container runtime warnings and failures'},
+            agent: {title:appName, copy:`Application raised by this issue: ${appName}`},
+            other: {title:'Other', copy:'Related components and evidence'},
+          };
+
+      return ['vm', 'docker', 'agent', 'other'].map(id => {
+        const groupNodes = uniqueNodeList(buckets[id]);
+        const preferredNode = id === 'agent'
+          ? groupNodes.find(node => String(node?.id || '') === 'ai-agent')
+            || groupNodes.find(node => {
+              const text = `${node?.id || ''} ${node?.name || ''} ${node?.service_name || ''}`.toLowerCase();
+              return appName && text.includes(String(appName).toLowerCase());
+            })
+          : id === 'other'
+            ? groupNodes.find(node => String(node?.id || '') === 'prometheus')
+              || groupNodes.find(node => String(node?.id || '') === 'langfuse')
+            : null;
+        const errorCount = groupNodes.filter(node => node.status === 'error').length;
+        const warnCount = groupNodes.filter(node => node.status === 'warn').length;
+        const infoCount = Math.max(groupNodes.length - errorCount - warnCount, 0);
+        const firstNode = preferredNode
+          || groupNodes.find(node => node.status === 'error')
+          || groupNodes.find(node => node.status === 'warn')
+          || groupNodes[0]
+          || null;
+        return {
+          id,
+          title: labels[id].title,
+          copy: labels[id].copy,
+          nodes: groupNodes,
+          errorCount,
+          warnCount,
+          infoCount,
+          tone: groupToneOf(groupNodes),
+          firstNodeId: firstNode?.id || null,
+        };
+      });
+    }
+
+    function getSelectedBadgeGroup(topology, issue){
+      const groups = buildOpsBadgeGroups(topology, issue);
+      if(!groups.length) return null;
+      return groups.find(group => group.id === state.topologyBadge)
+        || groups.find(group => group.nodes.some(node => node.id === state.topologySelected))
+        || groups.find(group => group.errorCount > 0)
+        || groups.find(group => group.warnCount > 0)
+        || groups.find(group => group.id === 'agent')
+        || groups[0];
     }
 
     function topologyCauseOf(topology, analysis, issue){
@@ -3784,6 +4472,39 @@
       };
     }
 
+    function assistantServiceName(node, issue){
+      const raw = String(node?.service_name || node?.app_name || node?.name || '').trim();
+      if(!raw) return issue?.app_name || '';
+      const normalized = raw.toLowerCase();
+      if(normalized === 'ai agent' || normalized === 'ai-agent'){
+        return issue?.app_name || raw;
+      }
+      return raw;
+    }
+
+    function assistantServiceContext(issue, topology){
+      const nodes = Array.isArray(topology?.nodes) ? topology.nodes : [];
+      const projection = topology?.projection || {};
+      const findNode = id => nodes.find(node => String(node?.id || '') === String(id || ''));
+      const symptomNode = findNode(projection.symptom_component_id);
+      const rootNode = findNode(projection.root_component_id);
+      const affectedService = assistantServiceName(symptomNode, issue) || issue?.app_name || '';
+      let rootCandidateService = assistantServiceName(rootNode, issue) || affectedService;
+      if(rootCandidateService === affectedService){
+        const alternate = nodes.find(node => {
+          const candidate = assistantServiceName(node, issue);
+          return candidate && candidate !== affectedService && ['warn', 'error'].includes(String(node?.status || '').toLowerCase());
+        });
+        if(alternate){
+          rootCandidateService = assistantServiceName(alternate, issue);
+        }
+      }
+      return {
+        affectedService,
+        rootCandidateService: rootCandidateService || affectedService,
+      };
+    }
+
     function buildFiveWhys(issue, analysis){
       const cause = analysisCauseOf(analysis) || descOf(issue) || titleOf(issue);
       const action = analysisActionOf(analysis) || tr('nextAction');
@@ -3825,6 +4546,8 @@
     }
 
     function buildAssistantChatText(question, issue, analysis, topology, live){
+      const serverAnswer = cleanDisplayText(live?.answer);
+      if(serverAnswer) return serverAnswer;
       const intent = detectAssistantIntent(question);
       const impact = buildImpactSummary(issue, topology, analysis);
       const cause = analysisCauseOf(analysis) || impact.cause || descOf(issue) || titleOf(issue);
@@ -3875,6 +4598,7 @@
         state.selectedIssueId = null;
         state.topologyPayload = null;
         state.topologySelected = null;
+        state.topologyBadge = null;
         state.topologyLogsSelected = null;
         state.componentLogs = [];
         state.componentLogMeta = null;
@@ -3895,14 +4619,36 @@
           state.selectedIssueId = null;
           state.topologyPayload = null;
           state.topologySelected = null;
+          state.topologyBadge = null;
           state.topologyLogsSelected = null;
           state.componentLogs = [];
           state.componentLogMeta = null;
+        } else if(state.initialIssueId && state.issues.some(issue => issue.id === state.initialIssueId)){
+          state.selectedIssueId = state.initialIssueId;
+          state.hasAutoOpenedIssue = true;
+          await loadSelectedTopology();
+          if(['chat','rca','remediation'].includes(state.initialMode)){
+            state.chatPanelOpen = true;
+          }
+          state.initialIssueId = null;
+          state.initialMode = '';
+        } else if(state.currentPage === 'issues' && !state.hasAutoOpenedIssue){
+          const preferred = state.issues.find(issue => issue.status !== 'RESOLVED' && issue.severity === 'critical')
+            || state.issues.find(issue => issue.status !== 'RESOLVED' && issue.severity === 'high')
+            || state.issues.find(issue => issue.status !== 'RESOLVED')
+            || state.issues[0]
+            || null;
+          if(preferred){
+            state.selectedIssueId = preferred.id;
+            state.hasAutoOpenedIssue = true;
+            await loadSelectedTopology();
+          }
         }
       } catch (error){
         state.issues = [];
         state.topologyPayload = null;
         state.topologySelected = null;
+        state.topologyBadge = null;
         state.topologyLogsSelected = null;
         state.componentLogMeta = null;
         state.componentLogs = [{timestamp:new Date().toISOString(), level:'ERROR', message:String(error.message || error)}];
@@ -3919,6 +4665,7 @@
       state.loadingDetail = true;
       state.topologyPayload = null;
       state.topologySelected = null;
+      state.topologyBadge = null;
       state.topologyLogsSelected = null;
       state.componentLogSource = 'all';
       state.componentLogs = [];
@@ -3934,10 +4681,23 @@
       render();
     }
 
+    function conversationUrlFor(issueId){
+      const params = new URLSearchParams();
+      if(issueId) params.set('issue_id', String(issueId));
+      params.set('lang', state.lang);
+      return `/conversation_j?${params.toString()}`;
+    }
+
+    function openConversation(issueId){
+      if(!issueId) return;
+      window.location.href = conversationUrlFor(issueId);
+    }
+
     function closeIssueDetail(){
       state.selectedIssueId = null;
       state.topologyPayload = null;
       state.topologySelected = null;
+      state.topologyBadge = null;
       state.topologyLogsSelected = null;
       state.componentLogSource = 'all';
       state.componentLogs = [];
@@ -3956,19 +4716,30 @@
       try{
         const res = await fetch(`/api/topology/issues/${issue.id}?lang=${encodeURIComponent(state.lang)}`);
         if(!res.ok) throw new Error(await res.text());
-        state.topologyPayload = await res.json();
+        state.topologyPayload = normalizeLegacyTopologyPayload(await res.json(), issue);
       } catch (error){
-        state.topologyPayload = buildFallbackTopologyPayload(issue, String(error.message || error));
+        state.topologyPayload = normalizeLegacyTopologyPayload(
+          buildFallbackTopologyPayload(issue, String(error.message || error)),
+          issue
+        );
       }
       state.topologySelected = null;
+      state.topologyBadge = null;
       state.topologyLogsSelected = null;
       state.componentLogSource = 'all';
       state.componentLogs = [];
       state.componentLogMeta = null;
       state.chatPanelOpen = false;
-      const defaultNodeId = state.topologyPayload?.topology?.default_component_id || null;
+      const topology = state.topologyPayload?.topology || {};
+      const defaultNodeId = topology.default_component_id
+        || getSelectedBadgeGroup(topology, issue)?.firstNodeId
+        || null;
       if(defaultNodeId){
         state.topologySelected = defaultNodeId;
+        state.topologyBadge = topologyBadgeIdForNode(
+          (topology.nodes || []).find(node => node.id === defaultNodeId),
+          issue
+        );
         state.topologyLogsSelected = defaultNodeId;
         await loadComponentLogs();
       }
@@ -4020,6 +4791,11 @@
 
     async function selectTopologyNode(nodeId){
       if(!nodeId) return;
+      const issue = getSelectedIssue();
+      const node = (state.topologyPayload?.topology?.nodes || []).find(item => item.id === nodeId);
+      if(node){
+        state.topologyBadge = topologyBadgeIdForNode(node, issue);
+      }
       if(state.topologySelected === nodeId && state.topologyLogsSelected === nodeId && state.componentLogs.length){
         return;
       }
@@ -4030,6 +4806,19 @@
       state.componentLogMeta = null;
       render();
       await loadComponentLogs();
+    }
+
+    async function selectTopologyGroup(groupId){
+      const issue = getSelectedIssue();
+      const topology = state.topologyPayload?.topology || {};
+      const group = buildOpsBadgeGroups(topology, issue).find(item => item.id === groupId);
+      state.topologyBadge = groupId;
+      render();
+      if(!group || !group.firstNodeId) return;
+      if(group.nodes.some(node => node.id === state.topologySelected) && group.nodes.some(node => node.id === state.topologyLogsSelected) && state.componentLogs.length){
+        return;
+      }
+      await selectTopologyNode(group.firstNodeId);
     }
 
     async function toggleTopologyLogs(nodeId){
@@ -4058,7 +4847,7 @@
 
     function choosePreferredLogSource(){
       const rows = Array.isArray(state.componentLogs) ? state.componentLogs : [];
-      const rowSources = new Set(rows.map(log => String(log?.source || '').toLowerCase()).filter(Boolean));
+      const rowSources = new Set(rows.map(log => inferredLogSource(log, state.topologyLogsSelected)).filter(Boolean));
       const availableSources = Array.isArray(state.componentLogMeta?.sources)
         ? state.componentLogMeta.sources.map(source => String(source?.id || '').toLowerCase()).filter(Boolean)
         : [];
@@ -4080,6 +4869,15 @@
       state.componentLogSource = 'all';
     }
 
+    function inferredLogSource(log, selectedNodeId){
+      const raw = String(log?.source || log?.source_label || '').toLowerCase();
+      if(raw.includes('prom')) return 'prometheus';
+      if(raw.includes('langfuse')) return 'langfuse';
+      if(selectedNodeId === 'prometheus') return 'prometheus';
+      if(selectedNodeId === 'langfuse') return 'langfuse';
+      return 'aiops-local';
+    }
+
     async function submitAssistantQuery(mode = 'custom'){
       const issue = getSelectedIssue();
       if(!issue) return;
@@ -4094,6 +4892,7 @@
       render();
       const analysis = state.topologyPayload?.analysis || {};
       const topology = state.topologyPayload?.topology || {};
+      const serviceContext = assistantServiceContext(issue, topology);
       try{
         let response;
         if(mode === 'five'){
@@ -4123,8 +4922,8 @@
               body:JSON.stringify({
                 issue_id: issue.id,
                 message: userText,
-                service: issue.app_name,
-                root_candidate_service: issue.app_name,
+                service: serviceContext.affectedService || issue.app_name,
+                root_candidate_service: serviceContext.rootCandidateService || issue.app_name,
                 lang: state.lang,
               }),
             });
@@ -4176,6 +4975,7 @@
         state.selectedIssueId = null;
         state.topologyPayload = null;
         state.topologySelected = null;
+        state.topologyBadge = null;
         state.topologyLogsSelected = null;
         state.componentLogs = [];
         state.componentLogMeta = null;
@@ -4190,11 +4990,13 @@
 
     function openChatPanel(){
       state.chatPanelOpen = true;
+      syncDashboardUrl();
       render();
     }
 
     function closeChatPanel(){
       state.chatPanelOpen = false;
+      syncDashboardUrl();
       render();
     }
 
@@ -4414,8 +5216,8 @@
         ${renderIssueToolbar()}
         <section class="issue-list">
           ${issues.length ? issues.map(issue => `
-            <button class="issue-card" type="button" data-issue-id="${issue.id}">
-              <div>
+            <article class="issue-card" tabindex="0" data-issue-id="${issue.id}" aria-label="${esc(`#${issue.id} ${titleOf(issue)}`)}">
+              <div class="issue-card-main">
                 <div class="issue-title">#${issue.id} ${esc(titleOf(issue))}</div>
                 <div class="chips">
                   <span class="chip ${severityBadgeClass(issue.severity)}">${esc(sevText(issue.severity))}</span>
@@ -4423,8 +5225,14 @@
                   <span class="chip primary-point">${esc(`${tr('primaryPoint')}: ${primaryIncidentPointOf(issue)}`)}</span>
                 </div>
               </div>
-              <div class="age-pill">${esc(age(issue.created_at))}</div>
-            </button>
+              <div class="issue-card-side">
+                <div class="issue-card-actions">
+                  <button class="issue-card-action chat" type="button" data-action="open-conversation" data-conversation-issue-id="${issue.id}">${esc(tr('chatView'))}</button>
+                  <button class="issue-card-action dashboard" type="button" data-action="open-dashboard" data-dashboard-issue-id="${issue.id}">${esc(tr('dashboardView'))}</button>
+                </div>
+                <div class="age-pill">${esc(age(issue.created_at))}</div>
+              </div>
+            </article>
           `).join('') : renderEmptyState(tr('issueListEmptyTitle'), tr('issueListEmptyCopy'))}
         </section>
       `;
@@ -4655,6 +5463,110 @@
       `;
     }
 
+    function servicePathServices(topology, issue){
+      const where = String(topology?.impact?.where || '').trim();
+      const parts = where.includes('->')
+        ? where.split('->').map(part => String(part || '').trim()).filter(Boolean)
+        : [];
+      if(parts.length >= 2) return parts;
+      const issueApp = String(issue?.app_name || '').trim();
+      return issueApp ? ['', issueApp] : [];
+    }
+
+    function collectNodeLogs(nodes, matcher){
+      const seen = new Set();
+      const logs = [];
+      (Array.isArray(nodes) ? nodes : []).forEach(node => {
+        (Array.isArray(node?.logs) ? node.logs : []).forEach(log => {
+          const message = String(log?.message || '').trim();
+          if(!message || !matcher(message, node)) return;
+          const key = `${log.timestamp || ''}|${log.level || ''}|${message}`;
+          if(seen.has(key)) return;
+          seen.add(key);
+          logs.push({
+            timestamp: log.timestamp || new Date().toISOString(),
+            level: log.level || 'INFO',
+            message,
+            source: log.source || '',
+            source_label: log.source_label || '',
+          });
+        });
+      });
+      return logs;
+    }
+
+    function synthesizeLegacyUpstreamNode(topology, issue){
+      const nodes = Array.isArray(topology?.nodes) ? topology.nodes : [];
+      const services = servicePathServices(topology, issue);
+      if(services.length < 2) return null;
+      const upstream = services[0];
+      const downstream = services[services.length - 1];
+      if(!upstream || !downstream || upstream === downstream) return null;
+      if(nodes.some(node => String(node?.id || '').trim() === upstream)) return null;
+
+      const upstreamLogs = collectNodeLogs(nodes, (message, node) => {
+        const text = `${message} ${node?.id || ''} ${node?.name || ''}`.toLowerCase();
+        return text.includes(upstream.toLowerCase());
+      });
+      const promNode = nodes.find(node => String(node?.id || '') === 'prometheus');
+      const promMetrics = Array.isArray(promNode?.metrics) ? promNode.metrics : [];
+      const failedRequestsMetric = promMetrics.find(metric => /failed requests/i.test(String(metric?.label || metric?.name || '')));
+      const upstreamStatusMetric = promMetrics.find(metric => /last upstream status/i.test(String(metric?.label || metric?.name || '')));
+      const upstreamIssueMetric = collectNodeLogs(nodes, message => /issue\s*#\d+/i.test(String(message || '')) && String(message || '').toLowerCase().includes(upstream.toLowerCase()))[0];
+
+      return {
+        id: upstream,
+        name: upstream,
+        service_name: upstream,
+        zone: 'service',
+        status: 'error',
+        role: 'Primary application service',
+        summary: state.lang === 'ja'
+          ? `${localizeNodeName({name: upstream}, issue)} が上流側で障害を起こし、${localizeNodeName({name: downstream}, issue)} に影響しています。`
+          : `${upstream} is failing upstream and propagating impact to ${downstream}.`,
+        metrics: [
+          {label:'Issue', value: upstreamIssueMetric?.message?.match(/#\d+/)?.[0] || 'upstream'},
+          upstreamStatusMetric ? {label:'Status', value: upstreamStatusMetric.value || '--'} : null,
+          failedRequestsMetric ? {label:'Failed requests', value: failedRequestsMetric.value || '--'} : null,
+        ].filter(Boolean),
+        logs: upstreamLogs.slice(0, 8),
+        evidence_sources: [
+          {id:'prometheus', label:'Prometheus', kind:'metrics'},
+          {id:'langfuse', label:'Langfuse', kind:'traces'},
+          {id:'aiops-local', label:'Local issue logs', kind:'logs'},
+        ],
+      };
+    }
+
+    function normalizeLegacyTopologyPayload(payload, issue){
+      const originalTopology = payload?.topology || {};
+      const topology = {
+        ...originalTopology,
+        nodes: Array.isArray(originalTopology.nodes) ? originalTopology.nodes.map(node => ({...node})) : [],
+        projection: {...(originalTopology.projection || {})},
+      };
+      const syntheticUpstream = synthesizeLegacyUpstreamNode(topology, issue);
+      if(syntheticUpstream){
+        topology.nodes.push(syntheticUpstream);
+        const projection = topology.projection || {};
+        const pathIds = Array.isArray(projection.path_component_ids) ? [...projection.path_component_ids] : [];
+        const affectedIds = Array.isArray(projection.affected_component_ids) ? [...projection.affected_component_ids] : [];
+        const evidenceIds = Array.isArray(projection.evidence_component_ids) ? [...projection.evidence_component_ids] : [];
+        if(!pathIds.includes(syntheticUpstream.id)) pathIds.unshift(syntheticUpstream.id);
+        if(!affectedIds.includes(syntheticUpstream.id)) affectedIds.unshift(syntheticUpstream.id);
+        if(!evidenceIds.includes('prometheus')) evidenceIds.push('prometheus');
+        if(!evidenceIds.includes('langfuse')) evidenceIds.push('langfuse');
+        topology.projection = {
+          ...projection,
+          root_component_id: syntheticUpstream.id,
+          path_component_ids: pathIds,
+          affected_component_ids: affectedIds,
+          evidence_component_ids: evidenceIds,
+        };
+      }
+      return {...payload, topology};
+    }
+
     function renderInspectorMetrics(node){
       const metrics = Array.isArray(node?.metrics) ? node.metrics : [];
       if(!metrics.length){
@@ -4776,16 +5688,105 @@
 
     function renderVisualFlow(topology, issue){
       const analysis = state.topologyPayload?.analysis || {};
-      const map = deriveFaultMap(topology, issue, analysis);
-      const selectedNode = map.selectedNode || map.symptomNode || map.rootNode || map.hostNode;
       return `
-        <div class="topo-rca-layout">
-          <div class="topo-main-stack">
-            ${renderVmTopoDiagram(topology, issue)}
-            ${renderNodeLogDrawer()}
-          </div>
+        <div class="ops-workbench">
+          ${renderOpsIssueBoard(topology, issue, analysis)}
+          ${renderNodeLogDrawer()}
           ${renderRcaSidePanel(issue, topology, analysis)}
         </div>
+      `;
+    }
+
+    function renderOpsIssueBoard(topology, issue, analysis){
+      const groups = buildOpsBadgeGroups(topology, issue);
+      const selectedGroup = getSelectedBadgeGroup(topology, issue);
+      const selectedNode = (selectedGroup?.nodes || []).find(node => node.id === state.topologySelected)
+        || (selectedGroup?.nodes || []).find(node => node.id === state.topologyLogsSelected)
+        || selectedGroup?.nodes?.[0]
+        || null;
+      const errorLabel = state.lang === 'ja' ? 'エラー' : 'Errors';
+      const warnLabel = state.lang === 'ja' ? '警告' : 'Warnings';
+      const infoLabel = state.lang === 'ja' ? '情報' : 'Info';
+      const selectedLabel = state.lang === 'ja' ? '選択中' : 'Selected';
+      const badgeErrorLabel = state.lang === 'ja' ? 'エラー' : 'ERR';
+      const badgeWarnLabel = state.lang === 'ja' ? '警告' : 'WARN';
+      const badgeInfoLabel = state.lang === 'ja' ? '情報' : 'INFO';
+      return `
+        <section class="ops-issue-board">
+          <div class="ops-issue-board-head">
+            <div>
+              <div class="ops-issue-board-kicker">${esc(state.lang === 'ja' ? 'インシデントコンポーネントビュー' : 'Incident component view')}</div>
+              <h3 class="ops-issue-board-title">${esc(state.lang === 'ja' ? 'クリックでライブの異常・警告・情報を確認' : 'Click a component badge to inspect live errors, warnings, and info')}</h3>
+              <p class="ops-issue-board-copy">${esc(topologyCauseOf(topology, analysis, issue) || descOf(issue) || titleOf(issue))}</p>
+            </div>
+            <div class="ops-issue-board-meta">
+              <span class="chip ${severityBadgeClass(issue.severity)}">${esc(sevText(issue.severity))}</span>
+              <span class="chip ${statusBadgeClass(issue.status)}">${esc(statusText(issue.status))}</span>
+              <span class="chip primary-point">${esc(`${tr('primaryPoint')}: ${primaryIncidentPointOf(issue)}`)}</span>
+            </div>
+          </div>
+
+          <div class="ops-badge-grid">
+            ${groups.map(group => `
+              <button class="ops-badge ${esc(group.tone)} ${selectedGroup?.id === group.id ? 'active' : ''}" type="button" data-node-group="${esc(group.id)}">
+                <div class="ops-badge-title">${esc(group.title)}</div>
+                <div class="ops-badge-copy">${esc(group.copy)}</div>
+                <div class="ops-badge-summary">
+                  <span class="ops-mini-pill error">${group.errorCount} ${esc(badgeErrorLabel)}</span>
+                  <span class="ops-mini-pill warn">${group.warnCount} ${esc(badgeWarnLabel)}</span>
+                  <span class="ops-mini-pill info">${group.infoCount} ${esc(badgeInfoLabel)}</span>
+                </div>
+              </button>
+            `).join('')}
+          </div>
+
+          <div class="ops-detail-panel">
+            <div class="ops-detail-head">
+              <div>
+                <div class="ops-detail-title">${esc(selectedGroup?.title || (state.lang === 'ja' ? 'コンポーネント' : 'Components'))}</div>
+                <div class="ops-detail-copy">${esc(selectedNode ? nodeSummaryOf(selectedNode) : (selectedGroup?.copy || ''))}</div>
+              </div>
+              ${selectedNode ? `<span class="ops-mini-pill selected">${esc(selectedLabel)}: ${esc(localizeNodeName(selectedNode, issue))}</span>` : ''}
+            </div>
+
+            <div class="ops-detail-metrics">
+              <div class="ops-detail-metric error">
+                <span>${esc(errorLabel)}</span>
+                <strong>${selectedGroup?.errorCount || 0}</strong>
+              </div>
+              <div class="ops-detail-metric warn">
+                <span>${esc(warnLabel)}</span>
+                <strong>${selectedGroup?.warnCount || 0}</strong>
+              </div>
+              <div class="ops-detail-metric info">
+                <span>${esc(infoLabel)}</span>
+                <strong>${selectedGroup?.infoCount || 0}</strong>
+              </div>
+            </div>
+
+            ${(selectedGroup?.nodes || []).length ? `
+              <div class="ops-node-grid">
+                ${selectedGroup.nodes.map(node => `
+                  <button class="ops-node-card ${esc(node.status || 'ok')} ${state.topologySelected === node.id ? 'active' : ''}" type="button" data-node-id="${esc(node.id)}">
+                    <div class="ops-node-top">
+                      <div class="ops-node-title">${esc(localizeNodeName(node, issue))}</div>
+                      <span class="ops-node-status ${esc(node.status || 'ok')}">${esc(statusLabel(node.status))}</span>
+                    </div>
+                    <div class="ops-node-copy">${esc(shortenPlainText(nodeSummaryOf(node), 120) || '--')}</div>
+                    <div class="ops-node-meta">
+                      ${(node.metrics || []).slice(0, 2).map(metric => `
+                        <span class="ops-node-metric">
+                          <span>${esc(localizeMetricLabel(metric.label || metric.name || 'Metric'))}</span>
+                          <span>${esc(metric.value || '--')}</span>
+                        </span>
+                      `).join('')}
+                    </div>
+                  </button>
+                `).join('')}
+              </div>
+            ` : `<div class="ops-node-empty">${esc(state.lang === 'ja' ? 'このグループにライブのコンポーネント情報はまだありません。' : 'No live component data is available for this group yet.')}</div>`}
+          </div>
+        </section>
       `;
     }
 
@@ -5057,12 +6058,19 @@
           && (n.status === 'error' || n.status === 'warn' || map.affectedIds.has(n.id));
       });
       // Fallback: use only service-like nodes, never shared dependencies such as PGVector.
-      const displayedServices = affectedServices.length ? affectedServices : map.serviceNodes.filter(n =>
-        n.id !== map.rootNode?.id
-        && n.id !== map.symptomNode?.id
-        && !isExternalDependency(n)
-        && !['platform', 'runtime', 'observability'].includes(String(n?.zone || '').toLowerCase())
-      ).slice(0, 5);
+      const displayedServices = uniqueNodesById([
+        ...(affectedServices.length ? affectedServices : map.serviceNodes.filter(n =>
+          n.id !== map.symptomNode?.id
+          && !isExternalDependency(n)
+          && !['platform', 'runtime', 'observability'].includes(String(n?.zone || '').toLowerCase())
+        ).slice(0, 5)),
+        ...(map.rootNode
+          && map.rootNode.id !== map.symptomNode?.id
+          && !isExternalDependency(map.rootNode)
+          && ['service', 'application', 'caller'].includes(String(map.rootNode?.zone || '').toLowerCase())
+          ? [map.rootNode]
+          : []),
+      ]);
 
       // External/shared dependencies are shown separately from the VM-internal stack.
       const dependencyNodes = uniqueNodesById([
@@ -5123,7 +6131,7 @@
               <!-- Affected services box -->
               <div class="vm-topo-affected-box">
                 <div class="vm-topo-affected-head">
-                  <span class="vm-topo-affected-title">${esc(state.lang === 'ja' ? '影響サービス' : 'Affected services')}</span>
+                  <span class="vm-topo-affected-title">${esc(state.lang === 'ja' ? '関連サービス' : 'Related services')}</span>
                   <span class="vm-topo-affected-count">${displayedServices.length} ${state.lang === 'ja' ? 'サービス' : 'services'}</span>
                 </div>
                 ${displayedServices.map(node => {
@@ -5133,13 +6141,14 @@
                       type="button" data-node-id="${esc(node.id)}">
                       <span class="vm-topo-affected-dot ${esc(node.status || 'ok')}"></span>
                       <span class="vm-topo-affected-name">${esc(localizeNodeName(node, issue))}</span>
+                      ${node.id === map.rootNode?.id ? `<span class="vm-topo-affected-err">${esc(state.lang === 'ja' ? '上流起点' : 'Upstream root')}</span>` : ''}
                       ${rate ? `<span class="vm-topo-affected-err">${esc(rate)} errors</span>` : ''}
                     </button>
                   `;
                 }).join('')}
                 <div class="vm-topo-affected-note">${esc(state.lang === 'ja'
-                  ? `これらのサービスは ${appName} の障害により影響を受けています`
-                  : `These services are failing because ${appName} is unavailable`)}</div>
+                  ? `上流起点と関連サービスを表示しています。${appName} への影響経路をここで確認できます。`
+                  : `This shows the upstream root and related services on the impact path into ${appName}.`)}</div>
               </div>
 
               <!-- Cascade arrow -->
@@ -5249,20 +6258,21 @@
       const action = topologyActionOf(topology, analysis);
       return `
         <div class="rca-side-panel">
-          <div class="rca-side-title">📊 ${esc(state.lang === 'ja' ? '根本原因分析 (RCA)' : 'Root Cause Analysis')}</div>
-          <div>
-            <div class="rca-side-label">${esc(state.lang === 'ja' ? '原因候補' : 'Root cause')}</div>
-            <div class="rca-side-cause">${esc(shortenPlainText(cause, 300) || '--')}</div>
-          </div>
-          <div class="rca-divider"></div>
-          <div>
-            <div class="rca-side-label">${esc(state.lang === 'ja' ? '推奨対応' : 'Recommendations')}</div>
-            <div class="rca-side-rec">${esc(shortenPlainText(action, 300) || '--')}</div>
+          <div class="rca-side-title">${esc(state.lang === 'ja' ? 'RCA - 根本原因と推奨対応' : 'RCA - Root cause and recommendations')}</div>
+          <div class="rca-side-grid">
+            <div class="rca-side-card">
+              <div class="rca-side-label">${esc(state.lang === 'ja' ? '原因候補' : 'Root cause')}</div>
+              <div class="rca-side-cause">${esc(shortenPlainText(cause, 320) || '--')}</div>
+            </div>
+            <div class="rca-side-card">
+              <div class="rca-side-label">${esc(state.lang === 'ja' ? '推奨対応' : 'Recommendations')}</div>
+              <div class="rca-side-rec">${esc(shortenPlainText(action, 320) || '--')}</div>
+            </div>
           </div>
           <div class="rca-divider"></div>
           <div class="rca-icon-row">
             <button class="rca-icon-btn" type="button" data-assistant-mode="five">
-              <span class="ico">🔍</span><span>5 Whys</span>
+              <span class="ico">🔍</span><span>${esc(tr('quickFive'))}</span>
             </button>
             <button class="rca-icon-btn" type="button" data-assistant-mode="summary">
               <span class="ico">📋</span><span>${esc(state.lang === 'ja' ? '短い要約' : 'Summary')}</span>
@@ -5273,6 +6283,9 @@
           </div>
           <button class="rca-chat-btn" type="button" data-action="open-chat-panel">
             💬 ${esc(state.lang === 'ja' ? 'RCAチャット' : 'RCA Chat')}
+          </button>
+          <button class="btn subtle" type="button" data-action="open-conversation-remediation">
+            ${esc(tr('openRemediationInChat'))}
           </button>
         </div>
       `;
@@ -5301,14 +6314,16 @@
       `;
       const hasLogs = state.componentLogs.length > 0;
       const sourceTone = value => {
-        const id = String(value || '').toLowerCase();
+        const id = typeof value === 'string'
+          ? String(value || '').toLowerCase()
+          : inferredLogSource(value, state.topologyLogsSelected);
         if(id.includes('prom')) return 'prometheus';
         if(id.includes('langfuse')) return 'langfuse';
         return 'aiops-local';
       };
       const visibleLogs = state.componentLogSource === 'all'
         ? state.componentLogs
-        : state.componentLogs.filter(log => sourceTone(log.source || log.source_label) === state.componentLogSource);
+        : state.componentLogs.filter(log => sourceTone(log) === state.componentLogSource);
       return `
         <div class="node-log-drawer">
           <div class="node-log-drawer-head">
@@ -5330,7 +6345,7 @@
                   <div class="node-log-row">
                     <span class="node-log-ts">${esc(formatLogTs(log.timestamp))}</span>
                     <span class="node-log-lvl ${esc(String(log.level || 'INFO').toLowerCase())}">${esc(String(log.level || 'INFO').toUpperCase())}</span>
-                    <span class="node-log-origin ${esc(sourceTone(log.source || log.source_label))}">${esc(log.source_label || log.source || (state.lang === 'ja' ? 'ローカル' : 'Local'))}</span>
+                    <span class="node-log-origin ${esc(sourceTone(log))}">${esc(log.source_label || log.source || (sourceTone(log) === 'langfuse' ? 'Langfuse' : sourceTone(log) === 'prometheus' ? 'Prometheus' : (state.lang === 'ja' ? 'ローカル' : 'Local')))}</span>
                     <span class="node-log-msg">${esc(log.message || '')}</span>
                   </div>`).join('')
               : `<div class="node-log-empty">${esc(hasLogs
@@ -5415,6 +6430,7 @@
       document.getElementById('brandMark').textContent = tr('mark');
       document.getElementById('brandSubtitle').textContent = tr('subtitle');
       document.getElementById('liveText').textContent = tr('live');
+      document.getElementById('viewSwitchBtn').textContent = tr('switchToChat');
       document.getElementById('langBtn').textContent = tr('lang');
     }
 
@@ -5424,6 +6440,7 @@
       applySidebarState();
       renderSidebar();
       document.getElementById('content').innerHTML = renderContent();
+      syncDashboardUrl();
       restoreFocusState(focusState);
       syncAssistantScroll();
     }
@@ -5476,6 +6493,10 @@
       applySidebarState();
     });
 
+    document.getElementById('viewSwitchBtn').addEventListener('click', () => {
+      goToConversationView(state.chatPanelOpen ? 'rca' : 'issue');
+    });
+
     document.getElementById('langBtn').addEventListener('click', async () => {
       const preserveDetail = !!state.selectedIssueId;
       state.lang = state.lang === 'ja' ? 'en' : 'ja';
@@ -5489,9 +6510,24 @@
     });
 
     document.getElementById('content').addEventListener('click', event => {
+      const conversationButton = event.target.closest('[data-action="open-conversation"]');
+      if(conversationButton){
+        openConversation(Number(conversationButton.dataset.conversationIssueId));
+        return;
+      }
+      const dashboardButton = event.target.closest('[data-action="open-dashboard"]');
+      if(dashboardButton){
+        openIssue(Number(dashboardButton.dataset.dashboardIssueId));
+        return;
+      }
       const issueButton = event.target.closest('[data-issue-id]');
       if(issueButton){
         openIssue(Number(issueButton.dataset.issueId));
+        return;
+      }
+      const groupButton = event.target.closest('[data-node-group]');
+      if(groupButton){
+        selectTopologyGroup(groupButton.dataset.nodeGroup);
         return;
       }
       const backButton = event.target.closest('[data-action="back-to-issues"]');
@@ -5518,6 +6554,11 @@
       const openChatButton = event.target.closest('[data-action="open-chat-panel"]');
       if(openChatButton){
         openChatPanel();
+        return;
+      }
+      const openConversationRemediation = event.target.closest('[data-action="open-conversation-remediation"]');
+      if(openConversationRemediation){
+        goToConversationView('remediation');
         return;
       }
       const closeChatButton = event.target.closest('[data-action="close-chat-panel"]');
@@ -5574,6 +6615,12 @@
     });
 
     document.getElementById('content').addEventListener('keydown', event => {
+      const issueCard = event.target.matches('.issue-card[data-issue-id]') ? event.target : null;
+      if(issueCard && (event.key === 'Enter' || event.key === ' ')){
+        event.preventDefault();
+        openIssue(Number(issueCard.dataset.issueId));
+        return;
+      }
       if(event.target.id === 'assistant-draft' && event.key === 'Enter'){
         event.preventDefault();
         submitAssistantQuery('custom');

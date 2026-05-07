@@ -113,9 +113,11 @@ textarea,input,select{width:100%;border:1px solid var(--border);border-radius:6p
 const severityRank={critical:4,high:3,medium:2,low:1};
 const sevLabel={critical:'重大',high:'高',medium:'中',low:'低'};
 const statusLabel={OPEN:'未対応',ACKNOWLEDGED:'確認中',ESCALATED:'エスカレーション',RESOLVED:'解決済み'};
+const initialParams=new URLSearchParams(location.search);
 let currentIssue=null;
 let currentAnalysis=null;
-let currentLang='ja';
+let currentLang=initialParams.get('lang')==='en'?'en':'ja';
+let pendingIssueId=Number(initialParams.get('issue_id'))||null;
 
 function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 async function api(url,opt={}){const r=await fetch(url,{headers:{'Content-Type':'application/json'},...opt});if(!r.ok){let m=await r.text();try{m=JSON.parse(m).detail||m}catch{}throw new Error(m)}return r.json();}
@@ -123,6 +125,13 @@ function addMsg(kind,html){const el=document.createElement('div');el.className=`
 function setState(text){document.getElementById('session-state').textContent=text;}
 function setFlow(done,current){document.querySelectorAll('.flow-step').forEach(el=>{const key=el.dataset.step;el.classList.toggle('done',(done||[]).includes(key));el.classList.toggle('active',key===current);});}
 function prioritySort(a,b){return (severityRank[b.severity]||0)-(severityRank[a.severity]||0)||new Date(b.created_at||0)-new Date(a.created_at||0);}
+function syncConversationUrl(issueId){
+  const params=new URLSearchParams(location.search);
+  if(issueId) params.set('issue_id',String(issueId)); else params.delete('issue_id');
+  params.set('lang',currentLang);
+  const query=params.toString();
+  history.replaceState({},'',`${location.pathname}${query?`?${query}`:''}`);
+}
 
 async function loadTickets(){
   setState('チケット確認中');
@@ -139,6 +148,12 @@ async function loadTickets(){
       return;
     }
     document.getElementById('ticket-list').innerHTML=tickets.map(ticketCard).join('');
+    if(pendingIssueId && tickets.some(ticket=>ticket.id===pendingIssueId)){
+      const issueId=pendingIssueId;
+      pendingIssueId=null;
+      await selectIssue(issueId,{autoOpen:true});
+      return;
+    }
     addMsg('agent',currentLang==='ja'
       ?`未解決チケットを${tickets.length}件見つけました。重大度と発生時刻で優先度順に並べています。担当するチケットを選択してください。`
       :`Found ${tickets.length} unresolved ticket(s), sorted by severity and time. Select the ticket you want to handle.`);
@@ -159,16 +174,19 @@ function ticketCard(i){
   </button>`;
 }
 
-async function selectIssue(id){
+async function selectIssue(id,{autoOpen=false}={}){
   setState(`チケット #${id} を確認中`);
   setFlow(['tickets'],'select');
   document.querySelectorAll('.ticket').forEach(el=>el.classList.remove('selected'));
   const card=document.getElementById(`ticket-${id}`); if(card)card.classList.add('selected');
   try{
     currentIssue=await api(`/api/issues/${id}?lang=${currentLang}`);
+    syncConversationUrl(id);
     currentAnalysis=null;
     renderIssue();
-    addMsg('user',currentLang==='ja'?`チケット #${id} を担当します。RCAを確認してください。`:`I will handle ticket #${id}. Please show the RCA.`);
+    addMsg('user',autoOpen
+      ? (currentLang==='ja'?`チケット #${id} を会話ビューで開いてください。`:`Open ticket #${id} in the conversation view.`)
+      : (currentLang==='ja'?`チケット #${id} を担当します。RCAを確認してください。`:`I will handle ticket #${id}. Please show the RCA.`));
     await loadRCA(id);
   }catch(e){
     addMsg('agent',`チケット確認に失敗しました: ${esc(e.message)}`);
@@ -222,6 +240,7 @@ async function pollRCA(id){
 async function toggleLanguage(){
   currentLang=currentLang==='ja'?'en':'ja';
   document.getElementById('lang-toggle').textContent=currentLang==='ja'?'English':'日本語';
+  syncConversationUrl(currentIssue?.id || pendingIssueId);
   if(currentIssue){
     currentIssue=await api(`/api/issues/${currentIssue.id}?lang=${currentLang}`);
     renderIssue();
@@ -337,6 +356,8 @@ async function loadArtifacts(){
   }catch(e){addMsg('agent',`成果物を取得できません: ${esc(e.message)}`);}
 }
 
+document.documentElement.lang=currentLang;
+document.getElementById('lang-toggle').textContent=currentLang==='ja'?'English':'日本語';
 loadTickets();
 </script>
 </body>

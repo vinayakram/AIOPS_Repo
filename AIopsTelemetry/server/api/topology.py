@@ -6,14 +6,22 @@ import re
 from datetime import datetime
 from pathlib import Path
 from typing import Any
+from urllib.parse import quote_plus
+from urllib.request import urlopen
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import desc
 from sqlalchemy.orm import Session
 
+from server.config import settings
 from server.database.engine import get_db
 from server.database.models import Issue, IssueAnalysis, Span, TraceLog
-from server.engine.bilingual import app_display_name_ja, normalize_lang, select_text
+from server.engine.bilingual import (
+    app_display_name_ja,
+    localize_observability_text,
+    normalize_lang,
+    select_text,
+)
 
 
 router = APIRouter(prefix="/topology", tags=["topology"])
@@ -293,6 +301,22 @@ def _find_template_match(template_nodes: list[dict[str, Any]], source_node: dict
     return best_match[1] if best_match else None
 
 
+def _should_keep_distinct_source_node(source_node: dict[str, Any]) -> bool:
+    zone = str(source_node.get("zone") or "").lower()
+    source_id = _slug(source_node.get("id") or source_node.get("name"))
+    if zone != "runtime" or not source_id:
+        return False
+    return source_id not in {
+        "ai-agent",
+        "docker-runtime",
+        "prometheus",
+        "langfuse",
+        "pgvector",
+        "vm-host",
+        "host-background-job",
+    }
+
+
 def _node_summary(node: dict[str, Any]) -> str:
     status = _normalize_status(node.get("status"))
     summary = _human_text(node.get("summary")) or _human_text(node.get("error_message")) or _human_text(node.get("role")) or ""
@@ -346,7 +370,7 @@ def _node_source_descriptors(node: dict[str, Any], issue: Issue) -> list[dict[st
         add("langfuse", "Langfuse", "traces")
     if zone in {"platform", "runtime"} or has_metrics:
         add("prometheus", "Prometheus", "metrics")
-    if issue.trace_id and (node_id in {"ai-agent", "langfuse", "pgvector"} or zone == "observability"):
+    if issue.trace_id and (node_id in {"ai-agent", "langfuse", "pgvector"} or zone in {"observability", "runtime"}):
         add("langfuse", "Langfuse", "traces")
     if has_logs:
         add("aiops-local", "Local issue logs", "logs")
@@ -465,6 +489,132 @@ def _overlay_node(target: dict[str, Any], source: dict[str, Any]) -> None:
         target["aliases"] = list(dict.fromkeys([*(target.get("aliases") or []), *source.get("aliases")]))
 
 
+def _localize_node_content(node: dict[str, Any], lang: str, issue: Issue) -> None:
+    dependency = str(node.get("service_name") or node.get("name") or "").strip() or None
+    for field in ("summary", "error_message", "root_cause_chain"):
+        if node.get(field):
+            node[field] = localize_observability_text(
+                str(node.get(field)),
+                lang,
+                app_name=issue.app_name,
+                dependency=dependency,
+            )
+    localized_logs = []
+    for log in node.get("logs") or []:
+        row = _coerce_log(log)
+        row["message"] = localize_observability_text(
+            row.get("message"),
+            lang,
+            app_name=issue.app_name,
+            dependency=dependency,
+        ) or row.get("message", "")
+        localized_logs.append(row)
+    node["logs"] = localized_logs
+
+
+def _prometheus_query(query: str) -> list[dict[str, Any]]:
+    base_url = str(settings.MCP_PROMETHEUS_URL or "").rstrip("/")
+    if not base_url:
+        return []
+    url = f"{base_url}/api/v1/query?query={quote_plus(query)}"
+    try:
+        with urlopen(url, timeout=2.5) as response:
+            payload = json.loads(response.read().decode("utf-8"))
+    except Exception:
+        return []
+    data = payload.get("data") if isinstance(payload, dict) else {}
+    result = data.get("result") if isinstance(data, dict) else []
+    return result if isinstance(result, list) else []
+
+
+def _prometheus_scalar(query: str) -> tuple[float | None, dict[str, Any]]:
+    results = _prometheus_query(query)
+    if not results:
+        return None, {}
+    first = results[0] if isinstance(results[0], dict) else {}
+    value = first.get("value") if isinstance(first, dict) else None
+    try:
+        number = float(value[1]) if isinstance(value, list) and len(value) >= 2 else None
+    except (TypeError, ValueError):
+        number = None
+    metric = first.get("metric") if isinstance(first, dict) and isinstance(first.get("metric"), dict) else {}
+    return number, metric
+
+
+def _prometheus_rows_for_component(issue: Issue, node: dict[str, Any]) -> list[dict[str, str]]:
+    issue_meta = _issue_meta(issue)
+    issue_dependency = str(
+        issue_meta.get("dependency")
+        or issue_meta.get("cascade_candidate_root_cause")
+        or ""
+    ).strip()
+    service_name = str(
+        node.get("service_name")
+        or (issue.app_name if str(node.get("id") or "") == "ai-agent" else "")
+        or node.get("id")
+        or ""
+    ).strip()
+    rows: list[dict[str, str]] = []
+    timestamp = datetime.utcnow().replace(microsecond=0).isoformat()
+
+    def add(level: str, message: str) -> None:
+        rows.append(
+            _coerce_log(
+                {
+                    "timestamp": timestamp,
+                    "level": level,
+                    "message": message,
+                    "source": "prometheus",
+                    "source_label": "Prometheus",
+                }
+            )
+        )
+
+    if service_name == "sample-agent" or node.get("id") == "prometheus":
+        cpu_percent, _cpu_metric = _prometheus_scalar('sample_agent_pod_cpu_utilisation_percent{app="sample-agent"}')
+        cpu_threshold, _ = _prometheus_scalar('sample_agent_pod_cpu_threshold_percent{app="sample-agent"}')
+        memory_percent, _ = _prometheus_scalar('sample_agent_pod_memory_utilisation_percent{app="sample-agent"}')
+        memory_threshold, _ = _prometheus_scalar('sample_agent_pod_memory_threshold_percent{app="sample-agent"}')
+        breach_total, _ = _prometheus_scalar('sum(sample_agent_pod_threshold_breaches_total{app="sample-agent"})')
+        if cpu_percent is not None:
+            threshold_text = f" / threshold {cpu_threshold:.1f}%" if cpu_threshold is not None else ""
+            add(
+                "WARN" if cpu_threshold is not None and cpu_percent >= cpu_threshold else "INFO",
+                f"sample-agent CPU utilisation is {cpu_percent:.1f}%{threshold_text}.",
+            )
+        if memory_percent is not None:
+            threshold_text = f" / threshold {memory_threshold:.1f}%" if memory_threshold is not None else ""
+            add(
+                "WARN" if memory_threshold is not None and memory_percent >= memory_threshold else "INFO",
+                f"sample-agent memory utilisation is {memory_percent:.1f}%{threshold_text}.",
+            )
+        if breach_total is not None:
+            add(
+                "WARN" if breach_total > 0 else "INFO",
+                f"sample-agent pod threshold breaches observed: {int(breach_total)}.",
+            )
+
+    if service_name == issue.app_name or node.get("id") == "prometheus":
+        upstream = issue_dependency or "sample-agent"
+        cascade_total, _ = _prometheus_scalar(
+            f'sum(dependent_agent_cascade_failures_total{{upstream="{upstream}"}})'
+        )
+        last_status, _ = _prometheus_scalar(
+            f'dependent_agent_last_upstream_status{{upstream="{upstream}"}}'
+        )
+        if cascade_total is not None:
+            add(
+                "WARN" if cascade_total > 0 else "INFO",
+                f"{issue.app_name} recorded {int(cascade_total)} cascade failure(s) against {upstream}.",
+            )
+        if last_status is not None:
+            upstream_state = "healthy" if last_status >= 1 else "failed"
+            level = "INFO" if upstream_state == "healthy" else "ERROR"
+            add(level, f"Latest upstream status for {upstream} is {upstream_state}.")
+
+    return rows
+
+
 def _make_runtime_focus(issue: Issue, analysis: IssueAnalysis | None, meta: dict[str, Any], nodes: list[dict[str, Any]]) -> None:
     primary = next((node for node in nodes if node.get("id") == "ai-agent"), None)
     runtime = next((node for node in nodes if node.get("id") == "docker-runtime"), None)
@@ -475,6 +625,7 @@ def _make_runtime_focus(issue: Issue, analysis: IssueAnalysis | None, meta: dict
 
     if primary:
         primary["name"] = meta.get("display_app_name") or issue.app_name or primary.get("name")
+        primary["service_name"] = issue.app_name or primary.get("service_name") or primary.get("name")
         primary["status"] = desired
         primary["error_message"] = issue.title
         primary["root_cause_chain"] = (analysis.likely_cause if analysis and analysis.likely_cause else issue.description) or primary.get("role")
@@ -516,7 +667,7 @@ def _build_topology(issue: Issue, analysis: IssueAnalysis | None, lang: str = "j
         for source_node in source_topology.get("nodes") or []:
             if not isinstance(source_node, dict):
                 continue
-            target = _find_template_match(nodes, source_node)
+            target = None if _should_keep_distinct_source_node(source_node) else _find_template_match(nodes, source_node)
             if target is None:
                 target = copy.deepcopy(source_node)
                 target.setdefault("layout", {"x": 69, "y": min(80, 22 + len(nodes) * 8)})
@@ -532,12 +683,15 @@ def _build_topology(issue: Issue, analysis: IssueAnalysis | None, lang: str = "j
     issue_aliases = _issue_aliases(issue, analysis, meta)
     for node in nodes:
         if node.get("id") == "ai-agent" and issue.app_name:
+            node["name"] = meta.get("display_app_name") or issue.app_name or node.get("name")
+            node["service_name"] = issue.app_name
             node["aliases"] = list(dict.fromkeys([*(node.get("aliases") or []), issue.app_name]))
         if not node.get("logs") and issue_aliases & _node_aliases(node):
             node["logs"] = _fallback_issue_logs(issue, analysis)
         node["status"] = _normalize_status(node.get("status"), "ok")
         node["summary"] = _node_summary(node)
         node["evidence_sources"] = _node_source_descriptors(node, issue)
+        _localize_node_content(node, lang, issue)
 
     health_counts = {"ok": 0, "warn": 0, "error": 0}
     for node in nodes:
@@ -555,6 +709,9 @@ def _build_topology(issue: Issue, analysis: IssueAnalysis | None, lang: str = "j
     if lang == "ja":
         if impact.get("where") == "VM runtime component path":
             impact["where"] = "仮想マシンの実行経路"
+        elif "->" in str(impact.get("where") or ""):
+            parts = [part.strip() for part in str(impact.get("where") or "").split("->")]
+            impact["where"] = " -> ".join(app_display_name_ja(part) for part in parts if part)
         applications = impact.get("applications") if isinstance(impact.get("applications"), list) else []
         if applications:
             impact["applications"] = [app_display_name_ja(item) if isinstance(item, str) else item for item in applications]
@@ -597,8 +754,16 @@ def _build_topology(issue: Issue, analysis: IssueAnalysis | None, lang: str = "j
         "alerts": alerts,
         "traces": traces,
         "projection": projection,
-        "root_cause_chain": localized_cause or _human_text(source_topology.get("root_cause_chain")) or _human_text(analysis.likely_cause if analysis and analysis.likely_cause else issue.description),
-        "recommended_action": localized_action or _human_text(source_topology.get("recommended_action")) or _human_text(analysis.recommended_action if analysis and analysis.recommended_action else ""),
+        "root_cause_chain": localize_observability_text(
+            localized_cause or _human_text(source_topology.get("root_cause_chain")) or _human_text(analysis.likely_cause if analysis and analysis.likely_cause else issue.description),
+            lang,
+            app_name=issue.app_name,
+        ),
+        "recommended_action": localize_observability_text(
+            localized_action or _human_text(source_topology.get("recommended_action")) or _human_text(analysis.recommended_action if analysis and analysis.recommended_action else ""),
+            lang,
+            app_name=issue.app_name,
+        ),
         "health_counts": health_counts,
         "default_component_id": default_component,
     }
@@ -610,6 +775,7 @@ def _component_logs(
     topology: dict[str, Any],
     component_id: str,
     limit: int,
+    lang: str,
 ) -> tuple[dict[str, Any], list[dict[str, str]], list[dict[str, str]]]:
     node = next((item for item in topology.get("nodes") or [] if item.get("id") == component_id), None)
     if node is None:
@@ -639,6 +805,7 @@ def _component_logs(
                     }
                 )
             )
+    rows.extend(_prometheus_rows_for_component(issue, node))
 
     if issue.trace_id:
         trace_logs = (
@@ -717,7 +884,16 @@ def _component_logs(
             }
         )
         seen_source_ids.add(source_id)
-    return node, ordered[-limit:], sources
+    localized = ordered[-limit:]
+    dependency = str(node.get("service_name") or node.get("name") or "").strip() or None
+    for row in localized:
+        row["message"] = localize_observability_text(
+            row.get("message"),
+            lang,
+            app_name=issue.app_name,
+            dependency=dependency,
+        ) or row.get("message", "")
+    return node, localized, sources
 
 
 @router.get("/template")
@@ -776,7 +952,7 @@ def get_component_logs(
         raise HTTPException(status_code=404, detail="Issue not found")
     analysis = db.query(IssueAnalysis).filter(IssueAnalysis.issue_id == issue_id).first()
     topology = _build_topology(issue, analysis, lang)
-    node, logs, sources = _component_logs(db, issue, topology, component_id, limit)
+    node, logs, sources = _component_logs(db, issue, topology, component_id, limit, lang)
     return {
         "issue_id": issue_id,
         "component_id": component_id,

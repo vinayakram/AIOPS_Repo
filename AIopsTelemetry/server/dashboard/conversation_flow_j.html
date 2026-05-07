@@ -262,6 +262,7 @@ button{cursor:pointer}
           <span>MCP</span>
         </div>
         <span class="session-state" id="session-state"></span>
+        <button class="lang-btn" id="view-btn" onclick="goToDashboardView()">ダッシュボード</button>
         <button class="lang-btn" id="lang-btn" onclick="toggleLanguage()">English</button>
       </div>
     </header>
@@ -345,6 +346,31 @@ function sevText(s){return lang==='ja'?(SEV_JA[s]||s):(SEV_EN[s]||s)}
 function statusText(s){return lang==='ja'?(ST_JA[s]||s):(ST_EN[s]||s)}
 function rStatusText(s){const raw=String(s||'').toUpperCase();return lang==='ja'?(RST_JA[raw]||s):(RST_EN[raw]||s)}
 function sevClass(s){return s==='critical'?'critical':s==='high'?'high':s==='medium'?'medium':''}
+function dashboardBasePath(){return lang==='ja'?'/ops_j':'/ops'}
+function conversationBasePath(){return lang==='ja'?'/conversation_j':'/assistant_j'}
+function currentConversationMode(){return new URLSearchParams(location.search).get('mode')||'issue'}
+function buildConversationUrl(mode='issue'){
+  const params=new URLSearchParams();
+  params.set('lang',lang);
+  if(currentIssue?.id)params.set('issue_id',String(currentIssue.id));
+  if(mode&&mode!=='issue')params.set('mode',mode);
+  return `${conversationBasePath()}?${params.toString()}`;
+}
+function buildDashboardUrl(mode='issue'){
+  const params=new URLSearchParams();
+  params.set('lang',lang);
+  if(currentIssue?.id)params.set('issue_id',String(currentIssue.id));
+  if(mode&&mode!=='issue')params.set('mode',mode);
+  return `${dashboardBasePath()}?${params.toString()}`;
+}
+function syncConversationUrl(mode=currentConversationMode()){
+  if(typeof history?.replaceState!=='function')return;
+  history.replaceState(null,'',buildConversationUrl(mode));
+}
+function goToDashboardView(mode=''){
+  const resolvedMode=mode||((currentAnalysis||currentTopology)?'rca':'issue');
+  location.href=buildDashboardUrl(resolvedMode);
+}
 
 function setMcp(on){const p=document.getElementById('mcp-pill');if(p)p.classList.toggle('hidden',!on)}
 function setState(txt){const e=document.getElementById('session-state');if(e)e.textContent=txt}
@@ -404,6 +430,7 @@ function newChat(){
   document.querySelectorAll('.ticket').forEach(el=>el.classList.remove('selected'));
   renderDetailPanel(null,null,null);
   setState(t('待機中','Idle'));
+  syncConversationUrl('issue');
 }
 
 /* ── Chips ──────────────────────────────────── */
@@ -476,6 +503,7 @@ async function selectIssue(id,opts={}){
     addMsg('agent',selectedIssueHtml(currentIssue));
     renderDetailPanel(currentIssue,currentTopology,currentAnalysis);
     setState(`#${id}`);
+    syncConversationUrl(currentConversationMode());
     return currentIssue;
   }catch(e){addMsg('agent',`<div class="chat-card"><div class="card-body error-msg">${esc(e.message)}</div></div>`)}
 }
@@ -667,6 +695,7 @@ async function askRCA(userPrompt=''){
   const prompt=userPrompt||t('なぜ起きたの？','Why did this happen?');
   if(!userPrompt)addMsg('user',esc(prompt));
   if(!currentIssue){addMsg('agent',`<div class="chat-card"><div class="card-body">${t('まず問題を選んでください。','Please select an issue first.')}</div></div>`);return}
+  syncConversationUrl('rca');
   setMcp(true);
   const progressEl=addMsg('agent',mcpCallCardHtml('correlate_cross_service_incident',{root_candidate_service:currentIssue.app_name,affected_service:currentIssue.app_name,window_minutes:10},null,null));
   try{
@@ -703,6 +732,7 @@ function storedRcaHtml(a){
 function askSummary(){
   addMsg('user',t('やさしく要約して','Give me a simple summary'));
   if(!currentIssue){addMsg('agent',`<div class="chat-card"><div class="card-body">${t('まず問題を選んでください。','Select an issue first.')}</div></div>`);return}
+  syncConversationUrl('summary');
   const topo=currentTopology?.topology||{};
   const cause=cleanText(topo.root_cause_chain)||issueDesc(currentIssue);
   const action=cleanText(topo.recommended_action)||analysisAction(currentAnalysis)||'';
@@ -724,6 +754,7 @@ function askSummary(){
 async function askRemediation(){
   addMsg('user',t('対応を進めたい','I want to remediate this'));
   if(!currentIssue){addMsg('agent',`<div class="chat-card"><div class="card-body">${t('まず問題を選んでください。','Select an issue first.')}</div></div>`);return}
+  syncConversationUrl('remediation');
   if(!currentAnalysis){try{await getRCA()}catch{}}
   addMsg('agent',`
     <div class="card-heading">${t('対応の進め方','Remediation flow')}</div>
@@ -918,6 +949,7 @@ async function send(){
 function updateUiLang(){
   document.documentElement.lang=lang;
   document.getElementById('lang-btn').textContent=lang==='ja'?'English':'日本語';
+  document.getElementById('view-btn').textContent=lang==='ja'?'ダッシュボード':'Dashboard';
   document.getElementById('rail-mark').textContent=lang==='ja'?'助':'A';
   document.getElementById('brand-mark').textContent=lang==='ja'?'助':'A';
   document.getElementById('brand-name').textContent=lang==='ja'?'助手':'AIOPS';
@@ -934,6 +966,7 @@ function updateUiLang(){
 async function toggleLanguage(){
   lang=lang==='ja'?'en':'ja';
   updateUiLang();
+  syncConversationUrl(currentConversationMode());
   await loadTickets(true);
   if(currentIssue){await loadTopology(currentIssue.id);renderDetailPanel(currentIssue,currentTopology,currentAnalysis)}
   addMsg('agent',lang==='ja'?'日本語で続けます。':'Continuing in English.');
@@ -946,7 +979,12 @@ async function boot(){
   updateUiLang();
   await loadTickets(true);
   const issueId=Number(P.get('issue_id')||0);
-  if(issueId){await selectIssue(issueId);if(P.get('mode')==='remediation')askRemediation()}
+  if(issueId){
+    await selectIssue(issueId);
+    if(P.get('mode')==='remediation')askRemediation();
+    else if(['rca','chat'].includes(P.get('mode')||''))askRCA();
+    else if(P.get('mode')==='summary')askSummary();
+  }
 }
 boot();
 </script>
