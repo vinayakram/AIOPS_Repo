@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 from typing import Any
 
 from server.engine.llm_translator import translate_to_japanese
@@ -28,6 +29,8 @@ _SERVICE_NAMES: dict[str, str] = {
     "pod_resource_guard": "Podリソースガード",
 }
 
+_JAPANESE_RE = re.compile(r"[\u3040-\u30ff\u3400-\u9fff]")
+
 
 def normalize_lang(lang: str | None) -> str:
     return LANG_EN if (lang or "").lower().startswith("en") else LANG_JA
@@ -38,7 +41,13 @@ def app_display_name_ja(app_name: str | None) -> str:
     return _SERVICE_NAMES.get(key, app_name or "対象サービス")
 
 
-def issue_title_ja(title: str | None, *, app_name: str | None = None, rule_id: str | None = None) -> str:
+def issue_title_ja(
+    title: str | None,
+    *,
+    app_name: str | None = None,
+    rule_id: str | None = None,
+    allow_live_translate: bool = True,
+) -> str:
     """Return a native Japanese title via LLM translation.
 
     Falls back to the English title if the LLM is unavailable.
@@ -49,12 +58,10 @@ def issue_title_ja(title: str | None, *, app_name: str | None = None, rule_id: s
 
     # Replace known service names in the English title before translating
     # so the LLM preserves the official Japanese product name.
-    enriched = text
-    if app_name:
-        enriched = enriched.replace(app_name, app_display_name_ja(app_name))
+    enriched = _localize_known_names(text, app_name=app_name)
 
-    translated = translate_to_japanese(enriched)
-    return translated or text
+    translated = translate_to_japanese(enriched, use_cache_only=not allow_live_translate)
+    return translated or enriched or text
 
 
 def issue_description_ja(
@@ -62,17 +69,16 @@ def issue_description_ja(
     *,
     app_name: str | None = None,
     rule_id: str | None = None,
+    allow_live_translate: bool = True,
 ) -> str | None:
     """Translate an issue description to native Japanese via LLM."""
     if not description:
         return description
 
-    enriched = description
-    if app_name:
-        enriched = enriched.replace(app_name, app_display_name_ja(app_name))
+    enriched = _localize_known_names(description, app_name=app_name)
 
-    translated = translate_to_japanese(enriched)
-    return translated or description
+    translated = translate_to_japanese(enriched, use_cache_only=not allow_live_translate)
+    return translated or enriched or description
 
 
 def bilingual_analysis_fields(
@@ -133,21 +139,24 @@ def localize_observability_text(
     *,
     app_name: str | None = None,
     dependency: str | None = None,
+    allow_live_translate: bool = False,
 ) -> str | None:
     """Translate observability text to Japanese using LLM when lang=ja."""
     if normalize_lang(lang) != LANG_JA:
         return text
     if not text:
         return text
+    if _JAPANESE_RE.search(text):
+        return text
 
-    # Replace service names with their Japanese display names before translating.
-    enriched = text
-    for en_name, ja_name in _SERVICE_NAMES.items():
-        if en_name in enriched:
-            enriched = enriched.replace(en_name, ja_name)
+    enriched = _localize_known_names(
+        text,
+        app_name=app_name,
+        dependency=dependency,
+    )
 
-    translated = translate_to_japanese(enriched)
-    return translated or text
+    translated = translate_to_japanese(enriched, use_cache_only=not allow_live_translate)
+    return translated or enriched or text
 
 
 # ── Internal helpers ────────────────────────────────────────────────────
@@ -179,3 +188,27 @@ def _deep_find(obj: Any, key: str) -> Any:
             if found is not None:
                 return found
     return None
+
+
+def _localize_known_names(
+    text: str | None,
+    *,
+    app_name: str | None = None,
+    dependency: str | None = None,
+) -> str:
+    enriched = text or ""
+
+    names: dict[str, str] = dict(_SERVICE_NAMES)
+    for value in (app_name, dependency):
+        raw = str(value or "").strip()
+        if raw:
+            names.setdefault(raw.lower(), app_display_name_ja(raw))
+
+    for en_name, ja_name in names.items():
+        if en_name in enriched:
+            enriched = enriched.replace(en_name, ja_name)
+    for raw in (app_name, dependency):
+        candidate = str(raw or "").strip()
+        if candidate and candidate in enriched:
+            enriched = enriched.replace(candidate, app_display_name_ja(candidate))
+    return enriched

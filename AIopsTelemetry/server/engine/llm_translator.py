@@ -42,7 +42,7 @@ def _cache_key(text: str) -> str:
     return hashlib.md5(text.encode()).hexdigest()
 
 
-def translate_to_japanese(text: str | None) -> str | None:
+def translate_to_japanese(text: str | None, *, use_cache_only: bool = False) -> str | None:
     """Translate English text to Japanese using OpenAI.
 
     Returns None if translation is unavailable. Results are cached in-process.
@@ -54,6 +54,9 @@ def translate_to_japanese(text: str | None) -> str | None:
     key = _cache_key(text)
     if key in _cache:
         return _cache[key]
+
+    if use_cache_only:
+        return None
 
     client = _get_client()
     if client is None:
@@ -80,12 +83,12 @@ def translate_to_japanese(text: str | None) -> str | None:
     return None
 
 
-async def translate_to_japanese_async(text: str | None) -> str | None:
+async def translate_to_japanese_async(text: str | None, *, use_cache_only: bool = False) -> str | None:
     """Async wrapper — runs translation in a thread pool so FastAPI stays non-blocking."""
     if not text:
         return text
     loop = asyncio.get_event_loop()
-    return await loop.run_in_executor(None, translate_to_japanese, text)
+    return await loop.run_in_executor(None, lambda: translate_to_japanese(text, use_cache_only=use_cache_only))
 
 
 def translate_batch(texts: list[str | None]) -> list[str | None]:

@@ -66,6 +66,17 @@ button{cursor:pointer}
 .welcome{text-align:center;padding:48px 24px 32px}
 .welcome-heading{font-size:26px;font-weight:850;letter-spacing:-.02em;margin-bottom:8px}
 .welcome-sub{color:var(--muted);font-size:14px;margin-bottom:24px}
+.showcase-card{max-width:860px;margin:0 auto 24px;padding:18px 20px;border:1px solid var(--purple-line);border-radius:18px;background:linear-gradient(135deg,rgba(245,243,255,.98),rgba(255,255,255,.96));box-shadow:var(--shadow);text-align:left}
+.showcase-top{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:10px}
+.showcase-number{display:inline-flex;align-items:center;justify-content:center;min-width:34px;height:24px;padding:0 8px;border-radius:999px;background:var(--purple);color:#fff;font-size:12px;font-weight:900}
+.showcase-title{font-size:16px;font-weight:800;color:var(--ink)}
+.showcase-sub{font-size:12px;color:var(--muted)}
+.showcase-copy{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:12px}
+.showcase-pane{padding:12px 14px;border:1px solid var(--border2);border-radius:14px;background:rgba(255,255,255,.86)}
+.showcase-label{font-size:11px;font-weight:900;letter-spacing:.08em;text-transform:uppercase;color:var(--purple);margin-bottom:8px}
+.showcase-pane p{font-size:13px;line-height:1.7;color:#334155}
+.showcase-pills{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+.showcase-pill{display:inline-flex;align-items:center;height:28px;padding:0 10px;border-radius:999px;border:1px solid var(--border);background:var(--panel);font-size:12px;font-weight:700;color:var(--muted)}
 .quick-chips{display:flex;flex-wrap:wrap;justify-content:center;gap:8px}
 .quick-chip{height:36px;padding:0 14px;border:1px solid var(--border);border-radius:999px;background:var(--panel);color:var(--muted);font-size:13px}
 .quick-chip:hover{background:var(--blue-bg);border-color:var(--blue-line);color:var(--blue)}
@@ -217,7 +228,7 @@ button{cursor:pointer}
 
 /* ── Responsive ─────────────────────────────── */
 @media(max-width:1100px){.app{grid-template-columns:280px 1fr 0}.detail{display:none}}
-@media(max-width:780px){.app{grid-template-columns:0 1fr}.rail{display:none}.chat-scroll{padding:14px 14px 0}.composer-wrap{padding:8px 14px 12px}}
+@media(max-width:780px){.app{grid-template-columns:0 1fr}.rail{display:none}.chat-scroll{padding:14px 14px 0}.composer-wrap{padding:8px 14px 12px}.showcase-copy{grid-template-columns:1fr}.showcase-card{padding:16px}}
 </style>
 </head>
 <body>
@@ -272,6 +283,30 @@ button{cursor:pointer}
         <div id="welcome" class="welcome">
           <div class="welcome-heading" id="w-heading">こんにちは。助手です。</div>
           <div class="welcome-sub" id="w-sub">未対応の確認、MCPライブ証拠、原因分析、対応案まで一緒に進めます。</div>
+          <div class="showcase-card">
+            <div class="showcase-top">
+              <span class="showcase-number">04</span>
+              <div>
+                <div class="showcase-title">MCP Server for Prometheus &amp; Langfuse</div>
+                <div class="showcase-sub">Real-time metrics, LLM trace insights, and extensible observability ingestion for AIOps</div>
+              </div>
+            </div>
+            <div class="showcase-copy">
+              <div class="showcase-pane">
+                <div class="showcase-label">Japanese</div>
+                <p>Prometheus と Langfuse 向けの最小構成の MCP サーバーを構築し、ログやオブザーバビリティデータを AIOps プラットフォームへ取り込みます。これにより、リアルタイムメトリクスと LLM トレースの洞察を根拠に、根本原因分析をより深く強化できます。MCP ベースのアーキテクチャにより拡張性も高く、今後は追加ツールや新しいデータソースもスムーズに接続できます。</p>
+              </div>
+              <div class="showcase-pane">
+                <div class="showcase-label">English</div>
+                <p>Build a minimal MCP server for Prometheus and Langfuse to bring logs and observability data into the AIOps platform. This strengthens root cause analysis with real-time metrics and LLM trace insights, while the MCP-based architecture keeps the integration extensible and makes it easy to onboard additional tools and data sources later.</p>
+              </div>
+            </div>
+            <div class="showcase-pills">
+              <span class="showcase-pill">Prometheus metrics</span>
+              <span class="showcase-pill">Langfuse traces</span>
+              <span class="showcase-pill">Extensible MCP architecture</span>
+            </div>
+          </div>
           <div class="quick-chips">
             <button class="quick-chip" onclick="askOpenTickets()">📋 未対応を見る</button>
             <button class="quick-chip" onclick="askRCA()">🔍 原因を確認</button>

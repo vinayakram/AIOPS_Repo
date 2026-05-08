@@ -6,6 +6,7 @@ APP_DIR = Path(__file__).resolve().parents[1]
 
 
 class Settings(BaseSettings):
+    # 主要設定は `.env` から `AIOPS_` プレフィックス付きで上書きできる。
     HOST: str = "0.0.0.0"
     PORT: int = 7000
     DATABASE_URL: str = "sqlite:///./aiops.db"
@@ -55,6 +56,7 @@ class Settings(BaseSettings):
     class Config:
         env_file = str(APP_DIR / ".env")
         env_prefix = "AIOPS_"
+        # 他ツール向けの環境変数があっても読み飛ばし、設定衝突を避ける。
         extra = "ignore"   # ignore non-AIOPS_ env vars (e.g. ANTHROPIC_API_KEY)
 
 

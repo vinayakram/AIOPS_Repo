@@ -60,8 +60,7 @@ class IssueAnalysis(Base):
     handoff_plan = Column(Text, nullable=True)
     full_summary = Column(Text, nullable=True)    # raw LLM text
 
-    # Bilingual display fields. Legacy columns above remain populated so older
-    # readers continue to work; UI/API reads should prefer these language fields.
+    # 多言語表示用の列。互換性のため旧列も残しつつ、新しい UI/API はこちらを優先する。
     likely_cause_en = Column(Text, nullable=True)
     likely_cause_ja = Column(Text, nullable=True)
     evidence_en = Column(Text, nullable=True)
@@ -82,6 +81,7 @@ class IssueAnalysis(Base):
 class Trace(Base):
     __tablename__ = "traces"
 
+    # SDK から受け取る 1 回の実行単位。Span やログの親になる。
     id = Column(String, primary_key=True)          # trace_id from SDK
     app_name = Column(String, nullable=False)
     run_id = Column(String, nullable=True)          # LangGraph run_id
@@ -99,6 +99,7 @@ class Trace(Base):
 class Span(Base):
     __tablename__ = "spans"
 
+    # Trace 内の細かい処理単位。LLM 呼び出しや tool 実行を表す。
     id = Column(String, primary_key=True)
     trace_id = Column(String, ForeignKey("traces.id"), nullable=False)
     parent_span_id = Column(String, nullable=True)
@@ -120,6 +121,7 @@ class Span(Base):
 class Issue(Base):
     __tablename__ = "issues"
 
+    # 検知された障害の中心テーブル。ダッシュボードや RCA はこの行を起点に動く。
     id = Column(Integer, primary_key=True, autoincrement=True)
     app_name = Column(String, nullable=False)
     issue_type = Column(String, nullable=False)     # high_latency | error_spike | repeated_error | custom
@@ -141,7 +143,7 @@ class Issue(Base):
     escalation_count = Column(Integer, default=0)
     metadata_json = Column(Text, nullable=True)
     rule_id = Column(String, nullable=True)        # NFR rule ID e.g. NFR-8a
-    # Recurrence tracking
+    # 再発管理用。fingerprint は発生単位、base_fingerprint は同系統障害の束を表す。
     base_fingerprint = Column(String, nullable=True, index=True)  # stable fp across recurrences
     previous_issue_id = Column(Integer, nullable=True)             # id of prior resolved issue
     recurrence_count = Column(Integer, default=0)                  # 0 = first occurrence
@@ -150,6 +152,7 @@ class Issue(Base):
 class EscalationRule(Base):
     __tablename__ = "escalation_rules"
 
+    # issue_detector が挙げた Issue に対し、追加アクションを定義するルール群。
     id = Column(Integer, primary_key=True, autoincrement=True)
     app_name = Column(String, nullable=True)        # None = applies to all apps
     name = Column(String, nullable=False)

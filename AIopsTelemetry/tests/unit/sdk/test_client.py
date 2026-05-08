@@ -4,7 +4,7 @@ Unit tests for aiops_sdk/client.py
 TDD template — each test block is a stub showing WHAT to test.
 Fill in assertions as you build the implementation.
 
-Coverage target: 100% (see CLAUDE.md §4a)
+Coverage target: 100%
 """
 import threading
 from unittest.mock import MagicMock, patch

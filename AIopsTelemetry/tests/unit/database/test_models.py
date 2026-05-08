@@ -4,7 +4,7 @@ Unit tests for server/database/models.py
 Verifies schema creation, constraints, and ORM behaviour.
 Uses in-memory SQLite only — never touches aiops.db.
 
-Coverage target: 100% on models.py (see CLAUDE.md §4d)
+Coverage target: 100% on models.py
 """
 import pytest
 from datetime import datetime

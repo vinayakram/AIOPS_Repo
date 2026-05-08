@@ -64,11 +64,11 @@ async def request_rca(issue_id: int) -> dict:
             .first()
         )
 
-        # Return cached result immediately if already done
+        # 既に完了済みなら再解析せず、そのまま保存済み結果を返す。
         if existing and existing.status == "done":
             return _to_dict(existing)
 
-        # Create or reset to pending
+        # 初回作成または再実行のため pending に戻す。
         if not existing:
             existing = IssueAnalysis(issue_id=issue_id, status="pending")
             db.add(existing)
@@ -128,7 +128,7 @@ async def _run_rca(analysis_id: int, issue_id: int) -> None:
 
         trace_id, agent_name, timestamp = _extract_params(db, issue)
 
-        # ── No trace_id → fall back to legacy reason_analyzer ────────────
+        # trace_id が無い場合でも、旧 analyzer に落として UI を空にしない。
         if not trace_id:
             logger.warning(
                 "Issue #%d has no trace_id — falling back to reason_analyzer",
@@ -145,7 +145,7 @@ async def _run_rca(analysis_id: int, issue_id: int) -> None:
                 _mark_failed(analysis_id, str(exc))
             return
 
-        # ── Call external RCA service ─────────────────────────────────────
+        # 外部 RCA サービスには issue 情報と deployment context をまとめて渡す。
         payload = {
             "timestamp": timestamp,
             "trace_id": trace_id,
@@ -205,8 +205,7 @@ def _extract_params(db, issue: Issue) -> tuple[Optional[str], str, str]:
     trace_id: Optional[str] = issue.trace_id
     agent_name: str = issue.app_name or "unknown"
 
-    # Backfill missing trace_id for rules that were raised from aggregate signals
-    # (for example NFR-2) so external RCA can still run.
+    # 集計ベースで起きた Issue には trace_id が無いことがあるため、直近失敗 trace を補完する。
     if not trace_id and issue.app_name:
         candidates = (
             db.query(Trace.id, Trace.app_name)

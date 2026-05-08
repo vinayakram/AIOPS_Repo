@@ -48,10 +48,10 @@ exclude_lines = [
 
 # Per-module coverage thresholds (enforced in CI via --cov-fail-under per path)
 # Global minimum applied by CI: 80%
-# SDK:     100%  (see CLAUDE.md §4a)
-# Engine:   90%  (see CLAUDE.md §4b)
-# API:      85%  (see CLAUDE.md §4c)
-# Database:100%  (see CLAUDE.md §4d)
+# SDK:     100%
+# Engine:   90%
+# API:      85%
+# Database:100%
 
 # ── Ruff (linting) ────────────────────────────────────────────────────────────
 [tool.ruff]

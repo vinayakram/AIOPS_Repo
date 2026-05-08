@@ -24,6 +24,7 @@ _escalation_task = None
 _DOCS = Path(__file__).resolve().parents[2]  # repo root
 
 def _register_agents():
+    # ダッシュボードから起動・再起動できる補助エージェントをここで登録する。
     python = sys.executable
 
     ws_folder = os.environ.get("WEB_SEARCH_AGENT_DIR", str(_DOCS / "WebSearchAgent"))
@@ -45,14 +46,14 @@ def _register_agents():
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Startup
+    # 起動時に DB 初期化、外部エージェント登録、定期エスカレーションを開始する。
     init_db()
     _register_agents()
     global _escalation_task
     # metrics_collector is out of scope for this release; host-OS metrics not collected
     _escalation_task = asyncio.create_task(escalation_engine.start())
     yield
-    # Shutdown
+    # 終了時はバックグラウンドタスクを確実に停止する。
     escalation_engine.stop()
     for task in (_escalation_task,):
         if task:
@@ -70,6 +71,7 @@ app = FastAPI(
 )
 
 # ── API routes ────────────────────────────────────────────────────────────────
+# API モジュールは責務ごとに分割し、このファイルでまとめて公開する。
 app.include_router(health.router)
 app.include_router(ingest.router, prefix="/api")
 app.include_router(traces.router, prefix="/api")
@@ -89,12 +91,14 @@ app.include_router(topology_api.router, prefix="/api")
 # ── Dashboard SPA ─────────────────────────────────────────────────────────────
 _DASHBOARD_DIR = os.path.join(os.path.dirname(__file__), "dashboard")
 if os.path.isdir(_DASHBOARD_DIR):
+    # ダッシュボードの静的ファイルを FastAPI 配下にマウントする。
     app.mount("/static", StaticFiles(directory=_DASHBOARD_DIR), name="static")
 
 
 @app.get("/")
 @app.get("/dashboard")
 async def serve_dashboard():
+    # 通常の運用ダッシュボード入口。
     page = os.path.join(_DASHBOARD_DIR, "ops_dashboard.html")
     if os.path.isfile(page):
         return FileResponse(page)
@@ -147,6 +151,7 @@ async def serve_ops_dashboard():
 @app.get("/conversation_j")
 @app.get("/assistant_j")
 async def serve_japanese_conversation():
+    # 日本語会話 UI は新旧ファイル名が混在するため順にフォールバックする。
     page = os.path.join(_DASHBOARD_DIR, "conversation_flow_j.html")
     if os.path.isfile(page):
         return FileResponse(page)

@@ -37,6 +37,7 @@ class RCADiagramRequest(BaseModel):
 
 @router.post("/rca/live")
 def live_rca(payload: LiveRCARequest, db: Session = Depends(get_db)):
+    # メッセージと issue 情報を元に、MCP へライブ RCA を問い合わせる。
     lang = _message_lang(payload.message, payload.lang)
     issue = None
     analysis = None
@@ -66,6 +67,7 @@ def live_rca(payload: LiveRCARequest, db: Session = Depends(get_db)):
         {"type": "tool_call", "tool": "correlate_cross_service_incident", "message": _t(lang, "mcp")},
     ]
     try:
+        # UI にはローカライズ済み表示名を返すが、MCP 呼び出し自体は生の service 名を使う。
         result = mcp_observability.call_tool(
             "correlate_cross_service_incident",
             {
@@ -128,6 +130,7 @@ def live_rca(payload: LiveRCARequest, db: Session = Depends(get_db)):
 
 @router.post("/rca/diagram")
 def rca_diagram(payload: RCADiagramRequest, db: Session = Depends(get_db)):
+    # 保存済み RCA から、画面描画向けの簡易ノード構造を組み立てる。
     issue = db.query(Issue).filter(Issue.id == payload.issue_id).first()
     if not issue:
         raise HTTPException(404, "Issue not found")
@@ -147,6 +150,7 @@ def rca_diagram(payload: RCADiagramRequest, db: Session = Depends(get_db)):
 
 
 def _infer_root_candidate(message: str, affected_service: str, *, issue: Issue | None = None) -> str:
+    # ユーザー文面に別サービス名が含まれていれば、根本原因候補として優先する。
     text = str(message or "").strip()
     if not text:
         return affected_service
@@ -181,6 +185,7 @@ def _infer_root_candidate(message: str, affected_service: str, *, issue: Issue |
 
 
 def _resolve_affected_service(payload_service: str | None, issue: Issue | None) -> str:
+    # 明示入力、Issue 本体、topology 情報の順で影響サービス名を解決する。
     for candidate in (
         str(payload_service or "").strip(),
         str(issue.app_name if issue else "").strip(),
@@ -241,6 +246,7 @@ def _message_lang(message: str | None, requested_lang: str | None) -> str:
 def _analysis_json(analysis: IssueAnalysis | None) -> dict[str, Any]:
     if not analysis:
         return {}
+    # 保存形式が複数あるため、読めた JSON を順に採用する。
     for raw in (analysis.rca_json, analysis.full_summary, analysis.full_summary_en, analysis.full_summary_ja):
         if not raw:
             continue
@@ -253,6 +259,7 @@ def _analysis_json(analysis: IssueAnalysis | None) -> dict[str, Any]:
 
 
 def _unwrap_rca(data: dict[str, Any]) -> dict[str, Any]:
+    # 外部 RCA サービスのレスポンス揺れをここで吸収し、後段は固定キーで扱う。
     return {
         "norm": (data.get("normalization") or {}).get("incident") or data.get("normalization") or {},
         "corr": (data.get("correlation") or {}).get("correlation") or data.get("correlation") or {},
@@ -269,6 +276,7 @@ def _build_diagram(
     data: dict[str, Any],
     lang: str,
 ) -> dict[str, Any]:
+    # 原因・影響・推奨対応を 5 ノードのフローに正規化して UI に返す。
     p = _unwrap_rca(data)
     root = p["rca"].get("root_cause") or {}
     corr_root = p["corr"].get("root_cause_candidate") or {}
@@ -359,6 +367,7 @@ def _impact_snapshot(
     affected_service: str,
     lang: str,
 ) -> dict[str, Any]:
+    # issue 近傍 15 分の Trace を集計し、影響範囲の概算を作る。
     metadata = _issue_metadata(issue)
     corr_root = p.get("corr", {}).get("root_cause_candidate") or {}
     impact = (p.get("err", {}).get("error_impacts") or [{}])[0]
@@ -461,6 +470,7 @@ def _top_evidence(items: list[dict[str, Any]]) -> list[dict[str, Any]]:
         sev = ev.get("severity")
         return {"critical": 4, "error": 3, "warning": 2, "info": 1}.get(sev, 0)
 
+    # 同種の証拠をある程度まとめ、上位だけを UI に返す。
     cleaned = []
     seen = set()
     for ev in sorted(items, key=rank, reverse=True):
@@ -560,7 +570,12 @@ def _localized_kb_action(action: str | None, lang: str, issue: Issue | None) -> 
     text = (action or "").strip()
     if normalize_lang(lang) != "ja":
         return text
-    translated = issue_description_ja(text, app_name=issue.app_name if issue else None, rule_id=issue.rule_id if issue else None)
+    translated = issue_description_ja(
+        text,
+        app_name=issue.app_name if issue else None,
+        rule_id=issue.rule_id if issue else None,
+        allow_live_translate=False,
+    )
     if translated and translated != text:
         return translated
     lowered = text.lower()

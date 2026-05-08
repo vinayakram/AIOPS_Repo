@@ -6,7 +6,7 @@ Each NFR rule must have at least one test that:
   2. Calls detect_issues() and asserts the correct issue is created
   3. Has a companion test that seeds data that should NOT trigger the rule
 
-Coverage target: ≥ 90% (see CLAUDE.md §4b)
+Coverage target: ≥ 90%
 """
 import pytest
 from datetime import datetime, timedelta

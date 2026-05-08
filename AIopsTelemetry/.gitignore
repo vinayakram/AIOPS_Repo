@@ -115,7 +115,9 @@ pip-delete-this-directory.txt
 *.ipynb
 
 # ── Claude Code ───────────────────────────────────────────────────────────────
+.claude/
 .claude/settings.local.json
+CLAUDE.md
 
 # ── Project-specific ──────────────────────────────────────────────────────────
 # Screenshots / design assets (tracked manually if needed)

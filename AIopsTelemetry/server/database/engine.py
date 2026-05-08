@@ -12,6 +12,7 @@ Base = declarative_base()
 
 
 def get_db():
+    # FastAPI の依存注入用。1 リクエストにつき 1 セッションを払い出す。
     db = SessionLocal()
     try:
         yield db
@@ -20,6 +21,7 @@ def get_db():
 
 
 def init_db():
+    # テーブル作成に加え、SQLite 向けの軽量マイグレーションもここで実行する。
     from server.database import models  # noqa: F401 — registers all models
     Base.metadata.create_all(bind=engine)
     # SQLite does not add columns to existing tables via create_all.
@@ -71,6 +73,7 @@ def init_db():
             "UPDATE issue_analyses SET full_summary_en = full_summary WHERE full_summary_en IS NULL"
         ))
         conn.commit()
+    # 起動時にルール初期投入と多言語表示の穴埋めも済ませる。
     _seed_nfr_escalation_rules()
     _backfill_bilingual_display_fields()
     if settings.RCA_KB_ENABLED:
@@ -153,6 +156,7 @@ def _seed_nfr_escalation_rules():
 
 
 def _add_column_if_missing(conn, table: str, column: str, col_type: str):
+    # SQLite では存在確認してから `ALTER TABLE` を行う。
     from sqlalchemy import text, inspect as sa_inspect
     insp = sa_inspect(conn)
     existing = {c["name"] for c in insp.get_columns(table)}

@@ -2,6 +2,8 @@
 
 > Purpose-built observability and automated-remediation platform for AI agent applications.
 
+Japanese guide: [README_JA.md](README_JA.md)
+
 AIops Telemetry collects distributed traces from LangGraph / LangChain agents, detects issues using 21 NFR-based rules, generates LLM-powered root-cause analysis correlated with real system metrics, and can autonomously fix broken agent code using Claude Code — all from a single self-hosted server with a dark-mode dashboard.
 
 ---

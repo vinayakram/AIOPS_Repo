@@ -32,6 +32,7 @@ SEVERITY_ORDER = {"low": 0, "medium": 1, "high": 2, "critical": 3}
 def detect_issues(db: Session) -> list[Issue]:
     """Run all NFR detectors. Returns newly created issues."""
     global _configured_nfr_ids, _enabled_nfr_ids
+    # 有効化されている NFR を都度読み直し、DB 上の ON/OFF を即座に反映する。
     # Load enabled NFR rule IDs from the EscalationRule table.
     # If no NFR rules are seeded yet, _enabled_nfr_ids stays None (all allowed).
     nfr_rows = (
@@ -54,6 +55,7 @@ def detect_issues(db: Session) -> list[Issue]:
     created = []
     window = settings.NFR_CHECK_WINDOW_MINUTES
 
+    # 大まかなカテゴリ順に detector を流し、生成した Issue をまとめて返す。
     # Section 1 — Health & Availability
     created.extend(_detect_consecutive_trace_failures(db))         # NFR-2 / NFR-5
     created.extend(_detect_http_error_rate(db, window))            # NFR-8 / NFR-8a
@@ -107,8 +109,7 @@ def _detect_consecutive_trace_failures(db: Session) -> list[Issue]:
             .all()
         )
         if len(recent) == 3 and all(r[1] == "error" for r in recent):
-            # Keep a representative failing trace on the issue so RCA can call
-            # the external service instead of falling back to reason_analyzer.
+            # 代表 trace_id を保持しておくと、後段の外部 RCA が対象 trace を引ける。
             representative_trace_id = recent[0][0]
             issue = _ensure_issue(
                 db,
@@ -128,9 +129,7 @@ def _detect_consecutive_trace_failures(db: Session) -> list[Issue]:
 def _detect_http_error_rate(db: Session, window_mins: int) -> list[Issue]:
     """NFR-8: ≥1% 5xx rate for window → SEV2; NFR-8a: ≥5% → SEV1."""
     created = []
-    # Give the demo flow enough time for the user to trigger the error, open
-    # telemetry, and run RCA/remediation without the occurrence falling out of
-    # the short generic NFR polling window.
+    # デモ操作中に短い観測窓から抜け落ちないよう、最低 180 分は見る。
     cutoff = datetime.utcnow() - timedelta(minutes=max(window_mins, 180))
     apps = [r[0] for r in db.query(Trace.app_name).distinct().all()]
     for app in apps:
@@ -205,6 +204,7 @@ def _detect_exception_count_spike(db: Session, window_mins: int) -> list[Issue]:
         current = current_q.count()
         previous = previous_q.count()
         if previous > 0 and current >= previous * 2 and current >= 5:
+            # 直前窓との比較でスパイクを判定し、古い履歴に引きずられにくくする。
             issue = _ensure_issue(
                 db, app_name=app, rule_id="NFR-9",
                 issue_type="nfr_exception_count",
@@ -229,9 +229,7 @@ def _detect_response_time_with_llm(db: Session, window_mins: int) -> list[Issue]
     up in Langfuse.
     """
     created = []
-    # Give the demo flow enough time for the user to trigger the error, open
-    # telemetry, and run RCA/remediation without the occurrence falling out of
-    # the short generic NFR polling window.
+    # レイテンシ系もデモ再現性のため最低 180 分の窓を確保する。
     cutoff = datetime.utcnow() - timedelta(minutes=max(window_mins, 180))
     target = settings.NFR_RESPONSE_TIME_TARGET_MS
     apps = [r[0] for r in db.query(Trace.app_name).distinct().all()]

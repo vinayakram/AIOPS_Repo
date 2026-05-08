@@ -58,6 +58,9 @@ build/
 # IDE and local assistant state
 .vscode/
 .idea/
+CLAUDE.md
+**/CLAUDE.md
+**/.claude/
 **/.claude/settings.local.json
 
 # OS files

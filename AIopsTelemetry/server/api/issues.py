@@ -63,6 +63,7 @@ def list_issues(
     lang: str = Query("ja", pattern="^(ja|en)$"),
     db: Session = Depends(get_db),
 ):
+    # 一覧 API は軽量なフィルタだけを受け、表示用整形は最後にまとめて行う。
     logger.info("inside issues")
     q = db.query(Issue)
     if app_name:
@@ -90,7 +91,7 @@ def create_issue(
     fp_key = f"{payload.app_name}:{payload.issue_type}:{payload.span_name or ''}"
     base_fp = hashlib.sha256(fp_key.encode()).hexdigest()[:16]
 
-    # Dedup: return existing open issue without modification
+    # 同系統の未解決 Issue があれば新規作成せず既存を返す。
     open_existing = (
         db.query(Issue)
         .filter(Issue.base_fingerprint == base_fp, Issue.status != "RESOLVED")
@@ -99,7 +100,7 @@ def create_issue(
     if open_existing:
         return {"id": open_existing.id, "created": False, "message": "Duplicate open issue"}
 
-    # Find prior resolved issue for recurrence linkage
+    # 解決済みの直近 Issue とつなぎ、再発回数を追跡できるようにする。
     prior = (
         db.query(Issue)
         .filter(Issue.base_fingerprint == base_fp, Issue.status == "RESOLVED")
@@ -137,6 +138,7 @@ def create_issue(
     db.add(issue)
     db.commit()
     db.refresh(issue)
+    # RCA は非同期で走らせ、Issue 作成 API 自体はすぐ返す。
     background_tasks.add_task(rca_client.request_rca, issue.id)
     return {"id": issue.id, "created": True}
 
@@ -365,6 +367,7 @@ def _upsert_seed_issue(
     trace_id: str,
     created_at: datetime,
 ) -> tuple[Issue, bool]:
+    # デモデータは固定 fingerprint を使い、再投入時は idempotent に更新する。
     base_fp = hashlib.sha256(f"{namespace}:{key}".encode()).hexdigest()[:16]
     issue = db.query(Issue).filter(Issue.base_fingerprint == base_fp).first()
     created = False
@@ -409,6 +412,7 @@ def _upsert_seed_analysis(
     action_en: str,
     action_ja: str,
 ) -> None:
+    # seeded issue と対になる RCA 結果も同じ issue_id に上書きする。
     analysis = db.query(IssueAnalysis).filter(IssueAnalysis.issue_id == issue_id).first()
     if analysis is None:
         analysis = IssueAnalysis(issue_id=issue_id)
@@ -923,30 +927,40 @@ def _issue_dict(i: Issue, lang: str = "ja") -> dict:
     app_name_ja = app_display_name_ja(i.app_name)
     app_display_name = app_name_ja if lang == "ja" else i.app_name
     title_en = i.title_en or i.title
-    computed_title_ja = issue_title_ja(
-        i.title, app_name=i.app_name, rule_id=i.rule_id
-    )
     stored_title_ja = i.title_ja or ""
-    title_ja = (
-        computed_title_ja
-        if not stored_title_ja
+    needs_title_ja = (
+        not stored_title_ja
         or "NFR-" in stored_title_ja
         or i.app_name in stored_title_ja
         or stored_title_ja == title_en
         or _looks_english(stored_title_ja)
+    )
+    title_ja = (
+        issue_title_ja(
+            i.title,
+            app_name=i.app_name,
+            rule_id=i.rule_id,
+            allow_live_translate=False,
+        )
+        if needs_title_ja
         else stored_title_ja
     )
     description_en = i.description_en or i.description
-    computed_description_ja = issue_description_ja(
-        i.description, app_name=i.app_name, rule_id=i.rule_id
-    )
     stored_description_ja = i.description_ja or ""
-    description_ja = (
-        computed_description_ja
-        if not stored_description_ja
+    needs_description_ja = (
+        not stored_description_ja
         or "application is not reachable" in stored_description_ja.lower()
         or stored_description_ja == description_en
         or _looks_english(stored_description_ja)
+    )
+    description_ja = (
+        issue_description_ja(
+            i.description,
+            app_name=i.app_name,
+            rule_id=i.rule_id,
+            allow_live_translate=False,
+        )
+        if needs_description_ja
         else stored_description_ja
     )
     title = title_ja if lang == "ja" else title_en

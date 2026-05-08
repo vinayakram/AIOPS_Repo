@@ -10,7 +10,7 @@ Routes tested:
   POST   /api/issues/{id}/escalate
   POST   /api/issues/{id}/resolve
 
-Coverage target: ≥ 85% (see CLAUDE.md §4c)
+Coverage target: ≥ 85%
 """
 import pytest
 
