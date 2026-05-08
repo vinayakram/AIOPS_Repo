@@ -1,3 +1,14 @@
+"""
+Repository management service handling all git operations for the AIOPS remediation platform.
+Provides branch creation, backup, commit, push, and pull request creation via gh CLI or GitHub API,
+with fallback strategies for locked git object databases and Windows-specific permission issues.
+Also manages remote repository cloning/syncing and working-tree change detection.
+
+AIOPSリメディエーションプラットフォームのgit操作を一元管理するリポジトリサービス。
+ブランチ作成、バックアップ、コミット、プッシュ、gh CLIまたはGitHub APIによるPR作成を提供する。
+gitオブジェクトデータベースのロックやWindows固有のパーミッション問題に対するフォールバックも実装する。
+リモートリポジトリのクローン・同期とワーキングツリーの変更検出も担当する。
+"""
 from __future__ import annotations
 
 import json

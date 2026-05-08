@@ -1,4 +1,13 @@
 #!/usr/bin/env bash
+# Interactive presenter script for the SampleAgent AIOps end-to-end demo. Walks through
+# five steps: environment pre-check with normal query telemetry, concurrent user simulation
+# to trigger CPU threshold breaches, AIopsTelemetry ticket validation, RCA execution,
+# and a full remediation workflow including plan generation, implementation, review, and PR creation.
+#
+# SampleAgent AIOpsエンドツーエンドデモ向けのインタラクティブプレゼンタースクリプト。
+# 環境事前確認と通常クエリテレメトリ、CPUしきい値超過を引き起こす並行ユーザーシミュレーション、
+# AIopsTelemetryチケット確認、RCA実行、およびplan生成・実装・レビュー・PR作成を含む
+# 完全なremediationワークフローの5ステップを案内する。
 set -euo pipefail
 
 DEMO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"

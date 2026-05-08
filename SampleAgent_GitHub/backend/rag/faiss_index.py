@@ -1,3 +1,13 @@
+"""
+FAISS-based in-memory vector index for the SampleAgent GitHub RAG pipeline using inner-product
+similarity. Stores article metadata alongside embeddings and returns top-k results with
+cosine similarity scores. The index is rebuilt per query from L2-normalised embeddings
+produced by the Embedder class.
+
+SampleAgent GitHub RAGパイプライン向けの内積類似度を使用したFAISSベースのインメモリベクトルインデックス。
+論文メタデータをエンベディングと共に格納し、コサイン類似度スコア付きのトップk件の結果を返す。
+インデックスはEmbedderクラスが生成するL2正規化済みエンベディングからクエリごとに再構築される。
+"""
 import faiss
 import numpy as np
 from typing import List, Dict

@@ -1,3 +1,14 @@
+"""
+End-to-end RAG pipeline for the SampleAgent GitHub backend orchestrating PubMed article
+retrieval, sentence-transformer embedding, FAISS indexing, PageRank re-ranking, and LLM
+answer generation. Supports Anthropic (preferred) and OpenAI backends, special-character
+demo error triggers, LLM disable simulation, and Langfuse-instrumented step tracing.
+
+SampleAgent GitHubバックエンドのエンドツーエンドRAGパイプライン。PubMed論文取得・sentence-transformer
+エンベディング・FAISSインデックス・PageRank再ランキング・LLM回答生成を統合する。Anthropic
+（優先）とOpenAIバックエンド、特殊文字デモエラートリガー、LLM無効化シミュレーション、および
+Langfuseによるステップトレース計装をサポートする。
+"""
 import json
 import hashlib
 import re

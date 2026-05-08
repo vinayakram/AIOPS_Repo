@@ -1,9 +1,13 @@
 """
-Thin client that forwards completed SampleAgent traces to the AIops
-Telemetry server (http://localhost:7000).
+Non-blocking AIops Telemetry client for the SampleAgent GitHub backend that forwards
+completed pipeline traces to the AIops ingest API. Builds structured span payloads from
+TraceContext step timers and dispatches them in daemon background threads to avoid blocking
+the main request path.
 
-Called from main.py after each /api/query finishes — non-blocking,
-never raises so it can never break the main request.
+SampleAgent GitHubバックエンドのノンブロッキングAIopsテレメトリクライアント。完了したパイプライン
+トレースをAIOpsインジェストAPIに転送する。TraceContextのステップタイマーから構造化スパン
+ペイロードを構築し、メインリクエストパスをブロックしないよう、デーモンバックグラウンドスレッド
+で送信する。
 """
 import uuid
 import logging

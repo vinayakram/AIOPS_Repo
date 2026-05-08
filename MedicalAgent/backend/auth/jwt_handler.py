@@ -1,3 +1,12 @@
+"""
+JWT access token creation and verification utilities for the MedicalAgent backend.
+Tokens are signed with the application secret key using the configured algorithm (HS256 by default)
+and carry a configurable expiry enforced at decode time.
+
+MedicalAgentバックエンド用のJWTアクセストークン生成および検証ユーティリティ。
+設定済みアルゴリズム（デフォルトHS256）でアプリケーション秘密鍵によりトークンを署名し、
+デコード時に設定された有効期限を強制する。
+"""
 from datetime import datetime, timedelta
 from jose import JWTError, jwt
 from typing import Optional

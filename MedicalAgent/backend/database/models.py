@@ -1,3 +1,12 @@
+"""
+SQLAlchemy database models and session management for the MedicalAgent backend using SQLite.
+Defines the User table for authentication and the TraceLog table for persisting per-query
+pipeline execution metadata. Includes database initialization and default admin user seeding.
+
+SQLiteを使用するMedicalAgentバックエンドのSQLAlchemyデータベースモデルおよびセッション管理。
+認証用のUserテーブルと、クエリごとのパイプライン実行メタデータを永続化するTraceLogテーブル
+を定義する。データベース初期化およびデフォルト管理者ユーザーのシード処理を含む。
+"""
 from sqlalchemy import create_engine, Column, Integer, String, DateTime, Float, Text
 from sqlalchemy.orm import declarative_base, sessionmaker
 from datetime import datetime

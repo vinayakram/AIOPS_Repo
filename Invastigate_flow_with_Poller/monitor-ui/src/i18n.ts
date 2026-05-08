@@ -1,3 +1,12 @@
+// Internationalization module providing all UI string translations for English and Japanese.
+// Exports a UI lookup table keyed by string identifier and language code, plus a t() helper function.
+// Covers navigation labels, form fields, agent names, pipeline status terms, and summary section titles.
+// Falls back to the English value when a Japanese translation is missing for a given key.
+//
+// 英語と日本語のすべてのUI文字列翻訳を提供する国際化モジュール。
+// 文字列識別子と言語コードをキーとするUIルックアップテーブルとt()ヘルパー関数をエクスポートする。
+// ナビゲーションラベル、フォームフィールド、エージェント名、パイプラインステータス用語、サマリーセクションタイトルをカバーする。
+// 指定キーの日本語翻訳が不足している場合は英語の値にフォールバックする。
 export type Lang = 'en' | 'ja'
 
 export const UI: Record<string, Record<Lang, string>> = {

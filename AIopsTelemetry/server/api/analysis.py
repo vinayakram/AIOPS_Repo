@@ -1,9 +1,13 @@
 """
-Analysis API
-============
-Endpoints to request and retrieve root-cause analysis for issues (now
-delegated to the external Invastigate_flow_with_Poller microservice),
-and to query recent system metric snapshots.
+Analysis API providing endpoints to trigger and retrieve root-cause analysis
+for detected issues, delegating the five-agent RCA pipeline to the external
+Invastigate_flow_with_Poller microservice via rca_client. Also exposes
+recent system metric snapshots for correlated performance context.
+
+検出済みイシューに対するRCA（根本原因分析）をInvastigate_flow_with_Pollerマイクロサービスに
+委譲し、分析結果の取得および最新システムメトリクスのスナップショット照会を提供するAPIモジュール。
+五段階エージェントパイプラインの起動・ポーリング・結果返却を一貫して管理する。
+システム性能指標との時系列相関によりRCAの精度向上を図る設計となっている。
 """
 from fastapi import APIRouter, HTTPException, Query
 from server.engine.rca_client import request_rca, get_rca_analysis

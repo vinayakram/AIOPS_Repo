@@ -1,3 +1,14 @@
+"""
+FastAPI route handler for the standalone Correlation Agent endpoint at POST /api/v1/correlate.
+Accepts a CorrelationRequest containing the normalized incident and optional trace_id.
+Delegates to the CorrelationAgent which fetches logs and returns a causal failure graph.
+HTTP 500 is returned for LLM errors or validation failures; 422 for request schema violations.
+
+POST /api/v1/correlateのスタンドアロン相関エージェントエンドポイントのFastAPIルートハンドラ。
+正規化済みインシデントとオプションのtrace_idを含むCorrelationRequestを受け付ける。
+ログを取得して因果障害グラフを返すCorrelationAgentに処理を委譲する。
+LLMエラーまたは検証失敗にはHTTP 500を返し、リクエストスキーマ違反には422を返す。
+"""
 from fastapi import APIRouter, HTTPException
 
 from app.agents.correlation_agent import CorrelationAgent

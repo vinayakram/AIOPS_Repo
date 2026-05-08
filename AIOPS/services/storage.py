@@ -1,3 +1,14 @@
+"""
+Thread-safe file-based state and artifact storage layer for the AIOPS remediation platform.
+Manages per-issue run directories, atomic JSON state reads/writes, progress log appending,
+plan version tracking, and session state reset operations backed by the configured runs directory.
+Provides the single shared I/O interface used by all service layers throughout the application.
+
+AIOPSリメディエーションプラットフォームのスレッドセーフなファイルベースの状態・成果物ストレージ層。
+課題ごとの実行ディレクトリ管理、JSONステートのアトミック読み書き、進捗ログの追記、
+計画バージョン管理、セッション状態リセット操作を設定済みのrunsディレクトリを基盤として提供する。
+アプリケーション全体の全サービス層で使用される共通I/Oインターフェースを担う。
+"""
 from __future__ import annotations
 
 import json

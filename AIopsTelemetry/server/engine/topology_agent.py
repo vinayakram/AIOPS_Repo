@@ -1,3 +1,15 @@
+"""
+Topology agent providing infrastructure discovery and probing utilities.
+Performs HTTP and TCP liveness probes, discovers running Docker containers
+via docker ps and docker stats, captures a host CPU/memory snapshot using
+psutil, and classifies each container into a typed topology node for graph rendering.
+
+HTTPおよびTCPライブネスプローブ・docker psとdocker statsによるDockerコンテナ自動検出・
+psutilを用いたホストCPU/メモリスナップショット取得・各コンテナのトポロジーノード分類を
+提供するインフラ探索・プローブユーティリティモジュール。
+検出結果をPrometheus・Langfuse・PGVector・AIエージェントなどのノード種別に分類し、
+グラフ描画向けの構造化データを生成する設計となっている。
+"""
 from __future__ import annotations
 
 import json

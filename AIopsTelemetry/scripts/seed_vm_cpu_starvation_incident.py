@@ -1,3 +1,14 @@
+"""
+Seeds a VM CPU starvation topology incident scenario into the AIopsTelemetry database.
+Creates a pre-built critical issue depicting a runaway background job starving the Docker
+AI agent via Linux CPU cgroup throttling, with full topology nodes, metrics, and trace data.
+Upserts the issue and a completed IssueAnalysis with bilingual cause, evidence, and action.
+
+AIopsTelemetryデータベースにVMのCPU枯渇トポロジーインシデントシナリオを投入するスクリプト。
+暴走したバックグラウンドジョブがLinuxのCPU cgroupスロットリングを通じてDockerのAIエージェントを
+枯渇させるcritical課題を、完全なトポロジーノード・メトリクス・トレースデータとともに作成する。
+英日バイリンガルの原因・証拠・対処法を持つ課題とIssueAnalysisをupsertする。
+"""
 from __future__ import annotations
 
 import hashlib

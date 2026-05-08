@@ -1,3 +1,14 @@
+"""
+Pydantic data models and enumerations for the AIOPS remediation platform.
+Defines the core domain types: Issue, Status, RemediationType, ProjectResolution,
+RCAReport, TestRunResult, and ImplementationRun used throughout the application.
+Provides strict validation and serialization for all inter-service data exchange.
+
+AIOPSリメディエーションプラットフォームのPydanticデータモデルと列挙型定義。
+Issue、Status、RemediationType、ProjectResolution、RCAReport、TestRunResult、
+ImplementationRunなどのコアドメイン型をアプリケーション全体で使用する形で定義する。
+サービス間のデータ交換に対して厳密なバリデーションとシリアライズ機能を提供する。
+"""
 from __future__ import annotations
 
 from enum import Enum

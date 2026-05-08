@@ -1,3 +1,14 @@
+"""
+MCP observability client that launches a local stdio MCP server as a subprocess
+and communicates via Content-Length framed JSON-RPC messages. Sends tools/call
+requests to the MCP observability server, parses the structured response, and
+returns the tool result dict for consumption by the chat and analysis APIs.
+
+ローカルのstdio MCPサーバをサブプロセスとして起動し、Content-Lengthフレーム形式の
+JSON-RPCメッセージで通信するMCPオブザーバビリティクライアントモジュール。
+tools/callリクエストをMCPオブザーバビリティサーバに送信し、構造化レスポンスを解析して
+チャットAPIおよび分析APIが利用するツール結果dictを返す設計となっている。
+"""
 from __future__ import annotations
 
 import json

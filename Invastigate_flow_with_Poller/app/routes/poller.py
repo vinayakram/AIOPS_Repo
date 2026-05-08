@@ -1,3 +1,14 @@
+"""
+FastAPI route handlers for AIOps poller admin operations at /api/v1/poller/*.
+Provides GET /status to inspect poller state and statistics, and POST /start and /stop lifecycle controls.
+Exposes a singleton AIOpsPoller instance shared with the application lifespan via get_poller().
+Poll statistics include total incidents polled, processed, skipped, errored, and last poll timestamp.
+
+/api/v1/poller/*のAIOpsポーラー管理操作のFastAPIルートハンドラ。
+ポーラー状態と統計を確認するGET /statusと、POST /startおよび/stopライフサイクル制御を提供する。
+get_poller()を介してアプリケーションライフスパンと共有されるシングルトンAIOpsPollerインスタンスを公開する。
+ポーリング統計にはポーリング済み、処理済み、スキップ済み、エラー発生インシデントの合計と最終ポーリング時刻が含まれる。
+"""
 from fastapi import APIRouter
 
 from app.services.aiops_poller import AIOpsPoller

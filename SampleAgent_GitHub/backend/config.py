@@ -1,3 +1,14 @@
+"""
+Pydantic-based application settings for the SampleAgent GitHub backend loaded from
+environment variables and an optional .env file. Covers API keys for PubMed, OpenAI, and
+Anthropic, JWT authentication parameters, RAG tuning knobs, AIOps telemetry settings,
+and autoscaling guardrail parameters for operational deployment guidance.
+
+SampleAgent GitHubバックエンド向けのpydanticベースのアプリケーション設定。環境変数および
+オプションの.envファイルから読み込む。PubMed・OpenAI・AnthropicのAPIキー、JWT認証パラメータ、
+RAGチューニング値、AIOpsテレメトリ設定、および運用デプロイメントガイダンス向けの
+オートスケーリングガードレールパラメータを網羅している。
+"""
 from pydantic_settings import BaseSettings
 from typing import Optional
 

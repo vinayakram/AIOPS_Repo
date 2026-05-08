@@ -1,3 +1,10 @@
+// Application shell component providing the top navigation bar and page content outlet.
+// Includes a language toggle button (EN/JP) that persists the selection to localStorage.
+// Includes a dark/light theme toggle that persists the selection to localStorage via a CSS class on documentElement.
+//
+// トップナビゲーションバーとページコンテンツアウトレットを提供するアプリケーションシェルコンポーネント。
+// 選択をlocalStorageに永続化する言語切替ボタン（EN/JP）を含む。
+// documentElementのCSSクラスを介してlocalStorageに選択を永続化するダーク/ライトテーマトグルを含む。
 import { useEffect, useState } from 'react'
 import { Outlet, NavLink } from 'react-router-dom'
 import { useLang } from '../LanguageContext'

@@ -1,10 +1,13 @@
 """
-LangChain/LangGraph callback handler.
-Drop this into any graph's .invoke() / .astream() call to get automatic tracing.
+LangChain/LangGraph callback handler that automatically captures telemetry for AIops tracing.
+Implements on_chain_start/end, on_llm_start/end, on_tool_start/end, and on_retriever_start/end
+hooks to record span hierarchies, token usage, and error states for each graph execution.
+Drop this handler into any graph's .invoke() or .astream() config to enable automatic tracing.
 
-Usage:
-    from aiops_sdk import AIopsCallbackHandler
-    graph.invoke(inputs, config={"callbacks": [AIopsCallbackHandler()]})
+LangChain/LangGraphの実行を自動的にキャプチャしてAIopsにテレメトリを送信するコールバックハンドラー。
+チェーン、LLM、ツール、リトリーバーの開始・終了・エラーイベントを処理し、
+スパン階層、トークン使用量、エラー状態を記録する。
+graph.invoke()またはgraph.astream()のconfigに追加するだけでトレーシングが有効になる。
 """
 import logging
 from typing import Any, Optional, Union

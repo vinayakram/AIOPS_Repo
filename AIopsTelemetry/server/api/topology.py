@@ -1,3 +1,14 @@
+"""
+Topology API building VM-level service topology views for individual issues.
+Overlays RCA analysis results onto template nodes, fetches component logs from
+Prometheus, Langfuse, and the local database, and returns a Mermaid-compatible
+JSON structure suitable for graph rendering in the operations dashboard.
+
+個別イシューに対するVMレベルのサービストポロジーを構築するAPIモジュール。
+RCA分析結果をテンプレートノードに重ね合わせ、Prometheus・Langfuse・ローカルDBから
+コンポーネントログを収集し、オペレーションダッシュボードのグラフ描画に適した
+Mermaid互換のJSON構造を返す。
+"""
 from __future__ import annotations
 
 import copy

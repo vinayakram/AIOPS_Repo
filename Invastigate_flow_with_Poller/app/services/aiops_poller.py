@@ -1,3 +1,14 @@
+"""
+Background AIOps poller that periodically fetches incidents from an external AIOps engine.
+Uses two-layer deduplication: an in-memory set for fast checks and SQLite for restart survival.
+On startup, loads all existing trace_ids from the database to seed the deduplication set.
+New incidents are passed to the Orchestrator pipeline; polled, processed, and error counts are tracked.
+
+外部AIOpSエンジンから定期的にインシデントを取得するバックグラウンドAIOpsポーラー。
+高速チェック用のメモリ内セットと再起動後の保持のためのSQLiteによる2層重複排除を使用する。
+起動時にデータベースから既存のすべてのtrace_idを読み込んで重複排除セットを初期化する。
+新規インシデントはOrchestratorパイプラインに渡され、ポーリング済み、処理済み、エラー数を追跡する。
+"""
 from __future__ import annotations
 
 import asyncio

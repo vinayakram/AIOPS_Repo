@@ -1,3 +1,14 @@
+"""
+Topology correlation agent that identifies host-side CPU contention root issues
+and links them to downstream agent reachability/latency symptoms. Scores candidate
+pairs using temporal proximity, alias overlap, and impact keywords, then enriches
+issue metadata and IssueAnalysis records with bilingual correlation evidence.
+
+ホスト側CPU競合の根本原因イシューを特定し、下流エージェントの到達不能・高レイテンシ
+症状と関連付けるトポロジー相関エージェントモジュール。時間的近接性・エイリアスオーバーラップ・
+影響キーワードでスコアリングし、相関証跡で強化されたイシューメタデータと
+英日両言語対応のIssueAnalysisレコードを生成する設計となっている。
+"""
 from __future__ import annotations
 
 import copy

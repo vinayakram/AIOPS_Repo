@@ -1,3 +1,14 @@
+"""
+Seeds the AIopsTelemetry database with a curated set of realistic demo issues and analyses.
+Creates or refreshes 12 pre-defined production incident scenarios covering OOM, disk full,
+connection pool exhaustion, TLS expiry, deployment regression, and other common failure types.
+Each issue is upserted with bilingual (EN/JA) titles, descriptions, and RCA analysis records.
+
+現実的なデモ課題と分析データのキュレーション済みセットをAIopsTelemetryデータベースに投入する。
+OOM、ディスク満杯、コネクションプール枯渇、TLS期限切れ、デプロイ回帰など12種類の
+本番インシデントシナリオを作成または更新する。
+各課題は英日バイリンガルのタイトル・説明およびRCA分析レコードとともにupsertされる。
+"""
 from __future__ import annotations
 
 import hashlib

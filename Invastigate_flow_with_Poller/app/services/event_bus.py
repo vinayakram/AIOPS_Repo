@@ -1,3 +1,14 @@
+"""
+In-process publish/subscribe event bus for streaming pipeline events to SSE clients.
+Supports per-trace_id subscriptions and a wildcard channel for global dashboard feeds.
+A replay buffer stores all events per trace so late-connecting SSE clients receive full history.
+The buffer is automatically cleared 120 seconds after a pipeline_completed or error event.
+
+SSEクライアントにパイプラインイベントをストリーミングするためのプロセス内パブリッシュ/サブスクライブイベントバス。
+trace_idごとのサブスクリプションとグローバルダッシュボードフィード用のワイルドカードチャネルをサポートする。
+遅延接続したSSEクライアントが完全な履歴を受信できるようにトレースごとのリプレイバッファにすべてのイベントを格納する。
+pipeline_completedまたはerrorイベントの120秒後にバッファは自動的にクリアされる。
+"""
 from __future__ import annotations
 
 import asyncio

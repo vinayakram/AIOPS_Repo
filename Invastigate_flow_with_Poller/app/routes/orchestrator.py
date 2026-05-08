@@ -1,3 +1,14 @@
+"""
+FastAPI route handler for the full pipeline orchestrator endpoint at POST /api/v1/investigate.
+Accepts an InvestigationRequest and runs all five agents in sequence via the Orchestrator class.
+Returns an InvestigationResponse with all agent outputs; partial results are returned if a step fails.
+This is the low-level pipeline endpoint — prefer POST /api/v1/analyze for cache-aware frontend calls.
+
+POST /api/v1/investigateの完全パイプラインオーケストレーターエンドポイントのFastAPIルートハンドラ。
+InvestigationRequestを受け付け、Orchestratorクラスを介して5つのエージェントを順番に実行する。
+すべてのエージェント出力を含むInvestigationResponseを返し、ステップ失敗時は部分結果を返す。
+これはローレベルのパイプラインエンドポイントであり、フロントエンドはキャッシュ対応のPOST /api/v1/analyzeを推奨する。
+"""
 from fastapi import APIRouter, HTTPException
 
 from app.agents.orchestrator import Orchestrator

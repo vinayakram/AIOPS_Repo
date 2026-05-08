@@ -1,6 +1,11 @@
 """
-Runtime flags that can be toggled via the admin API without restarting the server.
-Used for demo purposes (e.g. disabling LLM access to show error traces in AIops).
+Runtime state flags for the SampleAgent GitHub backend that can be toggled via the admin API
+without restarting the server. Tracks LLM access enablement and records disabled-LLM query
+attempts within a rolling 10-minute window to trigger error escalation in AIops demos.
+
+サーバを再起動せずに管理者APIで切り替え可能なSampleAgent GitHubバックエンドのランタイム状態フラグ。
+LLMアクセス有効状態を管理し、AIopsデモにおけるエラーエスカレーション発火のため、10分間の
+ローリングウィンドウ内のLLM無効化クエリ試行回数を記録する。
 """
 
 import time

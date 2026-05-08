@@ -1,4 +1,11 @@
 #!/usr/bin/env bash
+# Starts the AIOPS remediation FastAPI server as a background (nohup) process on Linux.
+# Writes the server PID to a .runtime/codex-remediation.pid file and logs output to
+# .runtime/codex-remediation.log, preventing duplicate instances from launching.
+#
+# LinuxでAIOPSリメディエーションのFastAPIサーバーをバックグラウンド（nohup）プロセスとして起動する。
+# サーバーのPIDを.runtime/codex-remediation.pidに書き込み、ログを.runtime/codex-remediation.logへ出力する。
+# 既に起動中の場合は重複起動を防いで終了する。
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"

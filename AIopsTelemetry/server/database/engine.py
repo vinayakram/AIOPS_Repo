@@ -1,3 +1,14 @@
+"""
+SQLAlchemy database engine module providing the engine, SessionLocal factory,
+and declarative Base. The init_db function creates all tables, performs SQLite
+column migrations via _add_column_if_missing, seeds default NFR escalation rules,
+and backfills bilingual display fields for existing issue and analysis records.
+
+SQLAlchemyエンジン・SessionLocalファクトリ・宣言的Baseを提供するデータベースエンジンモジュール。
+init_db関数は全テーブル作成・_add_column_if_missingによるSQLiteカラムマイグレーション・
+デフォルトNFRエスカレーションルールのシード・既存イシューと分析レコードの
+英日両言語表示フィールドバックフィルを実行する。
+"""
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker

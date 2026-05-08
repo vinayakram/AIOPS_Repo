@@ -1,3 +1,14 @@
+"""
+Orchestrates the end-to-end code implementation workflow using the Codex CLI.
+Builds implementation prompts from approved plans, manages branch preparation and backup,
+runs Codex with watchdog/timeout controls, collects git diffs and change summaries,
+and handles branch push and pull request creation with fallback strategies.
+
+Codex CLIを使用したエンドツーエンドのコード実装ワークフローを制御するサービス。
+承認済み計画から実装プロンプトを生成し、ブランチ準備とバックアップを管理する。
+ウォッチドッグ・タイムアウト制御付きでCodexを実行し、git差分と変更サマリーを収集して、
+フォールバック戦略を使ったブランチプッシュおよびプルリクエスト作成まで担当する。
+"""
 from __future__ import annotations
 
 import json

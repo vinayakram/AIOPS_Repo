@@ -1,22 +1,13 @@
 """
-Mock AIOps Engine Server
+Mock AIOps engine server that simulates an external platform holding incident records.
+Exposes CRUD-like endpoints at /api/v1/incidents so the AIOps poller can fetch new incidents every poll cycle.
+Pre-loaded with two seed incidents; additional incidents can be added at runtime via the POST endpoint.
+Runs on port 9090 by default to match the AIOPS_SERVER_URL setting in the development .env file.
 
-Simulates an external AIOps platform that holds incident records.
-The poller fetches from this server every 20 seconds.
-
-Usage:
-    python mock_aiops_server.py
-
-Runs on port 9090 by default (matching AIOPS_SERVER_URL in .env).
-
-Endpoints:
-    GET  /api/v1/incidents          → Returns all incidents
-    POST /api/v1/incidents          → Add a new incident
-    POST /api/v1/incidents/reset    → Clear all incidents
-    GET  /api/v1/incidents/status   → Show current incident count
-
-The server comes pre-loaded with 2 sample incidents.
-Add more via POST or edit the SEED_INCIDENTS list below.
+インシデントレコードを保持する外部プラットフォームをシミュレートするモックAIOpsエンジンサーバー。
+AIOpsポーラーがポーリングサイクルごとに新規インシデントを取得できるように/api/v1/incidentsにCRUD類似エンドポイントを公開する。
+2つのシードインシデントで事前初期化されており、POSTエンドポイントを介して実行時に追加インシデントを登録できる。
+開発用.envファイルのAIOPS_SERVER_URL設定に合わせてデフォルトでポート9090で起動する。
 """
 
 import uvicorn

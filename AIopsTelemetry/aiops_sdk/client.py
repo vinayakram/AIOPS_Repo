@@ -1,6 +1,13 @@
 """
-AIops SDK client — collects spans in memory and flushes to the server.
-Thread-safe; works with both sync and async LangGraph code.
+AIops SDK client that collects trace spans in memory and flushes them to the telemetry server.
+Provides a singleton AIopsClient with thread-safe TraceBuffer management for concurrent agents,
+supporting start/finish trace lifecycle, span accumulation, log buffering, and HTTP ingest flush.
+Works transparently with both synchronous and asynchronous LangGraph execution patterns.
+
+メモリ内にトレーススパンを蓄積してテレメトリサーバーにフラッシュするAIops SDKクライアント。
+並行エージェントに対応したスレッドセーフなTraceBuffer管理のシングルトンAIopsClientを提供する。
+トレースの開始・終了ライフサイクル、スパン蓄積、ログバッファリング、HTTPによるインジェストをサポートする。
+同期・非同期両方のLangGraph実行パターンに透過的に対応する。
 """
 import json
 import logging

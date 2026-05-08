@@ -1,3 +1,12 @@
+// Trace detail page that loads a completed investigation record from the API and renders all agent results.
+// Reconstructs per-agent AgentState objects from the flat trace record including fetched log blobs.
+// Displays a pipeline timeline and an expandable AgentCard for each of the five agents in the pipeline.
+// Provides navigation back to the Dashboard and a link to the LiveMonitor for in-progress traces.
+//
+// 完了した調査レコードをAPIから読み込んですべてのエージェント結果をレンダリングするトレース詳細ページ。
+// 取得済みログのblobを含むフラットなトレースレコードからエージェントごとのAgentStateオブジェクトを再構築する。
+// パイプラインタイムラインと5つのエージェントそれぞれの展開可能なAgentCardを表示する。
+// ダッシュボードへの戻りナビゲーションと進行中トレースのLiveMonitorへのリンクを提供する。
 import { useEffect, useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { getTrace } from '../api'

@@ -1,3 +1,14 @@
+"""
+Error Analysis Agent that performs deep-dive error categorization on correlated failure components.
+Routes to Langfuse for agent traces, Prometheus for infra metrics, or both based on analysis_target.
+Each identified error is assigned a unique error_id and classified by severity and functional category.
+GPT-4o output is validated against the ErrorAnalysisResult Pydantic model before returning.
+
+相関済み障害コンポーネントに対して深掘りエラー分類を行うエラー分析エージェント。
+analysis_targetに基づいてLangfuse（エージェントトレース）、Prometheus（インフラメトリクス）、または両方にルーティングする。
+特定された各エラーには一意のerror_idが付与され、重大度と機能カテゴリで分類される。
+GPT-4oの出力はErrorAnalysisResult Pydanticモデルに対して検証してから返却される。
+"""
 from __future__ import annotations
 
 import json

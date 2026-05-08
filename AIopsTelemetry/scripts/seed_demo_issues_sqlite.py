@@ -1,3 +1,14 @@
+"""
+SQLite-based variant of the demo issue seeder for environments without a PostgreSQL connection.
+Reuses the same CASES dataset from seed_demo_issues and writes issues and analyses directly
+to the local aiops.db SQLite file using raw SQL with upsert-on-conflict for idempotent runs.
+Generates bilingual (EN/JA) titles and descriptions using the server's bilingual engine.
+
+PostgreSQL接続なしの環境向けに、SQLiteベースでデモ課題をシードするバリアント。
+seed_demo_issuesと同じCASESデータセットを再利用し、課題と分析をローカルの
+aiops.db SQLiteファイルにupsert-on-conflictを使ったraw SQLで直接書き込む。
+サーバーのバイリンガルエンジンを使って英日両言語のタイトルと説明を生成する。
+"""
 from __future__ import annotations
 
 import hashlib

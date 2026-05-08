@@ -1,3 +1,14 @@
+"""
+Root Cause Analysis Agent that determines the definitive root cause from error analysis findings.
+Fetches fresh logs from Langfuse or Prometheus based on the rca_target routing signal.
+Produces a causal chain, contributing factors, blast radius, and a mandatory Five Whys analysis.
+All findings must be grounded in log evidence; the output is validated against the RCAResult model.
+
+エラー分析の結果から確定的な根本原因を特定する根本原因分析エージェント。
+rca_targetルーティングシグナルに基づいてLangfuseまたはPrometheusから最新ログを取得する。
+因果チェーン、寄与要因、影響範囲、および必須の5つのなぜ分析を生成する。
+すべての所見はログの証拠に基づく必要があり、出力はRCAResultモデルに対して検証される。
+"""
 from __future__ import annotations
 
 import json

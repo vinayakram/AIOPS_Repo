@@ -1,8 +1,14 @@
 #!/usr/bin/env python3
-"""Local launcher for the AIOps preview demo.
+"""
+Local HTTP launcher for the AIOps preview demo, providing a localhost-only server that
+exposes a single POST /run-simulation endpoint invokable from the presenter browser page.
+Validates the load_seconds parameter against an allowlist and spawns the CPU spike simulation
+script as a detached background process, logging output to a timestamped file.
 
-The browser cannot execute shell scripts directly, so this tiny localhost-only
-server exposes one button-safe endpoint for the presenter page.
+プレゼンターのブラウザページから呼び出し可能なシングルPOST /run-simulationエンドポイントを
+公開するAIOpsプレビューデモ向けのローカルHTTPランチャー。load_secondsパラメータを許可リスト
+で検証し、CPUスパイクシミュレーションスクリプトをデタッチされたバックグラウンドプロセスとして
+起動し、タイムスタンプ付きファイルに出力をログ記録する。
 """
 
 from __future__ import annotations

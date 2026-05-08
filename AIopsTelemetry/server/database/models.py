@@ -1,3 +1,16 @@
+"""
+SQLAlchemy ORM model definitions for the AIops Telemetry Server. Declares all
+database tables: SystemMetric, IssueAnalysis (with bilingual columns), Trace,
+Span, Issue (with recurrence tracking), EscalationRule, TraceLog, EscalationLog,
+and the RCA knowledge base tables (RCAIncidentPattern, RCAResolutionPlaybook,
+RCAIncidentMemory, RCAPatternMatch, RCAKnowledgeFeedback).
+
+AIopsTelemetryサーバーの全データベーステーブルを定義するSQLAlchemy ORMモデルモジュール。
+SystemMetric・英日両言語カラムを持つIssueAnalysis・Trace・Span・再発追跡機能付きIssue・
+EscalationRule・TraceLog・EscalationLogおよびRCAナレッジベース関連テーブル
+（RCAIncidentPattern・RCAResolutionPlaybook・RCAIncidentMemory・RCAPatternMatch・
+RCAKnowledgeFeedback）を宣言する。
+"""
 from datetime import datetime
 from sqlalchemy import (
     Column, String, Float, Integer, Boolean, DateTime, Text, ForeignKey, JSON

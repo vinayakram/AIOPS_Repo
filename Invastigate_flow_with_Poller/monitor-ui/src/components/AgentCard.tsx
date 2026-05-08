@@ -1,3 +1,12 @@
+// Expandable card component that displays a single pipeline agent's status, logs, input, and output.
+// Renders agent-specific summary views for all five agents with bilingual EN/JA field support.
+// Tab bar toggles between Summary, Logs (fetched raw entries), Input JSON, and Output JSON views.
+// A log detail side-panel slides in on row click to show full message, timestamp, and metadata.
+//
+// 単一パイプラインエージェントのステータス、ログ、入力、出力を表示する展開可能なカードコンポーネント。
+// バイリンガルEN/JAフィールドサポートで5つのエージェント全員のエージェント固有サマリービューをレンダリングする。
+// タブバーでSummary、Logs（取得済み生エントリ）、Input JSON、Output JSONビューを切り替える。
+// 行クリック時にログ詳細サイドパネルがスライドインして全メッセージ、タイムスタンプ、メタデータを表示する。
 import { useState, type ReactNode } from 'react'
 import type { AgentName, AgentState, LogEntry } from '../types'
 import { useLang, pick } from '../LanguageContext'

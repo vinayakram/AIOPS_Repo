@@ -1,4 +1,11 @@
 #!/usr/bin/env bash
+# Shared shell library for the AIOps demo scripts providing runtime directory initialisation,
+# structured logging helpers, background process management (start/stop via PID files),
+# URL health-check polling, and pattern-based process termination used by start.sh and stop.sh.
+#
+# start.shおよびstop.shが使用するAIOpsデモスクリプト共通シェルライブラリ。ランタイムディレクトリ
+# 初期化・構造化ロギングヘルパー・バックグラウンドプロセス管理（PIDファイルによる起動/停止）・
+# URLヘルスチェックポーリング・パターンベースのプロセス終了機能を提供する。
 
 init_demo_runtime() {
   local default_runtime_dir="${ROOT_DIR}/.runtime"

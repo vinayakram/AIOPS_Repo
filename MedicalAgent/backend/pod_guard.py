@@ -1,3 +1,14 @@
+"""
+cgroup-aware pod resource guard for the MedicalAgent container demo. Reads CPU usage from
+cgroup v2 cpu.stat and normalises it against the container quota; falls back to /proc/meminfo
+for memory. Emits Prometheus metrics and sends AIops telemetry traces when configured thresholds
+are breached, rate-limiting telemetry emissions to avoid flooding the server.
+
+MedicalAgentコンテナデモ向けのcgroup対応podリソースガード。cgroup v2のcpu.statからCPU使用量を
+読み取りコンテナクォータで正規化し、メモリは/proc/meminfoにフォールバックする。設定済み閾値
+超過時にPrometheusメトリクスを出力しAIopsテレメトリトレースを送信する。テレメトリ送信は
+サーバへの過負荷を避けるためレート制限される。
+"""
 from __future__ import annotations
 
 import os

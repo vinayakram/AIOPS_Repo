@@ -1,3 +1,14 @@
+"""
+Structured logging configuration for the observability system backend.
+Creates a named logger with a timestamped format and configures the log level from application settings.
+Exports a module-level logger instance for use throughout the codebase.
+A single StreamHandler to stdout is registered to avoid duplicate log entries on repeated imports.
+
+オブザービリティシステムバックエンドの構造化ログ設定。
+タイムスタンプ付きフォーマットで名前付きロガーを作成し、アプリケーション設定からログレベルを設定する。
+コードベース全体で使用するモジュールレベルのロガーインスタンスをエクスポートする。
+重複インポート時のログエントリ重複を避けるため、stdoutへの単一のStreamHandlerを登録する。
+"""
 import logging
 import sys
 

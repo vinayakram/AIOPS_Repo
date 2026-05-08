@@ -1,5 +1,13 @@
 """
-AutoFix API — trigger and poll Claude Code autofix jobs.
+AutoFix API that triggers and polls Claude Code CLI autofix jobs for detected
+issues. Provides endpoints to start a new autofix run against an affected agent's
+source code, retrieve job status, list all past jobs, and query registered
+agent process statuses managed by the process_manager.
+
+検出されたイシューに対してClaude Code CLIを起動し、影響を受けるエージェントのソースコードを
+自動修正するAutoFix APIモジュール。新規ジョブの開始・ステータス取得・ジョブ一覧照会・
+プロセスマネージャが管理するエージェントプロセスの状態確認エンドポイントを提供する。
+修正完了後はプロセスマネージャ経由でエージェントを自動再起動する。
 """
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session

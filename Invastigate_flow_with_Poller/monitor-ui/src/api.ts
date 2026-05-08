@@ -1,3 +1,10 @@
+// API client module providing typed fetch wrappers for all backend endpoints.
+// Covers trace listing, trace detail retrieval, investigation triggering, and SSE EventSource creation.
+// All requests are proxied through Vite's dev server from /api to localhost:8000 via vite.config.ts.
+//
+// すべてのバックエンドエンドポイントに対する型付きfetchラッパーを提供するAPIクライアントモジュール。
+// トレース一覧、トレース詳細取得、調査トリガー、SSE EventSource生成をカバーする。
+// すべてのリクエストはvite.config.tsのVite開発サーバー経由で/apiからlocalhost:8000にプロキシされる。
 import type { TraceSummary, TraceDetail } from './types'
 
 const BASE = ''  // Vite proxies /api → localhost:8000

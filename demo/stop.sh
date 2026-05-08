@@ -1,4 +1,13 @@
 #!/usr/bin/env bash
+# Demo stack shutdown script that stops all background services started by start.sh.
+# Terminates each named process via its PID file with a graceful SIGTERM followed by a
+# forced SIGKILL if needed, then stops the MedicalAgent Docker compose stack and any
+# lingering processes matched by pattern.
+#
+# start.shで起動された全バックグラウンドサービスを停止するデモスタック停止スクリプト。
+# 各名前付きプロセスをPIDファイル経由でグレースフルなSIGTERMで終了し、必要に応じて
+# 強制SIGKILLを送信する。その後MedicalAgent Dockerコンポーズスタックおよびパターンで
+# 一致する残存プロセスを停止する。
 set -euo pipefail
 
 DEMO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"

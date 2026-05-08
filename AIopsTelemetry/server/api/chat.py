@@ -1,3 +1,14 @@
+"""
+Live RCA chat API that routes user questions through the MCP observability
+server, returning bilingual (EN/JP) answers and Mermaid flow diagrams.
+Queries issue and trace data to build contextual prompts, then formats
+the LLM response with structured diagram output for dashboard rendering.
+
+MCPオブザーバビリティサーバを介してユーザーの質問を処理し、英日両言語での回答と
+Mermaidフロー図を返すライブRCAチャットAPIモジュール。イシューおよびトレースデータを
+参照して文脈付きプロンプトを構築し、ダッシュボード描画向けの構造化図形式で応答を返す。
+`lang`パラメータにより英語・日本語の出力先を動的に切り替える設計となっている。
+"""
 from __future__ import annotations
 
 import json

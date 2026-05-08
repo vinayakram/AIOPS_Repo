@@ -1,12 +1,13 @@
 """
-Codebase Modifier Agent — powered by GPT-4o.
+GPT-4o powered codebase modifier agent that explores a target project directory
+using file tools and injects AIops telemetry instrumentation. Supports both
+AIopsCallbackHandler injection for LangGraph projects and direct HTTP ingest for
+custom pipelines. Yields SSE-ready event dicts for live dashboard streaming.
 
-Takes a project directory, explores it with file tools, then intelligently
-injects AIops telemetry (AIopsCallbackHandler for LangGraph projects, or
-direct HTTP ingest for custom pipelines).
-
-Yields SSE-ready event dicts throughout execution so the dashboard can
-stream live progress to the user.
+ファイルツールで対象プロジェクトディレクトリを探索し、AIopsテレメトリを自動注入する
+GPT-4oベースのコードベース改変エージェントモジュール。LangGraphプロジェクト向けの
+AIopsCallbackHandler注入とカスタムパイプライン向けの直接HTTPインジェストの両方に対応する。
+ダッシュボードへのリアルタイムストリーミング用SSEイベントdictを逐次yieldする設計となっている。
 """
 import json
 import os

@@ -1,4 +1,11 @@
 #!/usr/bin/env bash
+# Preset launcher for the AIops guided end-to-end demo script (e2e_demo.py).
+# Accepts a named preset (english-full, japanese-full, executive-short, remediation-focus)
+# and forwards any additional arguments to the Python runner with the appropriate flags.
+#
+# AIopsガイド付きエンドツーエンドデモスクリプト(e2e_demo.py)のプリセットランチャー。
+# 名前付きプリセット(english-full, japanese-full, executive-short, remediation-focus)を受け取り、
+# 適切なフラグとともに追加引数をPythonスクリプトに転送して実行する。
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"

@@ -1,12 +1,15 @@
 """
-Langfuse tracing wrapper for the SampleAgent pipeline.
+Langfuse tracing wrapper for the SampleAgent GitHub pipeline compatible with Langfuse SDK v4+.
+Creates one trace per /api/query call with nested child spans for each pipeline step
+(pubmed_fetch, embedding, pagerank, faiss_retrieval, openai_generation). Supports graceful
+degradation when Langfuse credentials are absent; all timings are also persisted locally
+in SQLite for the in-app trace dashboard.
 
-Each call to /api/query creates one Langfuse trace with child spans for:
-  pubmed_fetch → embedding → pagerank → faiss_retrieval → openai_generation
-
-Compatible with Langfuse SDK v4+.
-All timings are also stored locally in SQLite (trace_logs table) so the
-in-app dashboard works even when Langfuse is not configured.
+Langfuse SDK v4+互換のSampleAgent GitHubパイプライン向けLangfuseトレースラッパー。
+/api/queryの各呼び出しに対して1トレースを生成し、各パイプラインステップ（pubmed_fetch・
+embedding・pagerank・faiss_retrieval・openai_generation）のネストされた子スパンを作成する。
+Langfuse認証情報が存在しない場合のグレースフルデグラデーションをサポートし、全タイミングは
+インアプリトレースダッシュボード用としてSQLiteにも永続化される。
 """
 
 import time

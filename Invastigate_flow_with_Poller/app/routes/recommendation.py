@@ -1,3 +1,14 @@
+"""
+FastAPI route handler for the standalone Recommendation Agent endpoint at POST /api/v1/recommend.
+Accepts a RecommendationRequest containing the error analysis and RCA outputs.
+Delegates to the RecommendationAgent which synthesizes findings and returns 1-4 ranked solutions.
+HTTP 500 is returned for LLM errors or validation failures; 422 for request schema violations.
+
+POST /api/v1/recommendのスタンドアロン推奨エージェントエンドポイントのFastAPIルートハンドラ。
+エラー分析とRCA出力を含むRecommendationRequestを受け付ける。
+結果を統合して1〜4つのランク付きソリューションを返すRecommendationAgentに処理を委譲する。
+LLMエラーまたは検証失敗にはHTTP 500を返し、リクエストスキーマ違反には422を返す。
+"""
 from fastapi import APIRouter, HTTPException
 
 from app.agents.recommendation_agent import RecommendationAgent

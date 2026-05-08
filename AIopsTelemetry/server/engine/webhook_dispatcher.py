@@ -1,3 +1,14 @@
+"""
+Asynchronous webhook dispatcher that sends HTTP POST (or configurable method)
+requests with JSON payloads to configured webhook URLs. Implements configurable
+retry logic with exponential backoff (1s, 2s, 4s) and returns a success flag
+with a detail string for logging by the escalation engine.
+
+JSON ペイロードを設定済みWebhook URLにHTTP POST（またはメソッド指定）で送信する
+非同期Webookディスパッチャモジュール。指数バックオフ（1秒・2秒・4秒）による
+設定可能なリトライロジックを実装し、エスカレーションエンジンのログ記録用に
+成功フラグと詳細文字列のタプルを返す設計となっている。
+"""
 import json
 import asyncio
 import httpx

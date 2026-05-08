@@ -1,3 +1,14 @@
+"""
+Issue lifecycle management API covering create, list, get, update, and state
+transitions (acknowledge, escalate, resolve) for detected issues. Deduplicates
+by fingerprint hash, supports bilingual title and description fields, and provides
+seed endpoints for demo and MCP cross-service topology scenarios.
+
+検出イシューの作成・一覧・取得・更新・状態遷移（承認・エスカレーション・解決）を
+管理するイシューライフサイクルAPIモジュール。フィンガープリントハッシュによる重複排除、
+英日両言語タイトル・説明フィールドのサポート、デモおよびMCPクロスサービス
+トポロジーシナリオ向けシードエンドポイントを提供する。
+"""
 import json
 import hashlib
 from datetime import datetime, timedelta

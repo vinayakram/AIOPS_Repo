@@ -1,3 +1,14 @@
+"""
+Trace management API providing filtered trace listing, aggregate trace statistics,
+individual trace detail with child spans, system metric profiles correlated by
+time window, and trace log retrieval. Supports pagination, app-name filtering,
+and error-only queries for focused incident investigation.
+
+フィルタリング付きトレース一覧・集計統計・スパンを含む個別トレース詳細・
+時間ウィンドウで相関したシステムメトリクスプロファイル・トレースログ取得を提供する
+トレース管理APIモジュール。ページング・アプリ名フィルタ・エラー限定クエリに対応し、
+インシデント調査の効率化を図る設計となっている。
+"""
 import json
 from datetime import datetime, timedelta
 from typing import Optional, List

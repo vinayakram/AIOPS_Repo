@@ -1,3 +1,12 @@
+// Dashboard page that provides a form to trigger new investigations and a live-updating trace history table.
+// The trigger form posts to the monitor/investigate endpoint and navigates to the LiveMonitor page on success.
+// The recent traces table polls every 5 seconds and displays trace ID, agent, status, timestamps, and action links.
+// Supports bilingual EN/JA rendering and form validation with localised error messages.
+//
+// 新しい調査をトリガーするフォームとライブ更新されるトレース履歴テーブルを提供するダッシュボードページ。
+// トリガーフォームはmonitor/investigateエンドポイントにPOSTし、成功時にLiveMonitorページに遷移する。
+// 最近のトレーステーブルは5秒ごとにポーリングし、トレースID、エージェント、ステータス、タイムスタンプ、アクションリンクを表示する。
+// バイリンガルEN/JAレンダリングとローカライズされたエラーメッセージによるフォーム検証をサポートする。
 import { useState, useEffect, useCallback } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { listTraces, triggerInvestigation } from '../api'

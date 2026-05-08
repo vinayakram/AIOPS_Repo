@@ -1,13 +1,13 @@
 """
-CLI: aiops instrument <project_dir>
+CLI command that auto-instruments a LangGraph project directory with AIops telemetry.
+Scans Python source files for StateGraph invoke/astream/stream calls using AST analysis
+and injects AIopsCallbackHandler into the config argument without modifying business logic.
+Also generates an aiops_init.py startup file with the configured server URL and app name.
 
-Scans Python files for LangGraph StateGraph usage and injects
-AIopsCallbackHandler into .invoke() / .astream() / .stream() calls.
-
-Usage:
-    aiops instrument ./my_langgraph_app
-    aiops instrument ./my_langgraph_app --dry-run
-    aiops instrument ./my_langgraph_app --app-name my-agent
+LangGraphプロジェクトディレクトリにAIopsテレメトリを自動注入するCLIコマンド。
+AST解析でPythonソースファイルのStateGraphのinvoke/astream/stream呼び出しを検出し、
+ビジネスロジックを変更せずにconfigにAIopsCallbackHandlerを注入する。
+設定済みサーバーURLとアプリ名を含むaiops_init.py起動ファイルも自動生成する。
 """
 import ast
 import os

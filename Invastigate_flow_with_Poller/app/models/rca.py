@@ -1,3 +1,14 @@
+"""
+Pydantic models for the Root Cause Analysis Agent request and response contract.
+Defines RCARequest, RCAResult (the LLM output contract), and RCAResponse.
+Includes models for CausalLink, ContributingFactor, RootCause, FailureTimeline, and FiveWhyAnalysis.
+The RCAResult schema enforces exactly five WhyStep entries and is injected into the LLM system prompt.
+
+根本原因分析エージェントのリクエストとレスポンス契約のPydanticモデル。
+RCARequest、RCAResult（LLM出力契約）、RCAResponseを定義する。
+CausalLink、ContributingFactor、RootCause、FailureTimeline、FiveWhyAnalysisのモデルを含む。
+RCAResultスキーマは正確に5つのWhyStepエントリを強制し、LLMシステムプロンプトに注入される。
+"""
 from __future__ import annotations
 
 from enum import Enum

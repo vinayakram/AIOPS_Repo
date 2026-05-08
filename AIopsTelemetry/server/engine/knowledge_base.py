@@ -1,3 +1,14 @@
+"""
+RCA knowledge base module seeding 17 industry incident patterns and corresponding
+resolution playbooks into the database. Provides find_matches_for_issue using
+keyword token overlap and organizational memory retrieval, record_feedback for
+continuous improvement, and init_knowledge_base for idempotent initialization.
+
+17件の業界インシデントパターンと対応解決プレイブックをデータベースにシードする
+RCAナレッジベースモジュール。キーワードトークンオーバーラップと組織記憶検索を組み合わせた
+find_matches_for_issue・継続改善用record_feedback・冪等初期化用init_knowledge_baseを提供する。
+蓄積されたフィードバックにより将来のパターンマッチング精度を向上させる設計となっている。
+"""
 from __future__ import annotations
 
 import json

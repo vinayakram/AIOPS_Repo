@@ -1,10 +1,15 @@
 #!/usr/bin/env python3
-"""Generate a small, steady background load against SampleAgent.
+"""
+Steady background load generator for the MedicalAgent demo environment targeting the
+/api/demo/background-load endpoint. Maintains a configurable number of concurrent workers
+that each perform deterministic CPU work and pause, establishing a stable non-zero baseline
+in Grafana before threshold-breach spike scenarios are triggered. Handles SIGTERM and SIGINT
+for clean shutdown and prints periodic heartbeat statistics.
 
-This is meant for demo environments where Grafana should show a stable,
-non-zero CPU baseline before the threshold-breach spike is triggered.
-It deliberately hits a dedicated demo endpoint so it does not create
-trace noise, extra AIops tickets, or RCA churn.
+MedicalAgentデモ環境向けの/api/demo/background-loadエンドポイントを対象とした定常バック
+グラウンド負荷生成ツール。設定可能な数の並行ワーカーが決定論的なCPU作業とポーズを実行し、
+しきい値超過スパイクシナリオ発動前のGrafanaに安定した非ゼロのベースラインを確立する。
+クリーンシャットダウンのためSIGTERMおよびSIGINTを処理し、定期的なハートビート統計を出力する。
 """
 
 from __future__ import annotations

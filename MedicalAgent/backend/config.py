@@ -1,3 +1,14 @@
+"""
+Pydantic-based application settings for the MedicalAgent backend loaded from environment
+variables and an optional .env file. Covers API keys for PubMed, OpenAI, Anthropic, and
+Langfuse, JWT authentication parameters, RAG tuning knobs, AIOps telemetry settings,
+and pod resource threshold guardrails.
+
+MedicalAgentバックエンド向けのpydanticベースのアプリケーション設定。環境変数および
+オプションの.envファイルから読み込む。PubMed・OpenAI・Anthropic・LangfuseのAPIキー、
+JWT認証パラメータ、RAGチューニング値、AIOpsテレメトリ設定、podリソース閾値ガードレール
+を網羅している。
+"""
 from pydantic_settings import BaseSettings
 from typing import Optional
 

@@ -1,4 +1,14 @@
+"""
+Simulates a safe VM-host CPU contention topology incident for AIops demo purposes.
+Starts a low-priority background Python process to generate controlled CPU pressure,
+probes the AI agent and infrastructure endpoints, and records the observed topology,
+metrics, and correlated analysis as a structured issue and IssueAnalysis in the database.
 
+AIopsデモ用にVMホストのCPU競合トポロジーインシデントを安全に再現するスクリプト。
+低優先度のバックグラウンドPythonプロセスを起動して制御されたCPU負荷を生成し、
+AIエージェントおよびインフラエンドポイントをプローブする。
+観測されたトポロジー、メトリクス、相関分析をデータベースの課題・IssueAnalysisとして記録する。
+"""
 from __future__ import annotations
 
 import argparse

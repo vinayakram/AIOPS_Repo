@@ -1,6 +1,13 @@
 """
-Posts newly raised issues to Langfuse as scored events so they appear
-in the same Langfuse project as the application traces.
+Langfuse reporter that posts newly raised AIops issues as scored trace events,
+making them visible within the same Langfuse project as the application traces.
+Attaches issue severity, type, and description as event metadata to enable
+correlated root-cause analysis across LLM traces and operational incidents.
+
+新たに検出されたAIopsイシューをスコア付きトレースイベントとしてLangfuseに投稿し、
+アプリケーショントレースと同一のLangfuseプロジェクト内で可視化するレポーターモジュール。
+イシューの重要度・タイプ・説明をイベントメタデータとして付加し、LLMトレースと
+運用インシデントにまたがる相関根本原因分析を可能にする設計となっている。
 """
 import uuid
 import logging

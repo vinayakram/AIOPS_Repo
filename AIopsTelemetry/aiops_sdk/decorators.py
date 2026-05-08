@@ -1,12 +1,13 @@
 """
-Convenience decorators for manual instrumentation when auto-injection isn't enough.
+Convenience decorators for manual AIops span instrumentation in sync and async functions.
+Provides the @trace_span decorator that wraps a function as a named span within the active trace,
+recording output preview and error state, and supporting both synchronous and async coroutines.
+Intended for use when automatic callback injection does not cover all instrumentation points.
 
-Usage:
-    from aiops_sdk import trace_span
-
-    @trace_span("my_step")
-    def my_function(x):
-        return x * 2
+同期・非同期関数の手動AIopsスパン計測を行うコンビニエンスデコレーター。
+@trace_spanデコレーターはアクティブなトレース内で関数を名前付きスパンとしてラップし、
+出力プレビューとエラー状態を記録する。同期関数とasyncコルーチンの両方に対応する。
+自動コールバック注入でカバーできない計測ポイントへの手動適用を想定している。
 """
 import functools
 import logging

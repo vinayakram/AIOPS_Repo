@@ -1,3 +1,14 @@
+"""
+FastAPI triage agent (dependent agent) that periodically calls the upstream sample-agent
+to demonstrate cross-service cascade failure scenarios for AIOps RCA. Exposes Prometheus
+metrics for upstream call outcomes and cascade failures, records Langfuse traces for each
+dependency check, and forwards structured telemetry to the AIops ingest API.
+
+上流のsample-agentを定期的に呼び出してAIOps RCA向けのクロスサービスカスケード障害シナリオを
+実証するFastAPIトリアージエージェント（依存エージェント）。上流呼び出し結果とカスケード障害の
+Prometheusメトリクスを公開し、各依存性チェックのLangfuseトレースを記録し、構造化テレメトリを
+AIopsインジェストAPIに転送する。
+"""
 from __future__ import annotations
 
 import json

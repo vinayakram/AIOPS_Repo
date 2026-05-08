@@ -1,3 +1,14 @@
+"""
+Pipeline orchestrator that chains all five agents in sequence for a full investigation run.
+Executes Normalization, Correlation, Error Analysis, RCA, and Recommendation in order.
+Each step's input and output are persisted to SQLite and published to the SSE event bus.
+A NO_ERROR result from Normalization short-circuits the pipeline to avoid unnecessary processing.
+
+完全な調査実行のために5つのエージェントを順番にチェーンするパイプラインオーケストレーター。
+正規化、相関分析、エラー分析、RCA、推奨を順番に実行する。
+各ステップの入出力はSQLiteに永続化され、SSEイベントバスにパブリッシュされる。
+正規化からのNO_ERROR結果は、不要な処理を回避するためにパイプラインをショートサーキットする。
+"""
 from __future__ import annotations
 
 import time

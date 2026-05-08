@@ -1,3 +1,14 @@
+"""
+FastAPI routes for real-time pipeline monitoring via Server-Sent Events (SSE).
+POST /api/v1/monitor/investigate queues a background investigation and returns the stream URL.
+GET /api/v1/monitor/stream/{trace_id} streams all pipeline events to connected EventSource clients.
+Events include pipeline_started, step_started, step_completed, step_failed, logs_fetched, and pipeline_completed.
+
+Server-Sent Events（SSE）によるリアルタイムパイプライン監視のFastAPIルート。
+POST /api/v1/monitor/investigateはバックグラウンド調査をキューに入れてストリームURLを返す。
+GET /api/v1/monitor/stream/{trace_id}はすべてのパイプラインイベントを接続済みEventSourceクライアントにストリーミングする。
+イベントにはpipeline_started、step_started、step_completed、step_failed、logs_fetched、pipeline_completedが含まれる。
+"""
 from __future__ import annotations
 
 import asyncio

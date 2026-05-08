@@ -1,3 +1,14 @@
+"""
+RCA knowledge base API exposing incident pattern lookup, resolution playbooks,
+per-issue KB match results, a seed endpoint for pre-loading industry patterns,
+and a feedback recording endpoint for continuous knowledge improvement.
+Keyword overlap and organizational memory drive pattern matching.
+
+インシデントパターン照会・解決プレイブック・イシュー別KB一致結果・業界パターンシード・
+フィードバック記録エンドポイントを提供するRCAナレッジベースAPIモジュール。
+キーワードオーバーラップと組織記憶を組み合わせてパターンマッチングを実行する。
+フィードバックの蓄積によりナレッジベースの継続的改善を実現する設計となっている。
+"""
 from __future__ import annotations
 
 from typing import Optional

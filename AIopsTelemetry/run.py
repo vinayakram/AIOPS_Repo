@@ -1,9 +1,13 @@
 """
-Start the AIops Telemetry Server.
+Entry point for starting the AIops Telemetry Server via uvicorn.
+Parses --host, --port, and --reload command-line arguments, defaulting to values from
+the server settings module, and launches the FastAPI application defined in server.main.
+Intended as a lightweight development and production launcher for the telemetry backend.
 
-Usage:
-    python run.py
-    python run.py --port 7001
+uvicornを使ってAIops Telemetryサーバーを起動するエントリーポイント。
+--host、--port、--reloadのコマンドライン引数を解析し、デフォルト値はserverのsettingsから取得する。
+server.mainに定義されたFastAPIアプリケーションを起動する薄いラッパー。
+テレメトリバックエンドの開発・本番両環境でのシンプルな起動手段として使用する。
 """
 import argparse
 import uvicorn

@@ -1,3 +1,14 @@
+"""
+Prometheus client that executes a suite of PromQL range queries for incident investigation.
+Queries cover latency percentiles, error rates, LLM rate limits, CPU/memory utilization, and cascade failures.
+When a Langfuse trace span is available the query window is aligned to the trace duration with a configurable buffer.
+Results are converted to a flat log format with level assignment based on metric thresholds.
+
+インシデント調査のためにPromQLレンジクエリのスイートを実行するPrometheusクライアント。
+レイテンシパーセンタイル、エラーレート、LLMレート制限、CPU/メモリ使用率、カスケード障害をカバーするクエリを含む。
+Langfuseトレーススパンが利用可能な場合、クエリウィンドウは設定可能なバッファでトレース期間に合わせる。
+結果はメトリクスのしきい値に基づくレベル割り当てを持つフラットなログ形式に変換される。
+"""
 from __future__ import annotations
 
 from datetime import datetime, timedelta, timezone

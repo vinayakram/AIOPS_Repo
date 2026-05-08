@@ -1,3 +1,14 @@
+"""
+Root cause analysis service that classifies production incidents from issue text and logs.
+Detects common failure patterns such as timeouts, OpenAI API rate limits, and general errors,
+then produces a structured RCAReport with failure mode, root cause, evidence, and recommendations.
+Also generates a formatted remediation issue body for downstream handoff to the plan pipeline.
+
+課題テキストとログから本番インシデントを分類する根本原因分析サービス。
+タイムアウト、OpenAI APIレート制限、一般的なエラーなどの障害パターンを検出し、
+障害モード、根本原因、証拠、推奨事項を含む構造化されたRCAReportを生成する。
+下流の計画パイプラインへの引き継ぎ用として整形されたリメディエーション課題本文も生成する。
+"""
 from __future__ import annotations
 
 from core.schemas import RCAReport

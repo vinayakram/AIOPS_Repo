@@ -1,3 +1,14 @@
+"""
+Normalization Agent that converts raw logs from Langfuse or Prometheus into a structured incident.
+Routes to Langfuse when a trace_id is provided, otherwise queries Prometheus using the timestamp.
+Includes a no-error short-circuit and a performance hint path to avoid unnecessary LLM calls.
+Output is validated against the NormalizedIncident Pydantic model enforcing the PRD schema contract.
+
+LangfuseまたはPrometheusの生ログを構造化インシデントに変換する正規化エージェント。
+trace_idが提供された場合はLangfuseにルーティングし、それ以外はタイムスタンプでPrometheusを照会する。
+不要なLLM呼び出しを回避するためのno-errorショートサーキットとパフォーマンスヒントパスを含む。
+出力はPRDスキーマ契約を強制するNormalizedIncident Pydanticモデルに対して検証される。
+"""
 from __future__ import annotations
 
 import json

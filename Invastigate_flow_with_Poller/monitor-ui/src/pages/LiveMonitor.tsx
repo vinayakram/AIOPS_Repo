@@ -1,3 +1,12 @@
+// Live monitor page that streams real-time pipeline events via SSE and renders them into agent cards.
+// Pre-populates fetched log entries from the SQLite database on mount so logs survive page refreshes.
+// Maintains a PipelineState object updated by each SSE event type using an immutable update pattern.
+// Displays a pipeline timeline, an event log panel, and an expandable AgentCard for each of the five agents.
+//
+// SSEを介してリアルタイムパイプラインイベントをストリーミングしてエージェントカードにレンダリングするライブモニターページ。
+// マウント時にSQLiteデータベースから取得済みログエントリを事前入力してページリフレッシュ後もログを保持する。
+// イミュータブル更新パターンを使用して各SSEイベントタイプで更新されるPipelineStateオブジェクトを管理する。
+// パイプラインタイムライン、イベントログパネル、5つのエージェントそれぞれの展開可能なAgentCardを表示する。
 import { useEffect, useRef, useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { createEventSource, getTrace } from '../api'

@@ -1,3 +1,14 @@
+"""
+MCP-compliant observability server exposing Prometheus and Langfuse tools over JSON-RPC stdio.
+Provides instant and range PromQL queries, incident windowing, trace fetching, and
+cross-service incident correlation for AIOps root-cause analysis workflows.
+Input validation guards against oversized queries, forbidden keywords, and invalid identifiers.
+
+PrometheusとLangfuseのツールをJSON-RPC stdioで提供するMCP準拠のオブザーバビリティサーバ。
+即時・範囲PromQLクエリ、インシデント時間窓取得、トレース取得、およびクロスサービス
+インシデント相関をAIOps根本原因分析ワークフロー向けに提供する。
+クエリ長・禁止キーワード・不正識別子に対する入力バリデーションを実装している。
+"""
 from __future__ import annotations
 
 import base64

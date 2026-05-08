@@ -1,6 +1,13 @@
 """
-AutoFix Agent — invokes Claude Code CLI to analyse and fix an issue
-in the affected agent's source code, then restarts the agent.
+AutoFix Agent that invokes the Claude Code CLI to analyse and automatically
+remediate detected issues in the affected agent's source code. Manages async
+job lifecycle (pending, running, done, failed), captures CLI output, and
+triggers process_manager to restart the patched agent upon successful completion.
+
+Claude Code CLIを起動して検出イシューの根本原因を分析し、影響を受けるエージェントの
+ソースコードを自動修正するAutoFixエージェントモジュール。ジョブライフサイクル（保留・
+実行中・完了・失敗）を非同期管理し、CLIの出力をキャプチャする。
+修正完了後はprocess_manager経由でパッチ適用済みエージェントを自動再起動する。
 """
 import asyncio
 import logging

@@ -1,16 +1,13 @@
 """
-Demo script: inject a synthetic error trace into AIops Telemetry.
+Demo utility that injects a synthetic error trace into the AIops Telemetry ingest API
+for the SampleAgent GitHub variant. Constructs a realistic failed pipeline trace with
+successful pubmed_fetch, embedding, pagerank, and faiss_retrieval spans followed by a
+failed openai_generation span carrying a 429 rate-limit error message.
 
-Usage:
-    python demo_error_inject.py
-
-Simulates a failed medical query where:
-  - pubmed_fetch succeeded
-  - embedding succeeded
-  - openai_generation FAILED (e.g. rate-limit / context-length error)
-
-The trace appears in the AIops dashboard with status=error and a
-failing span with an error_message — great for demoing error capture.
+SampleAgent GitHub向けにAIopsテレメトリインジェストAPIへ合成エラートレースを注入するデモ
+ユーティリティ。pubmed_fetch・embedding・pagerank・faiss_retrievalの各スパンが成功し、
+openai_generationスパンが429レート制限エラーメッセージで失敗する現実的なパイプライン
+失敗トレースを構築する。
 """
 import uuid
 import requests

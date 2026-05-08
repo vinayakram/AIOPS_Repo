@@ -1,12 +1,15 @@
 """
-Langfuse tracing wrapper for the Sample Agent pipeline.
+Langfuse tracing wrapper for the MedicalAgent pipeline compatible with Langfuse SDK v4+.
+Creates one trace per /api/query call with nested child spans for each pipeline step
+(pubmed_fetch, embedding, pagerank, faiss_retrieval, openai_generation). Also records
+pod threshold breach events as synthetic error traces in Langfuse for AIOps correlation.
+All timings are additionally persisted locally in SQLite for the in-app dashboard.
 
-Each call to /api/query creates one Langfuse trace with child spans for:
-  pubmed_fetch → embedding → pagerank → faiss_retrieval → openai_generation
-
-Compatible with Langfuse SDK v4+.
-All timings are also stored locally in SQLite (trace_logs table) so the
-in-app dashboard works even when Langfuse is not configured.
+Langfuse SDK v4+互換のMedicalAgentパイプライン向けLangfuseトレースラッパー。
+/api/queryの各呼び出しに対して1トレースを生成し、各パイプラインステップ（pubmed_fetch・
+embedding・pagerank・faiss_retrieval・openai_generation）のネストされた子スパンを作成する。
+AIOps相関のためpodしきい値超過イベントをLangfuseの合成エラートレースとして記録する。
+全タイミングはインアプリダッシュボード用としてSQLiteにも永続化される。
 """
 
 import time

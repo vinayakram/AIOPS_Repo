@@ -1,3 +1,14 @@
+"""
+Correlation Agent that fetches logs from Langfuse and Prometheus to build a causal failure graph.
+Uses GPT-4o to identify failure propagation chains, peer components, and root cause candidates.
+Routing logic: trace_id present routes to Langfuse + Prometheus; absent routes to Prometheus only.
+Results are validated against the CorrelationResult Pydantic model and published to the event bus.
+
+LangfuseおよびPrometheusからログを取得し、障害の因果グラフを構築する相関エージェント。
+GPT-4oを使用して障害伝播チェーン、ピアコンポーネント、根本原因候補を特定する。
+trace_idが存在する場合はLangfuse + Prometheusにルーティングし、ない場合はPrometheusのみを使用する。
+結果はCorrelationResult Pydanticモデルに対して検証され、イベントバスにパブリッシュされる。
+"""
 from __future__ import annotations
 
 import json

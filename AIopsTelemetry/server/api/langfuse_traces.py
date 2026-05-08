@@ -1,4 +1,14 @@
-"""Proxy endpoint: fetch traces directly from Langfuse cloud API."""
+"""
+Proxy endpoint that fetches LLM traces directly from the Langfuse cloud API
+using Basic authentication derived from configured public/secret keys. Falls
+back to the local SQLite database when Langfuse is unreachable, ensuring
+continuous trace visibility regardless of external service availability.
+
+設定済みのパブリック/シークレットキーによるBasic認証でLangfuseクラウドAPIから
+LLMトレースを直接取得するプロキシエンドポイントAPIモジュール。Langfuseへの接続が
+失敗した場合はローカルSQLiteデータベースにフォールバックし、外部サービスの可用性に
+依存しない継続的なトレース可視性を確保する設計となっている。
+"""
 import base64
 from typing import Optional
 

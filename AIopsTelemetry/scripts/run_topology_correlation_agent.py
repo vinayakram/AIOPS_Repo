@@ -1,3 +1,14 @@
+"""
+CLI script that runs the topology correlation agent against recent issues in the database.
+Accepts a configurable time window and minimum confidence score threshold, then invokes
+correlate_recent_topology_issues to identify root-cause and downstream symptom relationships
+across topology issues and prints the structured correlation results as JSON to stdout.
+
+データベース内の最近の課題に対してトポロジー相関エージェントを実行するCLIスクリプト。
+設定可能な時間ウィンドウと最小信頼スコアしきい値を受け取り、
+correlate_recent_topology_issuesを呼び出してトポロジー課題間の根本原因と
+下流症状の関係を特定し、構造化された相関結果をJSON形式で標準出力に出力する。
+"""
 from __future__ import annotations
 
 import argparse

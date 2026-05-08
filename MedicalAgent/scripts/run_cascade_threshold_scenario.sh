@@ -1,4 +1,13 @@
 #!/usr/bin/env bash
+# Orchestration script for the MedicalAgent cascade threshold AIOps demo scenario.
+# Drives CPU load bursts against the sample-agent until a pod resource guardrail breach
+# is observed, then fires dependent-agent cascade checks and waits for AIopsTelemetry
+# to raise a triage-agent issue.
+#
+# MedicalAgentカスケードしきい値AIOpsデモシナリオのオーケストレーションスクリプト。
+# podリソースガードレール超過が観測されるまでsample-agentにCPU負荷バーストを送出し、
+# その後dependent-agentカスケードチェックを実行してAIopsTelemetryがtriage-agent
+# イシューを起票するまで待機する。
 set -euo pipefail
 
 SAMPLE_URL="${SAMPLE_URL:-http://localhost:8002}"

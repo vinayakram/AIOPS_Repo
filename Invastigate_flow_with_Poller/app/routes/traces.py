@@ -1,3 +1,14 @@
+"""
+FastAPI route handlers for trace history retrieval at GET /api/v1/traces and /api/v1/traces/{trace_id}.
+GET /traces lists stored traces with pagination (summary fields only, no agent I/O payload).
+GET /traces/{trace_id} returns the full record including all agent inputs, outputs, and fetched logs.
+A safety net ensures the database is initialized before handling requests if startup order races occur.
+
+GET /api/v1/tracesおよび/api/v1/traces/{trace_id}のトレース履歴取得のFastAPIルートハンドラ。
+GET /tracesはページネーション付きで保存済みトレースを一覧表示する（サマリーフィールドのみ、エージェントI/Oなし）。
+GET /traces/{trace_id}はすべてのエージェント入出力と取得済みログを含む完全なレコードを返す。
+起動順序のレースコンディションが発生した場合にリクエスト処理前にデータベースが初期化されることを保証するセーフティネットを含む。
+"""
 from fastapi import APIRouter, HTTPException, Query
 
 from app.services.trace_store import TraceStore

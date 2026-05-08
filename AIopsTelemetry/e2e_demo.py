@@ -1,13 +1,14 @@
 #!/usr/bin/env python3
 """
-Guided end-to-end demo runner for:
+Guided end-to-end demo runner covering the full AIops pipeline in English or Japanese.
+Orchestrates health checks, SampleAgent authentication, synthetic trace seeding, real query
+execution, AIopsTelemetry issue detection, multi-stage RCA via Invastigate, and remediation.
+Supports configurable demo speed and mode presets for presenter, live walkthrough, and rehearsal.
 
-  SampleAgent -> AIopsTelemetry -> Invastigate RCA -> Remediation
-
-This script is demo-first rather than validator-first:
-- narrates the architecture in English or Japanese
-- keeps the existing operational checks
-- showcases trace ingestion, issue detection, RCA, and remediation
+英語または日本語で完全なAIopsパイプラインをカバーするガイド付きエンドツーエンドデモ実行スクリプト。
+ヘルスチェック、SampleAgent認証、syntheticトレース注入、実クエリ実行、AIopsTelemetryによる
+課題検出、Invastigateを使った多段RCA、リメディエーションまでを段階的に実行する。
+プレゼンター向け・ライブウォークスルー・リハーサル用のデモ速度とモードプリセットを設定可能。
 """
 
 from __future__ import annotations

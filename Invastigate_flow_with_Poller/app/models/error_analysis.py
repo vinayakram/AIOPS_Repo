@@ -1,3 +1,14 @@
+"""
+Pydantic models for the Error Analysis Agent request and response contract.
+Defines ErrorAnalysisRequest, ErrorAnalysisResult (the LLM output contract), and ErrorAnalysisResponse.
+Includes enums for ErrorSeverity and ErrorCategory with coercion validators that handle LLM hallucinations.
+The ErrorAnalysisResult model schema is injected into the LLM system prompt at runtime.
+
+エラー分析エージェントのリクエストとレスポンス契約のPydanticモデル。
+ErrorAnalysisRequest、ErrorAnalysisResult（LLM出力契約）、ErrorAnalysisResponseを定義する。
+LLMの幻覚を処理する強制バリデータを持つErrorSeverityとErrorCategoryの列挙型を含む。
+ErrorAnalysisResultモデルスキーマは実行時にLLMシステムプロンプトに注入される。
+"""
 from __future__ import annotations
 
 from enum import Enum

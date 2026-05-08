@@ -1,3 +1,14 @@
+"""
+Escalation management API providing full CRUD operations for EscalationRule
+and read access for EscalationLog records. Rules define threshold-based
+conditions and actions (log, escalate, webhook) evaluated by the background
+escalation engine on each periodic tick.
+
+エスカレーションルールのCRUDおよびエスカレーションログの参照機能を提供するAPIモジュール。
+ルールはしきい値条件とアクション（ログ・エスカレーション・Webhook）を定義し、
+バックグラウンドの定期実行エンジンが各ティックで評価する。
+ルールの優先度・有効化状態・通知先URLを柔軟に設定できる構造となっている。
+"""
 import json
 from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, Query

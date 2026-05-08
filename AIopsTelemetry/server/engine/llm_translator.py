@@ -1,3 +1,14 @@
+"""
+LLM-based English-to-Japanese translation module powered by OpenAI GPT-4o-mini.
+Provides synchronous and asynchronous translation wrappers with an MD5-keyed
+in-process cache to minimize API calls for repeated strings. Also exposes a
+batch translation helper for translating multiple fields in a single function call.
+
+OpenAI GPT-4o-miniを用いた英日機械翻訳モジュール。繰り返し文字列へのAPI呼び出しを
+最小化するMD5キー付きインプロセスキャッシュを実装し、同期・非同期の両翻訳ラッパーを提供する。
+複数フィールドを一括変換するバッチ翻訳ヘルパーも備え、bilingual.pyからの効率的な
+呼び出しを可能にする設計となっている。
+"""
 from __future__ import annotations
 
 import asyncio

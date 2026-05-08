@@ -1,3 +1,14 @@
+"""
+Smart frontend entry point that returns a cached investigation result or runs the full pipeline.
+Checks the SQLite database for an existing trace_id result before invoking the orchestrator.
+Supports a force=true query parameter to bypass the cache and re-run the pipeline unconditionally.
+Returns a source field indicating whether the response came from the cache or a fresh pipeline run.
+
+キャッシュ済み調査結果を返すか、完全なパイプラインを実行するスマートフロントエンドエントリーポイント。
+オーケストレーターを呼び出す前に既存のtrace_id結果についてSQLiteデータベースを確認する。
+キャッシュをバイパスして無条件にパイプラインを再実行するforce=trueクエリパラメータをサポートする。
+レスポンスがキャッシュから来たものか新規パイプライン実行からかを示すsourceフィールドを返す。
+"""
 from fastapi import APIRouter, HTTPException, Query
 
 from app.agents.orchestrator import Orchestrator

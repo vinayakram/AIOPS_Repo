@@ -1,3 +1,14 @@
+"""
+Persistence layer for the trace_results SQLite table storing all pipeline agent I/O.
+Provides write operations for creating traces, saving agent inputs/outputs, and storing fetched log blobs.
+Provides read operations for existence checks, listing traces with pagination, and retrieving full records.
+JSON columns are automatically parsed on read; the fetched_logs blob is keyed by agent and source name.
+
+すべてのパイプラインエージェントI/Oを格納するtrace_results SQLiteテーブルの永続化レイヤー。
+トレースの作成、エージェント入出力の保存、取得済みログのblobの格納のための書き込み操作を提供する。
+存在確認、ページネーション付きトレース一覧、完全レコード取得のための読み取り操作を提供する。
+JSONカラムは読み取り時に自動的に解析され、fetched_logs blobはエージェントとソース名をキーとする。
+"""
 from __future__ import annotations
 
 import json

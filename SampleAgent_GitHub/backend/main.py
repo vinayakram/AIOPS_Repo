@@ -1,3 +1,14 @@
+"""
+FastAPI application entry point for the SampleAgent GitHub backend. Initialises the RAG
+pipeline on startup and exposes endpoints for research queries, trace dashboard data, LLM
+access control, and health checks. Integrates with Langfuse tracing and the AIops Telemetry
+server to forward completed pipeline traces for observability and RCA workflows.
+
+SampleAgent GitHubバックエンドのFastAPIアプリケーションエントリポイント。起動時にRAGパイプラインを
+初期化し、リサーチクエリ・トレースダッシュボードデータ・LLMアクセス制御・ヘルスチェックの
+エンドポイントを公開する。LangfuseトレースおよびAIopsテレメトリサーバと統合し、完了した
+パイプライントレースをオブザーバビリティおよびRCAワークフロー向けに転送する。
+"""
 import json
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, Depends, HTTPException

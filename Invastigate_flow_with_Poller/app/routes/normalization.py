@@ -1,3 +1,14 @@
+"""
+FastAPI route handler for the standalone Normalization Agent endpoint at POST /api/v1/normalize.
+Accepts a NormalizationRequest with a timestamp, optional trace_id, and agent name.
+Delegates to the NormalizationAgent which routes to Langfuse or Prometheus and returns a structured incident.
+HTTP 500 is returned for LLM errors or validation failures; 422 for request schema violations.
+
+POST /api/v1/normalizeのスタンドアロン正規化エージェントエンドポイントのFastAPIルートハンドラ。
+タイムスタンプ、オプションのtrace_id、エージェント名を含むNormalizationRequestを受け付ける。
+LangfuseまたはPrometheusにルーティングして構造化インシデントを返すNormalizationAgentに処理を委譲する。
+LLMエラーまたは検証失敗にはHTTP 500を返し、リクエストスキーマ違反には422を返す。
+"""
 from fastapi import APIRouter, HTTPException
 
 from app.agents.normalization_agent import NormalizationAgent

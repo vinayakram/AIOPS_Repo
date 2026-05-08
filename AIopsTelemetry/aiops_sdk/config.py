@@ -1,3 +1,14 @@
+"""
+Configuration class for the AIops SDK, reading settings from environment variables or kwargs.
+Exposes server_url, app_name, api_key, enabled flag, and flush_interval_seconds as properties,
+and derives the ingest, batch, and authentication header values used by the AIopsClient.
+Defaults to localhost:7000 and can be overridden via AIOPS_SERVER_URL, AIOPS_APP_NAME, AIOPS_API_KEY.
+
+AIops SDKの設定クラス。環境変数またはキーワード引数から設定を読み込む。
+server_url、app_name、api_key、enabledフラグ、flush_interval_secondsをプロパティとして公開し、
+AIopsClientが使用するインジェストURL、バッチURL、認証ヘッダーを導出する。
+デフォルトはlocalhost:7000で、環境変数AIOPS_SERVER_URL等で上書き可能。
+"""
 import os
 
 

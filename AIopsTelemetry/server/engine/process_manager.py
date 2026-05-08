@@ -1,6 +1,13 @@
 """
-Process manager for AI agent services.
-Registers agent processes so they can be stopped and restarted after an AutoFix.
+Process manager for AI agent services that registers, starts, stops, and restarts
+named agent subprocesses. Enables the AutoFix workflow to restart patched agents
+after a code fix without requiring manual operator intervention. Tracks process
+state and stdout/stderr for health monitoring and log retrieval.
+
+名前付きエージェントサブプロセスの登録・起動・停止・再起動を管理するAIエージェント
+サービスプロセスマネージャモジュール。コード修正後のパッチ適用済みエージェントを
+オペレーターの手動介入なしにAutoFixワークフローが自動再起動することを可能にする。
+プロセス状態とstdout/stderrを追跡してヘルス監視とログ取得に活用する設計となっている。
 """
 import os
 import time

@@ -1,3 +1,14 @@
+"""
+FastAPI web application providing the Remediation POC user interface and REST API.
+Manages the full remediation lifecycle: issue intake, project resolution, plan generation,
+Codex-based implementation, human review, and branch/PR delivery.
+Exposes both an HTML UI for interactive use and a JSON API for upstream integrations.
+
+AIopsTelemetryやRemediationサービスとの統合を担うFastAPI Webアプリケーション。
+課題の受付からプロジェクト解決、計画生成、Codexによる実装、人間によるレビュー、
+ブランチ/PRの作成・配信までの全ライフサイクルを管理する。
+HTMLベースのUIとJSON APIの両方を提供し、上流システムとの連携をサポートする。
+"""
 from __future__ import annotations
 
 import json

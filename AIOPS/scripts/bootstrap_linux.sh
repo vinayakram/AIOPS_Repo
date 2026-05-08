@@ -1,4 +1,12 @@
 #!/usr/bin/env bash
+# Bootstrap script for setting up the AIOPS remediation platform on Linux.
+# Creates a Python virtual environment, installs pip dependencies from requirements.txt,
+# and installs the OpenAI Codex CLI via npm if it is not already available.
+# Copies the example .env file and creates the required runs and managed_repos directories.
+#
+# LinuxにおけるAIOPSリメディエーションプラットフォームの初期セットアップスクリプト。
+# Pythonの仮想環境を作成し、requirements.txtから依存パッケージをインストールする。
+# OpenAI Codex CLIがない場合はnpm経由でインストールし、必要なディレクトリと.envを用意する。
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"

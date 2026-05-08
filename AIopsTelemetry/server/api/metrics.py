@@ -1,3 +1,14 @@
+"""
+Metrics API delivering latency percentiles, error rates, per-application health
+scores, throughput buckets, token usage with cost estimates, SLA compliance
+status, and live host system metric snapshots. Aggregates trace and span data
+from SQLite to provide a comprehensive real-time performance picture.
+
+レイテンシパーセンタイル・エラーレート・アプリケーション別ヘルススコア・スループット
+バケット・トークン使用量とコスト推計・SLA準拠状態・ライブホストシステムメトリクスを
+提供するメトリクスAPIモジュール。SQLiteに格納されたトレースおよびスパンデータを
+集計し、リアルタイムの包括的パフォーマンス状況をダッシュボードに提供する。
+"""
 from typing import Optional
 from datetime import datetime, timedelta
 from fastapi import APIRouter, Depends, Query

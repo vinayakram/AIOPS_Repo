@@ -1,3 +1,14 @@
+"""
+In-process Prometheus metrics collection and text-format rendering for the MedicalAgent backend.
+Tracks HTTP request counts and latency histograms, RAG query throughput and concurrency,
+LLM rate-limit state, pod CPU and memory utilisation, and pod threshold breach counts.
+Exposes legacy metric name aliases for backward compatibility with existing Grafana dashboards.
+
+MedicalAgentバックエンドのインプロセスPrometheusメトリクス収集およびテキスト形式レンダリング。
+HTTPリクエスト数・レイテンシヒストグラム、RAGクエリスループット・並行数、LLMレート制限状態、
+pod CPU・メモリ使用率、podしきい値超過カウントを追跡する。既存Grafanaダッシュボードとの
+後方互換性のためレガシーメトリクス名のエイリアスを公開する。
+"""
 from __future__ import annotations
 
 import math

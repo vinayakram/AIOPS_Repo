@@ -1,21 +1,13 @@
 """
-Incidents API
-=============
-Returns recent traces in the format consumed by the Invastigate_flow_with_Poller
-background poller (AIOpsPoller).
+Incidents API returning recent traces formatted for consumption by the
+Invastigate_flow_with_Poller background poller (AIOpsPoller). Exposes
+GET /api/v1/incidents with configurable time window and result limit.
+The poller performs trace_id deduplication, so returning all recent traces is safe.
 
-Endpoint:  GET /api/v1/incidents?since_minutes=30&limit=100
-
-Response shape:
-  {
-    "incidents": [
-      {"trace_id": "...", "timestamp": "2026-...", "agent_name": "sample-agent"},
-      ...
-    ]
-  }
-
-The poller deduplicates by trace_id on its side, so returning all recent
-traces — not just new ones — is safe and simpler.
+Invastigate_flow_with_Pollerバックグラウンドポーラー（AIOpsPoller）が消費する形式で
+直近トレースを返すインシデントAPIモジュール。時間ウィンドウと件数上限を指定可能な
+GET /api/v1/incidentsエンドポイントを公開する。
+ポーラー側でtrace_idの重複排除を行うため、直近の全トレースを返す単純な実装で安全に運用できる。
 """
 from datetime import datetime, timedelta
 

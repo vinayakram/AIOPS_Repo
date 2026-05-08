@@ -1,3 +1,14 @@
+"""
+PageRank-based article scoring for the SampleAgent GitHub RAG pipeline. Supports two modes:
+citation-based ranking using PubMed related-article links to build a directed graph, and
+similarity-based ranking using embedding cosine similarity as a fallback. Scores are blended
+with FAISS similarity for final article re-ranking.
+
+SampleAgent GitHub RAGパイプライン向けのPageRankベースの論文スコアリング。PubMed関連論文リンクを
+使用した引用ベースランキング（有向グラフ構築）と、フォールバックとしてエンベディングのコサイン
+類似度を使用した類似度ベースランキングの2モードをサポートする。スコアはFAISS類似度と
+ブレンドされ最終的な論文再ランキングに使用される。
+"""
 import networkx as nx
 import numpy as np
 from typing import List, Dict

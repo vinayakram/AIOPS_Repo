@@ -1,3 +1,13 @@
+// Shared TypeScript type definitions for the monitor UI including SSE event payloads and pipeline state.
+// Defines all five pipeline agent names, the AGENT_ORDER constant, and per-agent AgentState shape.
+// Covers all SSE event interfaces (StepStarted, StepCompleted, StepFailed, LogsFetched, PipelineCompleted).
+// Also defines TraceSummary and TraceDetail for the trace list and detail API responses.
+//
+// SSEイベントペイロードとパイプライン状態を含むモニターUIの共有TypeScript型定義。
+// 5つのパイプラインエージェント名、AGENT_ORDER定数、エージェントごとのAgentState形状を定義する。
+// すべてのSSEイベントインターフェース（StepStarted、StepCompleted、StepFailed、LogsFetched、PipelineCompleted）をカバーする。
+// トレース一覧と詳細APIレスポンス用のTraceSummaryとTraceDetailも定義する。
+
 // ── Log entry (from Langfuse / Prometheus) ────────────────────────────
 
 export interface LogEntry {

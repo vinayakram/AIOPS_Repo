@@ -1,4 +1,13 @@
 #!/usr/bin/env bash
+# Demo stack startup script that launches the full AIOps demo environment. Starts the
+# MedicalAgent Docker compose stack and then starts AIopsTelemetry, Invastigate RCA, AIOPS
+# remediation, the monitor UI, the AIOps preview page, and the preview launcher as background
+# processes. Optionally starts a steady background load worker against the sample-agent.
+#
+# AIOpsデモ環境全体を起動するデモスタック起動スクリプト。MedicalAgent Dockerコンポーズスタック
+# を起動後、AIopsTelemetry・Invastigate RCA・AIOps remediation・モニターUI・AIOpsプレビュー
+# ページ・プレビューランチャーをバックグラウンドプロセスとして起動する。オプションで
+# sample-agentへの定常バックグラウンド負荷ワーカーを起動する。
 set -euo pipefail
 
 DEMO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"

@@ -1,3 +1,14 @@
+"""
+Pydantic models for the pipeline orchestrator request and response contract.
+Defines InvestigationRequest as the single entry point for triggering the full 5-agent pipeline.
+InvestigationResponse aggregates all agent outputs keyed by trace_id along with pipeline step metadata.
+Optional fields allow partial responses when one or more pipeline steps fail during execution.
+
+パイプラインオーケストレーターのリクエストとレスポンス契約のPydanticモデル。
+完全な5エージェントパイプラインをトリガーする単一エントリーポイントとしてInvestigationRequestを定義する。
+InvestigationResponseはtrace_idをキーとするすべてのエージェント出力とパイプラインステップのメタデータを集約する。
+オプションフィールドにより、実行中に1つ以上のパイプラインステップが失敗した場合の部分レスポンスを許可する。
+"""
 from __future__ import annotations
 
 from typing import Any, Optional

@@ -1,3 +1,14 @@
+"""
+Shared constants injected into every agent's LLM system prompt for bilingual output support.
+Defines the BILINGUAL_INSTRUCTION string that instructs GPT-4o to populate all _ja fields
+with professional technical Japanese while keeping English fields as the primary data record.
+Technical identifiers and enum values remain in English in both language outputs.
+
+バイリンガル出力サポートのためにすべてのエージェントのLLMシステムプロンプトに注入される共有定数。
+GPT-4oに対してすべての_jaフィールドに専門的な技術日本語を入力するよう指示するBILINGUAL_INSTRUCTION文字列を定義する。
+英語フィールドはデータの主記録として保持し、技術識別子と列挙値は両言語で英語のままとする。
+このモジュールはエージェント間で一貫したバイリンガル動作を保証するための単一の参照点として機能する。
+"""
 from __future__ import annotations
 
 BILINGUAL_INSTRUCTION = """\

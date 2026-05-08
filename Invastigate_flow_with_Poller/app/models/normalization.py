@@ -1,3 +1,14 @@
+"""
+Pydantic models for the Normalization Agent request and response contract.
+Defines NormalizationRequest (from frontend), NormalizedIncident (the LLM output contract), and NormalizationResponse.
+Includes ErrorType and DataSource enums that classify failure categories and observability backends.
+The NormalizedIncident model schema is injected into the LLM system prompt as the strict output contract.
+
+正規化エージェントのリクエストとレスポンス契約のPydanticモデル。
+NormalizationRequest（フロントエンドから）、NormalizedIncident（LLM出力契約）、NormalizationResponseを定義する。
+障害カテゴリとオブザービリティバックエンドを分類するErrorTypeとDataSource列挙型を含む。
+NormalizedIncidentモデルスキーマは厳格な出力契約としてLLMシステムプロンプトに注入される。
+"""
 from __future__ import annotations
 
 from enum import Enum

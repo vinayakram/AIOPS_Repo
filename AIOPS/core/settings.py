@@ -1,3 +1,14 @@
+"""
+Application settings loader for the AIOPS remediation platform.
+Reads configuration from environment variables and a .env file, exposing runtime
+parameters such as Codex command paths, GitHub credentials, project mappings,
+and timeout budgets as a singleton Settings instance used across all services.
+
+AIOPSリメディエーションプラットフォームのアプリケーション設定ローダー。
+環境変数および.envファイルから設定を読み込み、Codexコマンドパス、GitHub認証情報、
+プロジェクトマッピング、タイムアウト設定などのランタイムパラメータを
+全サービスで共有するシングルトンのSettingsインスタンスとして公開する。
+"""
 from __future__ import annotations
 
 import json

@@ -1,3 +1,12 @@
+"""
+FastAPI authentication router for the SampleAgent GitHub backend providing user registration,
+JWT-based login, and a protected /auth/me endpoint. Enforces minimum length requirements
+on usernames and passwords and rejects duplicate usernames and email addresses.
+
+SampleAgent GitHubバックエンドのFastAPI認証ルーター。ユーザー登録、JWTベースのログイン、
+および保護された/auth/meエンドポイントを提供する。ユーザー名・パスワードの最小長
+バリデーションを実施し、重複ユーザー名およびメールアドレスを拒否する。
+"""
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session

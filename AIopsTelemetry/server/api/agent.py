@@ -1,5 +1,13 @@
 """
-SSE endpoint that streams ModifierAgent progress to the dashboard.
+Server-Sent Events endpoint that streams live ModifierAgent codebase-instrumentation
+progress to the AIops dashboard. Accepts a target project path and optional
+configuration, then delegates to ModifierAgent which injects telemetry hooks.
+Each yielded event is a JSON-encoded status dict with stage, message, and payload.
+
+ModifierAgentの実行進捗をServer-Sent Eventsでダッシュボードにリアルタイム配信するAPIエンドポイント。
+対象プロジェクトのパスと設定を受け取り、ModifierAgentにテレメトリ注入処理を委譲する。
+各イベントはステージ・メッセージ・ペイロードを含むJSON形式でストリーム出力される。
+実行中の状態変化をリアルタイムに可視化するためのSSEプロトコルを採用している。
 """
 import json
 from fastapi import APIRouter

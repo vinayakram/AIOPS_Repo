@@ -1,3 +1,14 @@
+"""
+Service for generating, revising, and rendering remediation plans via the Codex CLI.
+Builds structured plan prompts incorporating issue details, RCA context, and reviewer comments,
+sanitizes and version-controls the Codex markdown output, and renders plans as HTML for review.
+Supports iterative plan revision cycles driven by human reviewer feedback.
+
+Codex CLIを通じたリメディエーション計画の生成・改訂・レンダリングを担当するサービス。
+課題の詳細、RCAコンテキスト、レビュアーのコメントを組み込んだ計画プロンプトを構築する。
+Codexのマークダウン出力をサニタイズしてバージョン管理し、レビュー用HTMLとして描画する。
+人間のレビュアーフィードバックに基づく反復的な計画改訂サイクルをサポートする。
+"""
 from __future__ import annotations
 
 import html

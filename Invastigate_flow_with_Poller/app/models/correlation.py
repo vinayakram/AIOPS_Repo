@@ -1,3 +1,14 @@
+"""
+Pydantic models for the Correlation Agent request and response contract.
+Defines CorrelationRequest, CorrelationResult (the LLM output contract), and CorrelationResponse.
+Includes enums for ComponentRole and AnalysisDomain which drive routing in downstream agents.
+The CorrelationResult model schema is injected into the LLM system prompt at runtime.
+
+相関エージェントのリクエストとレスポンス契約のPydanticモデル。
+CorrelationRequest、CorrelationResult（LLM出力契約）、CorrelationResponseを定義する。
+下流エージェントのルーティングを制御するComponentRoleとAnalysisDomainの列挙型を含む。
+CorrelationResultモデルスキーマは実行時にLLMシステムプロンプトに注入される。
+"""
 from __future__ import annotations
 
 from enum import Enum

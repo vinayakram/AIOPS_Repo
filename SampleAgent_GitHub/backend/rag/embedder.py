@@ -1,3 +1,12 @@
+"""
+Sentence-transformer embedding wrapper for the SampleAgent GitHub RAG pipeline. Loads a
+SentenceTransformer model on construction and produces L2-normalised float32 embedding
+vectors suitable for cosine similarity search via FAISS inner-product indexing.
+
+SampleAgent GitHub RAGパイプライン向けのsentence-transformerエンベディングラッパー。
+構築時にSentenceTransformerモデルをロードし、FAISSの内積インデックスによるコサイン類似度
+検索に適したL2正規化済みfloat32エンベディングベクトルを生成する。
+"""
 from sentence_transformers import SentenceTransformer
 import numpy as np
 from typing import List

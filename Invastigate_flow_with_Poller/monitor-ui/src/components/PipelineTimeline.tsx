@@ -1,3 +1,12 @@
+// Vertical timeline component that visualizes the five-step pipeline execution progress.
+// Each step shows its status (pending, running, completed, failed) with a color-coded dot and icon.
+// Displays per-step metadata including processing time, log count, confidence, and data sources.
+// Supports optional onSelect callback for navigating to a specific agent card in the parent view.
+//
+// 5ステップのパイプライン実行進捗を視覚化する垂直タイムラインコンポーネント。
+// 各ステップはカラーコードされたドットとアイコンでステータス（pending、running、completed、failed）を表示する。
+// 処理時間、ログ数、信頼度、データソースを含むステップごとのメタデータを表示する。
+// 親ビューの特定エージェントカードへナビゲートするオプションのonSelectコールバックをサポートする。
 import type { AgentName, AgentState, StepStatus } from '../types'
 import { AGENT_ORDER } from '../types'
 import { useLang } from '../LanguageContext'

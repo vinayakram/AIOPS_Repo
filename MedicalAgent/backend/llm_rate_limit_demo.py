@@ -1,3 +1,13 @@
+"""
+AIOps demo client for simulating Azure OpenAI rate-limit scenarios in the MedicalAgent pipeline.
+Tracks rolling 60-second request windows locally and emits Prometheus metrics for current hits,
+configured limit, and remaining capacity. Raises LLMRateLimitExceeded on provider 429 responses.
+
+MedicalAgentパイプラインでAzure OpenAIレート制限シナリオをシミュレートするAIOpsデモクライアント。
+ローカルで60秒ローリングウィンドウのリクエスト数を追跡し、現在のヒット数・設定済み制限・
+残余容量をPrometheusメトリクスとして出力する。プロバイダーの429レスポンスに対して
+LLMRateLimitExceededをraiseする。
+"""
 from __future__ import annotations
 
 import threading

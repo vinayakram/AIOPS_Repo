@@ -1,3 +1,14 @@
+"""
+Telemetry ingest API accepting traces, spans, and trace logs from instrumented
+AI agents via POST /ingest/trace and POST /ingest/batch. Authenticates requests
+using the X-AIops-Key header and upserts records into the local SQLite database
+with span deduplication and automatic trace-level aggregation.
+
+AIエージェントから送信されるトレース・スパン・トレースログをX-AIops-Keyヘッダで認証し、
+POST /ingest/traceおよびPOST /ingest/batchエンドポイントで受信するテレメトリ収集APIモジュール。
+スパン重複排除とトレースレベル集計を自動実行し、ローカルSQLiteデータベースにupsertする。
+バッチ受信により高頻度インスツルメントによるネットワーク負荷を低減する設計となっている。
+"""
 import json
 from datetime import datetime
 from typing import Optional, List

@@ -1,3 +1,14 @@
+"""
+FastAPI application factory for the AIops Telemetry Server. Manages the lifespan
+context for database initialization, external agent registration, and the background
+escalation engine. Mounts all 14 API routers and serves the dashboard SPA variants
+(operations, technical, light theme, and Japanese) as static HTML responses.
+
+AIopsTelemetryサーバーのFastAPIアプリケーションファクトリ。データベース初期化・
+外部エージェント登録・バックグラウンドエスカレーションエンジンのライフサイクル管理を担う。
+14本のAPIルーターを一括マウントし、オペレーション・テクニカル・ライトテーマ・
+日本語の各ダッシュボードSPAを静的HTMLレスポンスとして提供する。
+"""
 import asyncio
 import os
 import sys

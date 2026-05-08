@@ -1,9 +1,14 @@
 #!/usr/bin/env python3
-"""Generate concurrent user load against the SampleAgent chat endpoint.
+"""
+Concurrent load generator for the SampleAgent /api/query endpoint used in MedicalAgent demos.
+Authenticates once then fires configurable numbers of parallel requests using a thread pool,
+cycling through a default set of medical prompts. Reports p50/p95/max latency, throughput,
+non-2xx response counts, and transport errors on completion.
 
-The script is intentionally dependency-light so it can run in a demo VM without
-installing a separate load-testing tool. It prints p50/p95/max latency and
-non-2xx/error counts that can be compared with AIopsTelemetry NFR alerts.
+MedicalAgentデモで使用するSampleAgentの/api/queryエンドポイント向け並行負荷生成ツール。
+一度認証を行った後、スレッドプールを使用して設定可能な数の並行リクエストを送信し、
+デフォルトの医療プロンプト集をサイクルする。完了時にp50/p95/最大レイテンシ・スループット・
+非2xxレスポンス数・転送エラー数を報告する。
 """
 
 from __future__ import annotations

@@ -1,3 +1,14 @@
+"""
+Recommendation Agent that synthesizes Error Analysis and RCA findings into ranked actionable solutions.
+Produces between one and four solutions; rank 1 always directly addresses the identified root cause.
+Does not fetch any external logs — operates purely on upstream agent outputs passed in the request.
+GPT-4o output is validated against the RecommendationResult Pydantic model before returning.
+
+エラー分析とRCAの結果を統合してランク付きの実行可能なソリューションを生成する推奨エージェント。
+1〜4つのソリューションを生成し、ランク1は常に特定された根本原因に直接対処する。
+外部ログは取得せず、リクエストで渡された上流エージェントの出力のみで動作する。
+GPT-4oの出力はRecommendationResult Pydanticモデルに対して検証してから返却される。
+"""
 from __future__ import annotations
 
 import json

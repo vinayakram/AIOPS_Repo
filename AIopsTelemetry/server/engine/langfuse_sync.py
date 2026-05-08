@@ -1,19 +1,13 @@
-"""Langfuse → local SQLite sync.
+"""
+Langfuse-to-local-SQLite synchronization module that pulls recent trace summaries
+and full observation details from Langfuse on each escalation tick. Upserts traces
+and spans into local tables so issue detectors and metrics endpoints operate on a
+consistent dataset. Uses a bounded in-memory set to avoid redundant fetches.
 
-Pulls recent traces from Langfuse and upserts them into the local database
-so that issue detectors and metrics endpoints work from a complete, consistent
-dataset regardless of whether the AIops SDK was used directly.
-
-Flow per tick
-─────────────
-1. Fetch the most-recent page of trace summaries from Langfuse.
-2. Identify IDs not yet fully synced (observations not fetched).
-3. For each new trace, fetch the full detail record (includes observations).
-4. Upsert trace + all observations into local Trace / Span tables.
-
-The in-memory _synced_ids set prevents redundant detail fetches across ticks.
-It is capped at MAX_CACHED_IDS entries; once exceeded, the oldest half is
-evicted so the set never grows without bound.
+エスカレーションティックごとにLangfuseから直近のトレースサマリと全観測詳細を取得し、
+ローカルSQLiteに同期するモジュール。トレースとスパンをローカルテーブルにupsertすることで
+イシュー検出器とメトリクスエンドポイントが一貫したデータセットで動作することを保証する。
+上限付きのインメモリセットにより重複フェッチを防止し、ティックをまたぐ処理効率を維持する。
 """
 import base64
 import json

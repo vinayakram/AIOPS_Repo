@@ -1,3 +1,14 @@
+"""
+FastAPI application entry point for the multi-agent observability and correlation system.
+Registers all route modules including individual agents, the pipeline orchestrator, and SSE monitor.
+Manages the application lifespan: initializes SQLite, starts the AIOps poller, and tears both down.
+CORS middleware is configured from the CORS_ORIGINS environment variable for frontend access.
+
+マルチエージェントオブザービリティおよび相関システムのFastAPIアプリケーションエントリーポイント。
+個別エージェント、パイプラインオーケストレーター、SSEモニターを含むすべてのルートモジュールを登録する。
+アプリケーションのライフスパンを管理：SQLiteの初期化、AIOpSポーラーの起動と終了処理を行う。
+フロントエンドアクセスのためにCORS_ORIGINS環境変数からCORSミドルウェアを設定する。
+"""
 from contextlib import asynccontextmanager
 import os
 

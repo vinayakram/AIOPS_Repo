@@ -1,14 +1,13 @@
 """
-Reason Analyzer
-===============
-Generates a structured LLM root-cause analysis for a detected issue by
-correlating:
-  • Issue metadata (type, severity, description, affected span/trace)
-  • System metric snapshots around the time the issue was created
-  • Related trace + span data (error messages, durations, token counts)
+LLM-powered root-cause analysis module that correlates issue metadata, system
+metric snapshots around the incident time, and related trace/span data to generate
+structured RCA reports. Uses OpenAI gpt-4o with a rule-based fallback when no
+API key is configured. Results are persisted to the issue_analyses table.
 
-Uses OpenAI gpt-4o (falls back to rule-based analysis if no OpenAI key).
-Analysis is stored in `issue_analyses` and can be retrieved via the API.
+イシューメタデータ・インシデント時刻周辺のシステムメトリクススナップショット・
+関連トレース/スパンデータを相関させて構造化RCAレポートを生成するLLMベースの
+根本原因分析モジュール。OpenAI gpt-4oを使用し、APIキー未設定時はルールベース分析に
+フォールバックする。分析結果はissue_analysesテーブルに永続化される設計となっている。
 """
 import json
 import logging

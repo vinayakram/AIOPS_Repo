@@ -1,3 +1,14 @@
+"""
+Async SQLite database layer managing the trace_results table for pipeline persistence.
+Initializes the schema on startup and applies migrations for columns added after initial deployment.
+Provides init_db(), get_db(), and close_db() lifecycle helpers used by the FastAPI lifespan handler.
+Stores per-agent inputs, outputs, and raw fetched log blobs keyed by trace_id.
+
+パイプライン永続化のためのtrace_resultsテーブルを管理する非同期SQLiteデータベース層。
+起動時にスキーマを初期化し、初期デプロイ後に追加されたカラムのマイグレーションを適用する。
+FastAPIライフスパンハンドラで使用されるinit_db()、get_db()、close_db()ライフサイクルヘルパーを提供する。
+エージェントごとの入出力と取得済みログのblob（trace_idをキーとする）を格納する。
+"""
 from __future__ import annotations
 
 import aiosqlite

@@ -1,3 +1,14 @@
+"""
+Pydantic models for the Recommendation Agent request and response contract.
+Defines RecommendationRequest, RecommendationResult (the LLM output contract), and RecommendationResponse.
+Includes SolutionEffort and SolutionCategory enums; a model validator enforces sequential unique ranks.
+Between one and four Solution items are allowed; rank 1 must always address the root cause directly.
+
+推奨エージェントのリクエストとレスポンス契約のPydanticモデル。
+RecommendationRequest、RecommendationResult（LLM出力契約）、RecommendationResponseを定義する。
+SolutionEffortとSolutionCategory列挙型を含み、モデルバリデータが連続した一意ランクを強制する。
+1〜4つのSolutionアイテムが許可され、ランク1は常に根本原因に直接対処する必要がある。
+"""
 from __future__ import annotations
 
 from enum import Enum

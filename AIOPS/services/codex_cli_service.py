@@ -1,3 +1,14 @@
+"""
+Service wrapper for invoking the OpenAI Codex CLI as a subprocess within the AIOPS platform.
+Streams stdout in real time, supports watchdog-based auto-stop when repository changes are
+detected, enforces hard timeouts, and provides automatic sandbox fallback on runtime failures.
+Encapsulates all Codex execution lifecycle management for plan and implementation phases.
+
+AIOPSプラットフォームでOpenAI Codex CLIをサブプロセスとして呼び出すサービスラッパー。
+標準出力をリアルタイムでストリーミングし、リポジトリへの変更検出時のウォッチドッグ停止、
+ハードタイムアウト強制、ランタイム障害時のサンドボックス自動フォールバックをサポートする。
+計画フェーズおよび実装フェーズにおけるCodex実行のライフサイクルを一元管理する。
+"""
 from __future__ import annotations
 
 import subprocess

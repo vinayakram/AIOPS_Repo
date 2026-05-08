@@ -1,3 +1,15 @@
+"""
+Bilingual utility module providing English and Japanese localization functions
+for issue titles, descriptions, and analysis fields. Maintains a service display
+name table, normalizes language codes, and delegates machine translation to
+llm_translator while offering fast rule-based overrides for known service names.
+
+イシュータイトル・説明・分析フィールドの英日両言語ローカライズ機能を提供するユーティリティ
+モジュール。サービス表示名テーブルを保持し、言語コードを正規化する。機械翻訳はllm_translatorに
+委譲しつつ、既知のサービス名に対してはルールベースの高速変換を優先適用する。
+select_textおよびlocalize_observability_text関数でlangパラメータに応じた
+テキスト選択を一元的に処理する。
+"""
 from __future__ import annotations
 
 import re

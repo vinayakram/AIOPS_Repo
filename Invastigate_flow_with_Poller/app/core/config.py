@@ -1,3 +1,14 @@
+"""
+Application configuration loaded from environment variables using pydantic-settings.
+Covers OpenAI model selection, Langfuse credentials, Prometheus endpoint, database path,
+and AIOps poller settings including target URL, poll interval, and enabled flag.
+A cached get_settings() factory ensures a single Settings instance per process lifetime.
+
+pydantic-settingsを使用して環境変数からアプリケーション設定を読み込む。
+OpenAIモデル選択、Langfuseクレデンシャル、Prometheusエンドポイント、データベースパス、
+AIOpSポーラー設定（ターゲットURL、ポーリング間隔、有効フラグ）を含む。
+キャッシュされたget_settings()ファクトリによりプロセスライフタイムごとに単一のSettingsインスタンスを保証する。
+"""
 from pydantic_settings import BaseSettings
 from functools import lru_cache
 

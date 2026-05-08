@@ -1,3 +1,15 @@
+"""
+Asynchronous background escalation engine that runs a periodic tick loop.
+On each tick it synchronizes Langfuse traces, runs NFR-based issue detection,
+evaluates all active EscalationRules against open issues, and fires configured
+actions including log entries, status escalation, and webhook notifications.
+
+定期ティックループを実行する非同期バックグラウンドエスカレーションエンジン。
+各ティックでLangfuseトレースの同期・NFRベースのイシュー検出・全アクティブ
+EscalationRuleのオープンイシューへの評価を行い、ログ記録・ステータスエスカレーション・
+Webhook通知の各アクションを実行する。ESCALATION_INTERVAL_SECONDSで
+実行間隔を設定可能な設計となっている。
+"""
 import asyncio
 import json
 import logging

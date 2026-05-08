@@ -1,3 +1,14 @@
+"""
+Langfuse REST API client that fetches trace and observation data for the observability pipeline.
+Converts trace metadata and span-level observations into a flat log-like format for LLM consumption.
+Error detection inspects status, statusMessage, output, and input fields across all observation types.
+Provides extract_timespan() to derive the Prometheus query window from the actual trace duration.
+
+オブザービリティパイプライン用にトレースとオブザベーションデータを取得するLangfuse REST APIクライアント。
+トレースメタデータとスパンレベルのオブザベーションをLLMが利用しやすいフラットなログ形式に変換する。
+エラー検出はすべてのオブザベーションタイプでstatus、statusMessage、output、inputフィールドを検査する。
+実際のトレース期間からPrometheusクエリウィンドウを導出するextract_timespan()を提供する。
+"""
 from __future__ import annotations
 
 import json

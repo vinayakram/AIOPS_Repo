@@ -1,3 +1,12 @@
+"""
+Password hashing and verification utilities for the SampleAgent GitHub backend using bcrypt.
+Provides a passlib CryptContext configured with bcrypt to securely hash and verify
+user passwords at registration and login time.
+
+SampleAgent GitHubバックエンド向けのbcryptを使用したパスワードハッシュ化および検証ユーティリティ。
+passlibのCryptContextをbcryptで構成し、ユーザー登録およびログイン時のパスワードを
+安全にハッシュ化・検証する。
+"""
 from passlib.context import CryptContext
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")

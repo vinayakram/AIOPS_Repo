@@ -1,3 +1,14 @@
+"""
+End-to-end RAG pipeline for the MedicalAgent backend orchestrating PubMed article retrieval,
+sentence-transformer embedding, FAISS indexing, PageRank re-ranking, and LLM answer generation.
+Supports Anthropic (preferred) and OpenAI backends, demo scenarios for rate-limit and LLM
+disable simulation, and Langfuse-instrumented step tracing.
+
+MedicalAgentバックエンドのエンドツーエンドRAGパイプライン。PubMed論文取得・sentence-transformer
+エンベディング・FAISSインデックス・PageRank再ランキング・LLM回答生成を統合する。Anthropic
+（優先）とOpenAIバックエンド、レート制限・LLM無効化シミュレーション用デモシナリオ、および
+Langfuseによるステップトレース計装をサポートする。
+"""
 import json
 import hashlib
 import re

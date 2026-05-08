@@ -1,6 +1,13 @@
 """
-ContextVar-based active trace/span tracking so spans can find their parent
-without explicit parameter passing through LangGraph's call chain.
+ContextVar-based span stack enabling implicit parent-span discovery across LangGraph call chains.
+Defines the SpanContext dataclass with timing, token usage, model name, and serialization support,
+and provides push_span/pop_span/current_span helpers backed by a thread-local ContextVar stack.
+Used by both the callback handler and decorators to build correct span hierarchies automatically.
+
+LangGraphのコールチェーン全体で暗黙的な親スパン検出を可能にするContextVarベースのスパンスタック。
+タイミング、トークン使用量、モデル名、シリアライズをサポートするSpanContextデータクラスを定義する。
+スレッドローカルなContextVarスタックを基盤としたpush_span/pop_span/current_spanヘルパーを提供する。
+コールバックハンドラーとデコレーターの両方が正確なスパン階層を自動構築するために使用する。
 """
 import uuid
 from contextvars import ContextVar

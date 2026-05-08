@@ -1,8 +1,13 @@
 """
-NFR-based issue detector.
+NFR-based issue detector implementing 25+ detection rules across health,
+infrastructure, AI, and application categories. Rules are sourced from
+non_functional_requirements.md and map SEV1→critical, SEV2→high, SEV3→medium.
+Generates fingerprint-keyed issues and deduplicates against existing records.
 
-Rules sourced from non_functional_requirements.md (23 March 2026).
-Severity mapping:  SEV1 → critical  |  SEV2 → high  |  SEV3 → medium
+ヘルス・インフラ・AI・アプリケーションの各カテゴリにわたる25以上の検出ルールを実装する
+NFRベースのイシュー検出モジュール。ルールはnon_functional_requirements.mdに基づき
+SEV1→critical・SEV2→high・SEV3→mediumにマッピングされる。
+フィンガープリントキーによるイシュー生成と既存レコードとの重複排除を行う設計となっている。
 """
 import hashlib
 import json

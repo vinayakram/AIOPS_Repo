@@ -1,3 +1,14 @@
+"""
+FastAPI route handler for the standalone RCA Agent endpoint at POST /api/v1/rca.
+Accepts an RCARequest containing the error analysis output and rca_target routing signal.
+Delegates to the RCAAgent which fetches fresh logs and returns a detailed root cause analysis.
+HTTP 500 is returned for LLM errors or validation failures; 422 for request schema violations.
+
+POST /api/v1/rcaのスタンドアロンRCAエージェントエンドポイントのFastAPIルートハンドラ。
+エラー分析出力とrca_targetルーティングシグナルを含むRCARequestを受け付ける。
+最新ログを取得して詳細な根本原因分析を返すRCAAgentに処理を委譲する。
+LLMエラーまたは検証失敗にはHTTP 500を返し、リクエストスキーマ違反には422を返す。
+"""
 from fastapi import APIRouter, HTTPException
 
 from app.agents.rca_agent import RCAAgent

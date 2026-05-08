@@ -1,14 +1,13 @@
 """
-System Metrics Collector
-========================
-Background service that samples CPU, memory, disk I/O, and network statistics
-every COLLECTION_INTERVAL_SECONDS and persists them to `system_metrics`.
+Background system metrics collector that samples CPU, memory, disk I/O, and
+network statistics via psutil at configurable intervals and persists snapshots
+to the system_metrics table. Computes delta rates per second for I/O metrics
+and prunes old rows to retain only the last RETENTION_COUNT snapshots.
 
-Delta metrics (disk I/O, network) are computed as rates per second relative to
-the previous sample, so dashboard charts are immediately interpretable.
-
-Old snapshots are pruned to keep only the last RETENTION_COUNT rows
-(default 720 = 2 hours at 10-second intervals).
+psutilを使用してCPU・メモリ・ディスクI/O・ネットワーク統計を設定可能な間隔でサンプリングし、
+system_metricsテーブルにスナップショットを永続化するバックグラウンドメトリクス収集モジュール。
+I/Oメトリクスは前回サンプルとの差分から秒当たりレートを算出し、ダッシュボードでの
+即時可読性を確保する。RETENTION_COUNT件を超える古いスナップショットは自動削除される。
 """
 import asyncio
 import json

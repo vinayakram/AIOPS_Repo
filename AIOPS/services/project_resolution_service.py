@@ -1,3 +1,14 @@
+"""
+Service for resolving issue requests to their target project and repository configuration.
+Scores configured projects against issue metadata using name matching and GitHub repo signals,
+supports direct resolution from explicit repository paths, and exposes project selection by name.
+Used to determine the repo_root, allowed_folder, and test_command for each remediation run.
+
+課題リクエストを対象プロジェクトおよびリポジトリ設定に解決するサービス。
+名称マッチングとGitHubリポジトリシグナルを使って設定済みプロジェクトをスコアリングする。
+明示的なリポジトリパスからの直接解決や名前によるプロジェクト選択もサポートする。
+各リメディエーション実行のrepo_root、allowed_folder、test_commandを決定するために使用される。
+"""
 from __future__ import annotations
 
 from pathlib import Path

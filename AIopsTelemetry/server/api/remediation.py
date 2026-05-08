@@ -1,18 +1,13 @@
 """
-Remediation Proxy API
-=====================
-Thin proxy layer that bridges AIopsTelemetry issues to the external AIOPS
-remediation service (Documents/AIOPS, running on port 8005).
+Remediation proxy API bridging AIopsTelemetry issues to the external AIOPS
+remediation service on port 8005. Enriches the initial remediation start
+request with issue data from the local database, stores the returned run_id
+into issue metadata, and translates issue IDs for all subsequent proxy calls.
 
-All routes follow the pattern /api/remediation/issues/{aiops_issue_id}/...
-where `aiops_issue_id` is the AIopsTelemetry integer issue ID.
-
-The proxy:
-  - Enriches the initial POST /start with issue data from our DB so the
-    caller doesn't have to re-type it.
-  - Stores the AIOPS run_id (string) back into issues.metadata_json so
-    the dashboard can track per-issue remediation state.
-  - Translates AIopsTelemetry issue_id → AIOPS run_id for all subsequent calls.
+AIopsTelemetryのイシューをポート8005で稼働する外部AIoPS修復サービスに橋渡しする
+リメディエーションプロキシAPIモジュール。修復開始リクエストにローカルDBのイシューデータを
+付加し、返却されたrun_idをイシューメタデータに保存する。後続の全プロキシ呼び出しで
+AIopsTelemetryイシューIDとAIOPS run_idの変換を透過的に処理する。
 """
 import json
 import logging

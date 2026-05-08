@@ -1,4 +1,11 @@
 #!/usr/bin/env bash
+# Stable Codex CLI launcher that locates the highest installed version via fnm.
+# Searches for the codex binary under the fnm node-versions directory and executes it,
+# failing with a clear error message if the CLI has not been installed yet.
+#
+# fnmのnode-versionsディレクトリから最新のcodexバイナリを検索して実行する安定版ランチャー。
+# CLIがインストールされていない場合は分かりやすいエラーメッセージを表示して終了する。
+# npm install -g @openai/codex で事前にインストールしておく必要がある。
 set -euo pipefail
 
 FNM_HOME="${FNM_HOME:-${HOME}/.local/share/fnm}"

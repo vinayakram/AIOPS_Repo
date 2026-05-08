@@ -1,3 +1,14 @@
+"""
+FastAPI application entry point for the MedicalAgent backend. Initialises the RAG pipeline
+on startup and exposes endpoints for research queries, trace dashboard data, LLM access
+control, health checks, and Prometheus metrics. Pod resource guardrail middleware enforces
+CPU and memory thresholds and returns HTTP 503 when breached.
+
+MedicalAgentバックエンドのFastAPIアプリケーションエントリポイント。起動時にRAGパイプラインを
+初期化し、リサーチクエリ・トレースダッシュボードデータ・LLMアクセス制御・ヘルスチェック・
+Prometheusメトリクスのエンドポイントを公開する。podリソースガードレールミドルウェアが
+CPU・メモリ閾値を強制し、超過時はHTTP 503を返す。
+"""
 import asyncio
 import json
 import os

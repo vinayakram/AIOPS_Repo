@@ -1,3 +1,14 @@
+"""
+PubMed E-utilities client for the SampleAgent GitHub backend supporting article search,
+full-detail fetching, and related-article link retrieval. Parses PubMed XML responses to
+extract PMIDs, titles, abstracts, authors, journals, and publication years. Link data is
+used to build citation graphs for PageRank scoring.
+
+SampleAgent GitHubバックエンド向けのPubMed E-utilitiesクライアント。論文検索・詳細取得・関連論文
+リンク取得をサポートする。PubMed XMLレスポンスを解析してPMID・タイトル・アブストラクト・
+著者・ジャーナル・出版年を抽出する。リンクデータはPageRankスコアリング用の引用グラフ構築
+に使用される。
+"""
 import requests
 import xml.etree.ElementTree as ET
 from typing import List, Dict, Optional

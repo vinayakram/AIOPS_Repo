@@ -1,3 +1,14 @@
+"""
+FastAPI route handler for the standalone Error Analysis Agent endpoint at POST /api/v1/error-analysis.
+Accepts an ErrorAnalysisRequest containing the correlation output and normalized incident.
+Delegates to the ErrorAnalysisAgent which routes to Langfuse, Prometheus, or both based on analysis_target.
+HTTP 500 is returned for LLM errors or validation failures; 422 for request schema violations.
+
+POST /api/v1/error-analysisのスタンドアロンエラー分析エージェントエンドポイントのFastAPIルートハンドラ。
+相関出力と正規化済みインシデントを含むErrorAnalysisRequestを受け付ける。
+analysis_targetに基づいてLangfuse、Prometheus、または両方にルーティングするErrorAnalysisAgentに処理を委譲する。
+LLMエラーまたは検証失敗にはHTTP 500を返し、リクエストスキーマ違反には422を返す。
+"""
 from fastapi import APIRouter, HTTPException
 
 from app.agents.error_analysis_agent import ErrorAnalysisAgent

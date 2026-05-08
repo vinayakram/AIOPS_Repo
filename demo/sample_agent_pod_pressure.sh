@@ -1,4 +1,13 @@
 #!/usr/bin/env bash
+# Guided SampleAgent pod-pressure AIOps demo script covering eight steps: Docker container
+# verification, service health checks, normal RAG query traces, external Prometheus metrics,
+# CPU pressure injection and breach detection, AIopsTelemetry ticket surfacing, and Invastigate
+# RCA correlation using Langfuse and Prometheus evidence.
+#
+# SampleAgent pod pressureのAIOpsデモスクリプト（8ステップ）。Dockerコンテナ確認・サービス
+# ヘルスチェック・通常RAGクエリトレース・外部Prometheusメトリクス・CPU負荷注入および超過検出・
+# AIopsTelemetryチケット表示・LangfuseとPrometheusの証拠を使用したInvastigate RCA相関
+# を案内する。
 set -euo pipefail
 
 DEMO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"

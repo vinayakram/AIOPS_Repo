@@ -1,3 +1,14 @@
+"""
+Central configuration module using Pydantic BaseSettings with AIOPS_ prefix
+environment variable overrides. Defines all server parameters including database
+URL, API key, latency and escalation thresholds, webhook settings, RCA service
+URL, Langfuse credentials, NFR parameters, and knowledge base configuration.
+
+AIOPS_プレフィックス付き環境変数でオーバーライド可能なPydantic BaseSettingsを用いた
+中央設定モジュール。データベースURL・APIキー・レイテンシ/エスカレーションしきい値・
+Webhook設定・RCAサービスURL・Langfuse認証情報・NFRパラメータ・
+ナレッジベース設定を含む全サーバーパラメータを定義する。
+"""
 from pydantic_settings import BaseSettings
 from pathlib import Path
 from typing import Optional

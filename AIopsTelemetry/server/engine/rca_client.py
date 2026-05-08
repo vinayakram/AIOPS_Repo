@@ -1,24 +1,14 @@
 """
-RCA Client
-==========
-Calls the external Invastigate_flow_with_Poller service and stores the
-full pipeline response in IssueAnalysis.rca_json.
+RCA client that calls the external Invastigate_flow_with_Poller five-agent pipeline
+and stores the full response in IssueAnalysis.rca_json. Manages async job lifecycle:
+request_rca creates a pending row and fires a background task; _run_rca resolves
+issue context and POSTs to the service; get_rca_analysis reads the completed result.
 
-Flow
-----
-1.  request_rca(issue_id)  → creates/resets IssueAnalysis row (status=pending),
-                             fires _run_rca as an asyncio background task,
-                             returns immediately.
-2.  _run_rca               → resolves trace_id / agent_name / timestamp from the
-                             Issue row, POSTs to the external service, stores
-                             the response in the DB (status → done | failed).
-3.  get_rca_analysis(id)   → read path, returns dict with all fields including
-                             rca_data (parsed JSON from rca_json column).
-
-Fallback
---------
-If the issue has no trace_id the client logs a warning and delegates to the
-legacy reason_analyzer so the dashboard always gets a result.
+外部Invastigate_flow_with_Pollerの五段階エージェントパイプラインを呼び出し、
+完全なレスポンスをIssueAnalysis.rca_jsonに保存するRCAクライアントモジュール。
+request_rcaが保留レコードを作成しバックグラウンドタスクを起動、_run_rcaがイシュー
+コンテキストを解決して外部サービスにPOSTし、get_rca_analysisが完了結果を読み取る。
+trace_idが存在しない場合はreason_analyzerにフォールバックし常に結果を返す設計となっている。
 """
 from __future__ import annotations
 
